@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hot Dog Heaven - Restaurante</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            background-color: #ff6600; /* Naranja */
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .logo {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #ff6600; /* Logo en naranja */
+        }
+        .menu {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+        button {
+            background-color: #ff6600;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #e55a00;
+        }
+        #cart {
+            margin-top: 20px;
+            padding: 10px;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+        }
+        footer {
+            text-align: center;
+            padding: 10px;
+            background: #333;
+            color: white;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Hot Dog Heaven</div>
+        <p>¡Los mejores hot dogs de la ciudad!</p>
+    </header>
+
+    <div class="menu">
+        <h2>Menú</h2>
+        <div class="menu-item">
+            <div>
+                <h3>Hot Dog Clásico</h3>
+                <p>Hot dog con mostaza y ketchup. $5.00</p>
+            </div>
+            <button onclick="addToCart('Hot Dog Clásico', 5.00)">Agregar</button>
+        </div>
+        <div class="menu-item">
+            <div>
+                <h3>Hot Dog con Queso</h3>
+                <p>Hot dog con queso cheddar derretido. $6.50</p>
+            </div>
+            <button onclick="addToCart('Hot Dog con Queso', 6.50)">Agregar</button>
+        </div>
+        <div class="menu-item">
+            <div>
+                <h3>Hot Dog Deluxe</h3>
+                <p>Con tocino, cebolla y salsa especial. $8.00</p>
+            </div>
+            <button onclick="addToCart('Hot Dog Deluxe', 8.00)">Agregar</button>
+        </div>
+        <div class="menu-item">
+            <div>
+                <h3>Bebida Refresco</h3>
+                <p>Refresco de cola. $2.00</p>
+            </div>
+            <button onclick="addToCart('Bebida Refresco', 2.00)">Agregar</button>
+        </div>
+
+        <div id="cart">
+            <h3>Carrito de Compras</h3>
+            <ul id="cart-items"></ul>
+            <p>Total: $<span id="total">0.00</span></p>
+            <button onclick="clearCart()">Vaciar Carrito</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2023 Hot Dog Heaven. Todos los derechos reservados.</p>
+    </footer>
+
+    <script>
+        let cart = [];
+        let total = 0;
+
+        function addToCart(item, price) {
+            cart.push({ item, price });
+            total += price;
+            updateCart();
+        }
+
+        function updateCart() {
+            const cartItems = document.getElementById('cart-items');
+            cartItems.innerHTML = '';
+            cart.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${item.item} - $${item.price.toFixed(2)}`;
+                cartItems.appendChild(li);
+            });
+            document.getElementById('total').textContent = total.toFixed(2);
+        }
+
+        function clearCart() {
+            cart = [];
+            total = 0;
+            updateCart();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS - HOT DOGS CALLEJONES DE TAMAZULA</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+</head>
+<body>
+    <div id="login-section" class="login">
+        <h2>Iniciar Sesión</h2>
+        <input type="text" id="username" placeholder="Usuario" required>
+        <input type="password" id="password" placeholder="Contraseña" required>
+        <button onclick="login()">Iniciar Sesión</button>
+        <p id="login-msg" style="color: red;"></p>
+    </div>
+
+    <div id="app" style="display: none;">
+        <header>
+            <img src="logo-hotdogs.png" alt="Logo Hot Dogs" class="header-logo-right" onerror="this.style.display='none'">
+            <div class="logo-text">HOT DOGS CALLEJONES DE TAMAZULA</div>
+            <p class="animal-msg">¡Los mejores hot dogs de Tamazula!</p>
+            <button onclick="logout()" class="logout-btn">Cerrar Sesión</button>
+            <button onclick="toggleDarkMode()" class="dark-mode-toggle" title="Modo Oscuro">🌙</button>
+        </header>
+
+        <nav id="nav-admin" style="display: none;">
+            <button onclick="showSection('venta')">Venta</button>
+            <button onclick="showSection('productos')">Productos</button>
+            <button onclick="showSection('empleados')">Agregar Empleado</button>
+            <button onclick="showSection('pedidos')">Pedidos Pendientes</button>
+            <button onclick="showSection('reportes')">📊 Reportes</button>
+            <button onclick="showSection('ajustes')">Ajustes</button>
+            <button onclick="showSection('facturacion')">Facturación</button>
+        </nav>
+
+        <nav id="nav-empleado" style="display: none;">
+            <button onclick="showSection('venta')">Venta</button>
+            <button onclick="showSection('mis-pedidos')">Mis Pedidos</button>
+            <button onclick="showSection('historial-pedidos')">Historial</button>
+        </nav>
+
+        <nav id="nav-caja" style="display: none;">
+            <button onclick="showSection('pendientes-cobrar')">Pedidos Pendientes de Cobrar</button>
+            <button onclick="showSection('cobrados')">Pedidos Cobrados</button>
+            <button onclick="showSection('tickets')">Tickets</button>
+        </nav>
+
+        <!-- Ventana de Venta (Página Principal) -->
+        <div id="venta" class="section active">
+            <h2>Ventana de Venta</h2>
+            
+            <!-- Barra de Búsqueda -->
+            <div style="margin-bottom: 1.5rem;">
+                <input type="text" id="search-products" placeholder="🔍 Buscar productos..." 
+                    oninput="searchProducts(this.value)"
+                    style="width: 100%; max-width: 100%; padding: 1rem; font-size: 1.1rem; border: 2px solid #FF6B35;">
+            </div>
+            
+            <div class="product-list" id="product-list-venta"></div>
+            <h3>Carrito</h3>
+            <div id="cart"></div>
+            <p>Total: $<span id="total">0.00</span></p>
+            <button onclick="sendOrder()">Enviar Pedido</button>
+        </div>
+
+        <!-- Productos (Solo Admin) -->
+        <div id="productos" class="section">
+            <h2>Productos</h2>
+            <div class="product-list" id="product-list-admin"></div>
+            <h3>Agregar Producto</h3>
+            <input type="text" id="new-product-name" placeholder="Nombre">
+            <input type="number" id="new-product-price" placeholder="Precio" step="0.01">
+            <button onclick="addProduct()">Agregar</button>
+        </div>
+
+        <!-- Agregar Empleado (Solo Admin) -->
+        <div id="empleados" class="section">
+            <h2>Agregar Empleado</h2>
+            <input type="text" id="new-emp-username" placeholder="Usuario">
+            <input type="password" id="new-emp-password" placeholder="Contraseña">
+            <select id="new-emp-role">
+                <option value="empleado">Empleado</option>
+                <option value="caja">Caja</option>
+                <option value="admin">Administrador</option>
+            </select>
+            <button onclick="addEmployee()">Agregar Empleado</button>
+            <p id="emp-msg"></p>
+            <h3>Listado de Empleados</h3>
+            <div class="employee-list" id="employee-list"></div>
+        </div>
+
+        <!-- Pedidos Pendientes (Solo Admin) -->
+        <div id="pedidos" class="section">
+            <h2>Pedidos Pendientes</h2>
+            <div id="pending-orders"></div>
+        </div>
+
+        <!-- Pedidos Pendientes de Cobrar (Solo Caja) -->
+        <div id="pendientes-cobrar" class="section">
+            <h2>Pedidos Pendientes de Cobrar</h2>
+            <div id="cashier-pending-orders"></div>
+        </div>
+
+        <!-- Pedidos Cobrados (Solo Caja) -->
+        <div id="cobrados" class="section">
+            <h2>Pedidos Cobrados</h2>
+            <div id="cashier-paid-orders"></div>
+        </div>
+
+        <!-- Tickets (Solo Caja) -->
+        <div id="tickets" class="section">
+            <h2>Tickets</h2>
+            <div id="ticket-list"></div>
+        </div>
+
+        <!-- Mis Pedidos (Solo Empleado) -->
+        <div id="mis-pedidos" class="section">
+            <h2>Mis Pedidos Pendientes</h2>
+            <div id="employee-pending-orders"></div>
+        </div>
+
+        <!-- Historial de Pedidos (Solo Empleado) -->
+        <div id="historial-pedidos" class="section">
+            <h2>Historial de Pedidos</h2>
+            <div style="margin-bottom: 1rem;">
+                <button onclick="filterEmployeeHistory('today')" class="filter-btn">Hoy</button>
+                <button onclick="filterEmployeeHistory('week')" class="filter-btn">Esta Semana</button>
+                <button onclick="filterEmployeeHistory('all')" class="filter-btn active">Todos</button>
+            </div>
+            <div id="employee-order-history"></div>
+        </div>
+
+        <!-- Reportes (Solo Admin) -->
+        <div id="reportes" class="section">
+            <h2>📊 Reportes y Estadísticas</h2>
+            
+            <!-- Filtros de Fecha -->
+            <div style="background: rgba(255,255,255,0.9); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+                <h3>Filtrar por Período</h3>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                    <button onclick="filterReports('today')" class="filter-btn" data-filter="today">Hoy</button>
+                    <button onclick="filterReports('week')" class="filter-btn" data-filter="week">Esta Semana</button>
+                    <button onclick="filterReports('month')" class="filter-btn" data-filter="month">Este Mes</button>
+                    <button onclick="filterReports('all')" class="filter-btn active" data-filter="all">Todo</button>
+                </div>
+            </div>
+            
+            <!-- Dashboard de Estadísticas -->
+            <div id="stats-dashboard" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <!-- Las tarjetas se generarán dinámicamente -->
+            </div>
+            
+            <!-- Productos Más Vendidos -->
+            <div style="background: rgba(255,255,255,0.9); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+                <h3>🏆 Productos Más Vendidos</h3>
+                <div id="top-products"></div>
+            </div>
+            
+            <!-- Ventas por Método de Pago -->
+            <div style="background: rgba(255,255,255,0.9); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+                <h3>💳 Ventas por Método de Pago</h3>
+                <div id="payment-methods-stats"></div>
+            </div>
+            
+            <!-- Corte de Caja -->
+            <div style="background: rgba(255,255,255,0.9); padding: 1.5rem; border-radius: 8px;">
+                <h3>💰 Corte de Caja</h3>
+                <button onclick="generateCashReport()" style="background: #2ECC71; font-size: 1.1rem; padding: 1rem 2rem;">
+                    Generar Corte de Caja
+                </button>
+                <div id="cash-report" style="margin-top: 1rem;"></div>
+            </div>
+        </div>
+
+        <!-- Ajustes (Solo Admin) -->
+        <div id="ajustes" class="section">
+            <h2>Ajustes</h2>
+            <p>Configuraciones básicas:</p>
+            <label>Impuesto (%): <input type="number" id="tax-rate" value="10" step="0.01"></label>
+            <button onclick="saveSettings()">Guardar</button>
+            <p id="settings-msg"></p>
+        </div>
+
+        <!-- Facturación (Solo Admin) -->
+        <div id="facturacion" class="section">
+            <h2>Facturación</h2>
+            <button onclick="generateInvoice()">Generar Factura</button>
+            <div id="invoice" style="display: none;">
+                <h3>Factura</h3>
+                <div id="invoice-content"></div>
+                <button onclick="printInvoice()">Imprimir</button>
+            </div>
+        </div>
+
+        <!-- Ticket de Compra (Para Caja) -->
+        <div id="receipt" style="display: none;">
+            <h3>🌭 HOT DOGS CALLEJONES DE TAMAZULA 🌭</h3>
+            <h3>Ticket de Compra</h3>
+            <div id="receipt-content"></div>
+            <button onclick="printReceipt()">Imprimir</button>
+            <button onclick="cancelReceipt()">Cancelar</button>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 HOT DOGS CALLEJONES DE TAMAZULA. ¡Los mejores hot dogs de Tamazula!</p>
+        </footer>
+    </div>
+
+    <script src="api.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
