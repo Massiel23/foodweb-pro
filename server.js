@@ -9,328 +9,297 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: '*' } });
-const PORT = 3000;
+
+// IMPORTANTE: Usar el puerto de Render en producción
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(__dirname)); // Servir archivos estáticos
+app.use(express.static(__dirname));
 
-// Conectar a SQLite
-const db = new sqlite3.Database('./pos.db', (err) => {
-    if (err) console.error(err.message);
-    console.log('Conectado a SQLite.');
-});
+// Detectar si estamos en producción
+const isProduction = process.env.DATABASE_URL !== undefined;
 
-// Crear tablas
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password TEXT,
-        role TEXT
-    )`);
+let db;
 
-    db.run(`CREATE TABLE IF NOT EXISTS products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        price REAL,
-        img TEXT
-    )`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS orders (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        employee TEXT,
-        items TEXT,
-        total REAL,
-        status TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS tickets (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        order_id INTEGER,
-        employee TEXT,
-        items TEXT,
-        total REAL,
-        amount_received REAL,
-        change_given REAL,
-        payment_method TEXT DEFAULT 'Efectivo',
-        printed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (order_id) REFERENCES orders(id)
-    )`);
-
-    // Agregar columnas faltantes a la tabla tickets si no existen
-    db.run(`ALTER TABLE tickets ADD COLUMN amount_received REAL`, (err) => {
-        if (err && !err.message.includes('duplicate column name')) {
-            console.log('Columna amount_received ya existe o error:', err.message);
-        }
-    });
+if (isProduction) {
+    // PostgreSQL para producción
+    console.log('🚀 Modo PRODUCCIÓN - Usando PostgreSQL');
+    const { Pool } = require('pg');
     
-    db.run(`ALTER TABLE tickets ADD COLUMN change_given REAL`, (err) => {
-        if (err && !err.message.includes('duplicate column name')) {
-            console.log('Columna change_given ya existe o error:', err.message);
+    const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+    });
+
+    // Crear tablas
+    pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE,
+            password TEXT,
+            role TEXT
+        );
+        CREATE TABLE IF NOT EXISTS products (
+            id SERIAL PRIMARY KEY,
+            name TEXT,
+            price REAL,
+            img TEXT
+        );
+        CREATE TABLE IF NOT EXISTS orders (
+            id SERIAL PRIMARY KEY,
+            employee TEXT,
+            items TEXT,
+            total REAL,
+            status TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS tickets (
+            id SERIAL PRIMARY KEY,
+            order_id INTEGER,
+            employee TEXT,
+            items TEXT,
+            total REAL,
+            amount_received REAL,
+            change_given REAL,
+            payment_method TEXT DEFAULT 'Efectivo',
+            printed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    `).then(() => {
+        console.log('✅ Tablas creadas');
+        // Insertar datos por defecto
+        pool.query(`INSERT INTO users (username, password, role) VALUES ('admin', 'admin', 'admin') ON CONFLICT (username) DO NOTHING`);
+        pool.query(`INSERT INTO users (username, password, role) VALUES ('caja', 'caja', 'caja') ON CONFLICT (username) DO NOTHING`);
+    });
+
+    db = pool;
+} else {
+    // SQLite para desarrollo
+    console.log('💻 Modo DESARROLLO - Usando SQLite');
+    db = new sqlite3.Database('./pos.db');
+}
+
+// Helper functions
+const dbQuery = (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+        if (isProduction) {
+            const pgSql = sql.replace(/\?/g, (_, i) => `$${params.slice(0, i).length + 1}`);
+            db.query(pgSql, params, (err, result) => {
+                if (err) reject(err);
+                else resolve(result.rows);
+            });
+        } else {
+            db.all(sql, params, (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
         }
     });
-    
-    db.run(`ALTER TABLE tickets ADD COLUMN payment_method TEXT DEFAULT 'Efectivo'`, (err) => {
-        if (err && !err.message.includes('duplicate column name')) {
-            console.log('Columna payment_method ya existe o error:', err.message);
+};
+
+const dbRun = (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+        if (isProduction) {
+            let index = 0;
+            const pgSql = sql.replace(/\?/g, () => `$${++index}`);
+            db.query(pgSql + ' RETURNING id', params, (err, result) => {
+                if (err) reject(err);
+                else resolve({ lastID: result.rows[0]?.id, changes: result.rowCount });
+            });
+        } else {
+            db.run(sql, params, function(err) {
+                if (err) reject(err);
+                else resolve({ lastID: this.lastID, changes: this.changes });
+            });
         }
     });
+};
 
-    // Insertar usuarios por defecto
-    db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES ('admin', 'admin', 'admin')`);
-    db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES ('caja', 'caja', 'caja')`);
-
-    // Insertar productos por defecto
-    const defaultProducts = [
-        { name: 'Hot Dog Clásico', price: 5.00, img: '🐕' },
-        { name: 'Hot Dog con Queso', price: 6.50, img: '🐶' },
-        { name: 'Hot Dog Deluxe', price: 8.00, img: '🐕‍🦺' },
-        { name: 'Bebida Refresco', price: 2.00, img: '🥤' },
-        { name: 'Hot Dog Veggie (Animal-Friendly)', price: 7.00, img: '🌱' },
-        { name: 'Ensalada Fresca', price: 4.50, img: '🥗' }
-    ];
-
-    defaultProducts.forEach(product => {
-        db.run(`INSERT OR IGNORE INTO products (name, price, img) VALUES (?, ?, ?)`, 
-            [product.name, product.price, product.img]);
+const dbGet = (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+        if (isProduction) {
+            let index = 0;
+            const pgSql = sql.replace(/\?/g, () => `$${++index}`);
+            db.query(pgSql, params, (err, result) => {
+                if (err) reject(err);
+                else resolve(result.rows[0]);
+            });
+        } else {
+            db.get(sql, params, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        }
     });
-});
+};
 
-// Socket.IO para notificaciones en tiempo real
+// Socket.IO
 io.on('connection', (socket) => {
     console.log('Usuario conectado:', socket.id);
-    
-    socket.on('disconnect', () => {
-        console.log('Usuario desconectado:', socket.id);
-    });
+    socket.on('disconnect', () => console.log('Usuario desconectado:', socket.id));
 });
 
-// ========== RUTAS API ==========
+// Rutas
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'hotgogs.html')));
 
-// Ruta principal
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'hotgogs.html'));
-});
-
-// ========== USUARIOS ==========
-// Login
-app.post('/api/login', (req, res) => {
+// API Usuarios
+app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
-    
-    if (!username || !password) {
-        return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
-    }
-
-    db.get('SELECT * FROM users WHERE username = ? AND password = ?', [username, password], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
+    if (!username || !password) return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
+    try {
+        const row = await dbGet('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
         if (!row) return res.status(401).json({ error: 'Credenciales inválidas' });
         res.json(row);
-    });
-});
-
-// Obtener usuarios
-app.get('/api/users', (req, res) => {
-    db.all('SELECT id, username, role FROM users', [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
-});
-
-// Agregar usuario
-app.post('/api/users', (req, res) => {
-    const { username, password, role } = req.body;
-    
-    if (!username || !password || !role) {
-        return res.status(400).json({ error: 'Todos los campos son requeridos' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
+});
 
-    db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, password, role], function(err) {
-        if (err) {
-            if (err.message.includes('UNIQUE')) {
-                return res.status(400).json({ error: 'El usuario ya existe' });
-            }
-            return res.status(500).json({ error: err.message });
-        }
-        const newUser = { id: this.lastID, username, role };
+app.get('/api/users', async (req, res) => {
+    try {
+        const rows = await dbQuery('SELECT id, username, role FROM users');
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/users', async (req, res) => {
+    const { username, password, role } = req.body;
+    if (!username || !password || !role) return res.status(400).json({ error: 'Todos los campos requeridos' });
+    try {
+        const result = await dbRun('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, password, role]);
+        const newUser = { id: result.lastID, username, role };
         io.emit('userAdded', newUser);
         res.json(newUser);
-    });
-});
-
-// Eliminar usuario
-app.delete('/api/users/:id', (req, res) => {
-    db.run('DELETE FROM users WHERE id = ?', [req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        io.emit('userDeleted', { id: req.params.id });
-        res.json({ changes: this.changes });
-    });
-});
-
-// ========== PRODUCTOS ==========
-// Obtener productos
-app.get('/api/products', (req, res) => {
-    db.all('SELECT * FROM products', [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
-});
-
-// Agregar producto
-app.post('/api/products', (req, res) => {
-    const { name, price, img } = req.body;
-    
-    if (!name || !price) {
-        return res.status(400).json({ error: 'Nombre y precio son requeridos' });
+    } catch (err) {
+        if (err.message.includes('UNIQUE') || err.message.includes('duplicate')) {
+            return res.status(400).json({ error: 'Usuario ya existe' });
+        }
+        res.status(500).json({ error: err.message });
     }
+});
 
-    db.run('INSERT INTO products (name, price, img) VALUES (?, ?, ?)', [name, price, img || '🍔'], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        const newProduct = { id: this.lastID, name, price, img: img || '🍔' };
+app.delete('/api/users/:id', async (req, res) => {
+    try {
+        const result = await dbRun('DELETE FROM users WHERE id = ?', [req.params.id]);
+        io.emit('userDeleted', { id: req.params.id });
+        res.json({ changes: result.changes });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API Productos
+app.get('/api/products', async (req, res) => {
+    try {
+        const rows = await dbQuery('SELECT * FROM products');
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/products', async (req, res) => {
+    const { name, price, img } = req.body;
+    if (!name || !price) return res.status(400).json({ error: 'Nombre y precio requeridos' });
+    try {
+        const result = await dbRun('INSERT INTO products (name, price, img) VALUES (?, ?, ?)', [name, price, img || '🍔']);
+        const newProduct = { id: result.lastID, name, price, img: img || '🍔' };
         io.emit('productAdded', newProduct);
         res.json(newProduct);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Eliminar producto
-app.delete('/api/products/:id', (req, res) => {
-    db.run('DELETE FROM products WHERE id = ?', [req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
+app.delete('/api/products/:id', async (req, res) => {
+    try {
+        const result = await dbRun('DELETE FROM products WHERE id = ?', [req.params.id]);
         io.emit('productDeleted', { id: req.params.id });
-        res.json({ changes: this.changes });
-    });
+        res.json({ changes: result.changes });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// ========== PEDIDOS ==========
-// Obtener pedidos
-app.get('/api/orders', (req, res) => {
-    db.all('SELECT * FROM orders ORDER BY created_at DESC', [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        // Parsear items de JSON string a objeto
-        const orders = rows.map(row => ({
-            ...row,
-            items: JSON.parse(row.items)
-        }));
+// API Pedidos
+app.get('/api/orders', async (req, res) => {
+    try {
+        const rows = await dbQuery('SELECT * FROM orders ORDER BY created_at DESC');
+        const orders = rows.map(row => ({ ...row, items: JSON.parse(row.items) }));
         res.json(orders);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Agregar pedido
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', async (req, res) => {
     const { employee, items, total, status } = req.body;
-    
-    if (!employee || !items || !total) {
+    if (!employee || !items || !total) return res.status(400).json({ error: 'Datos incompletos' });
+    try {
+        const result = await dbRun('INSERT INTO orders (employee, items, total, status) VALUES (?, ?, ?, ?)', 
+            [employee, JSON.stringify(items), total, status || 'Pendiente']);
+        const newOrder = { id: result.lastID, employee, items, total, status: status || 'Pendiente', created_at: new Date().toISOString() };
+        io.emit('newOrder', newOrder);
+        res.json(newOrder);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/orders/:id', async (req, res) => {
+    const { status } = req.body;
+    if (!status) return res.status(400).json({ error: 'Estado requerido' });
+    try {
+        const result = await dbRun('UPDATE orders SET status = ? WHERE id = ?', [status, req.params.id]);
+        io.emit('orderUpdated', { id: parseInt(req.params.id), status });
+        res.json({ changes: result.changes, id: req.params.id, status });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/orders/:id', async (req, res) => {
+    try {
+        const result = await dbRun('DELETE FROM orders WHERE id = ?', [req.params.id]);
+        io.emit('orderDeleted', { id: req.params.id });
+        res.json({ changes: result.changes });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API Tickets
+app.get('/api/tickets', async (req, res) => {
+    try {
+        const rows = await dbQuery('SELECT * FROM tickets ORDER BY id DESC');
+        const tickets = rows.map(row => ({ ...row, items: JSON.parse(row.items) }));
+        res.json(tickets);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/tickets', async (req, res) => {
+    const { order_id, employee, items, total, amount_received, change_given, payment_method } = req.body;
+    if (!order_id || !employee || !items || total === undefined) {
         return res.status(400).json({ error: 'Datos incompletos' });
     }
-
-    db.run('INSERT INTO orders (employee, items, total, status) VALUES (?, ?, ?, ?)', 
-        [employee, JSON.stringify(items), total, status || 'Pendiente'], 
-        function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            const newOrder = { 
-                id: this.lastID, 
-                employee, 
-                items, 
-                total, 
-                status: status || 'Pendiente',
-                created_at: new Date().toISOString()
-            };
-            io.emit('newOrder', newOrder); // Notificación en tiempo real
-            res.json(newOrder);
-        }
-    );
+    try {
+        const result = await dbRun(
+            'INSERT INTO tickets (order_id, employee, items, total, amount_received, change_given, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?)', 
+            [order_id, employee, JSON.stringify(items), total, amount_received || 0, change_given || 0, payment_method || 'Efectivo']
+        );
+        const newTicket = { id: result.lastID, order_id, employee, items, total, amount_received: amount_received || 0, change_given: change_given || 0, payment_method: payment_method || 'Efectivo', printed_at: new Date().toISOString() };
+        io.emit('ticketPrinted', newTicket);
+        res.json(newTicket);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Actualizar pedido
-app.put('/api/orders/:id', (req, res) => {
-    const { status } = req.body;
-    
-    if (!status) {
-        return res.status(400).json({ error: 'Estado requerido' });
-    }
-
-    db.run('UPDATE orders SET status = ? WHERE id = ?', [status, req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        io.emit('orderUpdated', { id: parseInt(req.params.id), status }); // Notificación en tiempo real
-        res.json({ changes: this.changes, id: req.params.id, status });
-    });
-});
-
-// Eliminar pedido
-app.delete('/api/orders/:id', (req, res) => {
-    db.run('DELETE FROM orders WHERE id = ?', [req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        io.emit('orderDeleted', { id: req.params.id });
-        res.json({ changes: this.changes });
-    });
-});
-
-// ========== TICKETS ==========
-// Obtener tickets
-app.get('/api/tickets', (req, res) => {
-    db.all('SELECT * FROM tickets ORDER BY id DESC', [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        // Parsear items de JSON string a objeto
-        const tickets = rows.map(row => ({
-            ...row,
-            items: JSON.parse(row.items)
-        }));
-        res.json(tickets);
-    });
-});
-
-// Agregar ticket
-app.post('/api/tickets', (req, res) => {
-    const { order_id, employee, items, total, amount_received, change_given, payment_method } = req.body;
-    
-    console.log('POST /api/tickets recibido:', { order_id, employee, items, total, amount_received, change_given, payment_method });
-    
-    // Validación mejorada
-    if (!order_id) {
-        console.log('Error: order_id faltante');
-        return res.status(400).json({ error: 'order_id es requerido' });
-    }
-    if (!employee) {
-        console.log('Error: employee faltante');
-        return res.status(400).json({ error: 'employee es requerido' });
-    }
-    if (!items) {
-        console.log('Error: items faltante');
-        return res.status(400).json({ error: 'items es requerido' });
-    }
-    if (total === undefined || total === null) {
-        console.log('Error: total faltante o undefined');
-        return res.status(400).json({ error: 'total es requerido' });
-    }
-
-    db.run('INSERT INTO tickets (order_id, employee, items, total, amount_received, change_given, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?)', 
-        [order_id, employee, JSON.stringify(items), total, amount_received || 0, change_given || 0, payment_method || 'Efectivo'], 
-        function(err) {
-            if (err) {
-                console.log('Error en INSERT:', err);
-                return res.status(500).json({ error: err.message });
-            }
-            const newTicket = { 
-                id: this.lastID, 
-                order_id, 
-                employee, 
-                items, 
-                total,
-                amount_received: amount_received || 0,
-                change_given: change_given || 0,
-                payment_method: payment_method || 'Efectivo',
-                printed_at: new Date().toISOString()
-            };
-            console.log('Ticket creado exitosamente:', newTicket);
-            io.emit('ticketPrinted', newTicket); // Notificación en tiempo real
-            res.json(newTicket);
-        }
-    );
-});
-
-// Iniciar servidor
 server.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`🚀 Servidor en puerto ${PORT} - Modo: ${isProduction ? 'PRODUCCIÓN' : 'DESARROLLO'}`);
 });
