@@ -23,10 +23,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ========== SOCKET.IO ==========
 function initializeSocket() {
-    socket = io('http://localhost:3000');
+    // Detectar automáticamente la URL correcta para Socket.IO
+    let socketURL;
+    const hostname = window.location.hostname;
+    
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        // Estamos en la computadora (desarrollo local)
+        socketURL = 'http://localhost:3000';
+    } else if (hostname.includes('onrender.com')) {
+        // Estamos en Render (producción)
+        socketURL = window.location.origin; // Usa la misma URL del sitio
+    } else if (hostname.includes('192.168.')) {
+        // Estamos en la red local (celular conectado a la misma WiFi)
+        socketURL = 'http://192.168.101.53:3000';
+    } else {
+        // Por defecto, usar la URL actual del sitio
+        socketURL = window.location.origin;
+    }
+    
+    console.log('🔌 Conectando Socket.IO a:', socketURL);
+    socket = io(socketURL);
     
     socket.on('connect', () => {
-        console.log('Conectado al servidor Socket.IO');
+        console.log('✅ Conectado al servidor Socket.IO');
     });
     
     socket.on('disconnect', () => {

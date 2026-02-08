@@ -300,6 +300,8 @@ app.post('/api/tickets', async (req, res) => {
     }
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor en puerto ${PORT} - Modo: ${isProduction ? 'PRODUCCIÓN' : 'DESARROLLO'}`);
+    console.log(`📱 Acceso desde celular: http://192.168.101.53:${PORT}`);
+    console.log(`💻 Acceso desde computadora: http://localhost:${PORT}`);
 });

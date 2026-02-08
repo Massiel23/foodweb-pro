@@ -1,7 +1,26 @@
 // Cliente API para comunicación con el backend
 class API {
-    constructor(baseURL = 'http://localhost:3000') {
+    constructor(baseURL) {
+        // Detectar automáticamente la URL correcta
+        if (!baseURL) {
+            const hostname = window.location.hostname;
+            
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                // Estamos en la computadora (desarrollo local)
+                baseURL = 'http://localhost:3000';
+            } else if (hostname.includes('onrender.com')) {
+                // Estamos en Render (producción)
+                baseURL = window.location.origin; // Usa la misma URL del sitio
+            } else if (hostname.includes('192.168.')) {
+                // Estamos en la red local (celular conectado a la misma WiFi)
+                baseURL = 'http://192.168.101.53:3000';
+            } else {
+                // Por defecto, usar la URL actual del sitio
+                baseURL = window.location.origin;
+            }
+        }
         this.baseURL = baseURL;
+        console.log('🌐 API conectada a:', this.baseURL);
     }
 
     // Método genérico para hacer peticiones
