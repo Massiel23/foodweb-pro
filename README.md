@@ -1,4 +1,4 @@
-# 🐶 Hot Dog Heaven - Sistema POS
+# 🐶 Hot Dog Callejones de Tamazula - Sistema POS
 
 Sistema de Punto de Venta (POS) para Hot Dog Callejones de Tamazula con integración Frontend-Backend en tiempo real.
 
