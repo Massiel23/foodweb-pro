@@ -348,41 +348,49 @@ function showCustomizationModal(id, name, price) {
     
     const ingredientOptions = `
         <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin tomate" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <input type="checkbox" value="con todo" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #2ECC71;">
+            <span style="color: #2ECC71; font-weight: 700;">✅ Con Todo</span>
+        </label>
+        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
+            <input type="checkbox" value="cebolla asada" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <span style="color: #1a252f; font-weight: 500;">🔥 Cebolla Asada</span>
+        </label>
+        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
+            <input type="checkbox" value="sin tomate" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
             <span style="color: #1a252f; font-weight: 500;">🍅 Sin Tomate</span>
         </label>
         <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin cebolla" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <input type="checkbox" value="sin cebolla" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
             <span style="color: #1a252f; font-weight: 500;">🧅 Sin Cebolla</span>
         </label>
         <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin chile" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <input type="checkbox" value="sin chile" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
             <span style="color: #1a252f; font-weight: 500;">🌶️ Sin Chile</span>
         </label>
         <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin catsup" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <input type="checkbox" value="sin catsup" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
             <span style="color: #1a252f; font-weight: 500;">🍅 Sin Catsup</span>
         </label>
         <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin mayonesa" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <input type="checkbox" value="sin mayonesa" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
             <span style="color: #1a252f; font-weight: 500;">🥚 Sin Mayonesa</span>
         </label>
         <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin champiñón" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <input type="checkbox" value="sin champiñón" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
             <span style="color: #1a252f; font-weight: 500;">🍄 Sin Champiñón</span>
         </label>
         <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin queso rayado" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <input type="checkbox" value="sin queso rayado" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
             <span style="color: #1a252f; font-weight: 500;">🧀 Sin Queso Rayado</span>
         </label>
         <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin queso amarillo" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <input type="checkbox" value="sin queso amarillo" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
             <span style="color: #1a252f; font-weight: 500;">🟡 Sin Queso Amarillo</span>
         </label>
     `;
     
     modal.innerHTML = `
-        <div style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); padding: 2.5rem; border-radius: 16px; max-width: 550px; width: 90%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); animation: slideUp 0.3s ease;">
+        <div style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); padding: 2.5rem; border-radius: 16px; max-width: 550px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); animation: slideUp 0.3s ease;">
             <div style="text-align: center; margin-bottom: 2rem;">
                 <h3 style="color: #FF6B35; font-size: 1.8rem; margin-bottom: 0.5rem; font-weight: 700;">🌭 Personalizar Pedido</h3>
                 <p style="color: #1a252f; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">${name}</p>
@@ -399,7 +407,7 @@ function showCustomizationModal(id, name, price) {
                     <p style="color: #2ECC71; font-weight: 700; font-size: 1.3rem; margin: 0;">Total: $<span id="quantity-total">${parseFloat(price).toFixed(2)}</span></p>
                 </div>
                 
-                <p style="color: #4a5568; font-size: 0.95rem;">Selecciona los ingredientes que NO deseas:</p>
+                <p style="color: #4a5568; font-size: 0.95rem;">Personaliza tu pedido:</p>
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 2rem; padding: 1.5rem; background: rgba(255, 255, 255, 0.8); border-radius: 12px; border: 2px solid #f0f0f0;">
