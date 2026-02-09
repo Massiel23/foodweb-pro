@@ -183,6 +183,11 @@ async function initializeApp() {
         } 
     });
 
+    // Configurar trust proxy para Render
+    if (isProduction) {
+        app.set('trust proxy', 1); // Confiar en el primer proxy (Render)
+    }
+
     // Middleware de seguridad
     app.use(helmetConfig);
 
