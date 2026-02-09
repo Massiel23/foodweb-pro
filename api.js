@@ -20,30 +20,99 @@ class API {
             }
         }
         this.baseURL = baseURL;
+        this.token = localStorage.getItem('token');
         console.log('🌐 API conectada a:', this.baseURL);
+    }
+
+    // Obtener headers con token
+    getHeaders() {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        if (this.token) {
+            headers['Authorization'] = `Bearer ${this.token}`;
+        }
+        
+        return headers;
+    }
+
+    // Guardar token
+    setToken(token) {
+        this.token = token;
+        localStorage.setItem('token', token);
+    }
+
+    // Eliminar token
+    clearToken() {
+        this.token = null;
+        localStorage.removeItem('token');
+        localStorage.removeItem('currentUser');
     }
 
     // Método genérico para hacer peticiones
     async request(endpoint, options = {}) {
         try {
             const response = await fetch(`${this.baseURL}${endpoint}`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                },
+                headers: this.getHeaders(),
                 ...options
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Error en la petición');
+                // Si el token expiró, limpiar y redirigir al login
+                if (response.status === 401 || response.status === 403) {
+                    this.clearToken();
+                    if (window.location.pathname !== '/') {
+                        alert('Sesión expirada. Por favor, inicia sesión nuevamente.');
+                        window.location.href = '/';
+                    }
+                }
+                throw new Error(data.error || 'Error en la petición');
             }
 
-            return await response.json();
+            return data;
         } catch (error) {
             console.error(`Error en ${endpoint}:`, error);
             throw error;
         }
+    }
+
+    // ========== AUTENTICACIÓN ==========
+    async login(username, password) {
+        const response = await this.request('/api/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password })
+        });
+        
+        // Guardar token
+        if (response.token) {
+            this.setToken(response.token);
+        }
+        
+        return response;
+    }
+
+    async logout() {
+        try {
+            await this.request('/api/auth/logout', {
+                method: 'POST'
+            });
+        } finally {
+            this.clearToken();
+        }
+    }
+
+    async verifyToken() {
+        return this.request('/api/auth/verify');
+    }
+
+    async changePassword(oldPassword, newPassword) {
+        return this.request('/api/auth/change-password', {
+            method: 'POST',
+            body: JSON.stringify({ oldPassword, newPassword })
+        });
     }
 
     // ========== USUARIOS ==========
@@ -52,7 +121,7 @@ class API {
     }
 
     async addUser(username, password, role) {
-        return this.request('/api/users', {
+        return this.request('/api/auth/register', {
             method: 'POST',
             body: JSON.stringify({ username, password, role })
         });
@@ -61,13 +130,6 @@ class API {
     async deleteUser(id) {
         return this.request(`/api/users/${id}`, {
             method: 'DELETE'
-        });
-    }
-
-    async login(username, password) {
-        return this.request('/api/login', {
-            method: 'POST',
-            body: JSON.stringify({ username, password })
         });
     }
 

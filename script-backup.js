@@ -145,17 +145,17 @@ async function login() {
     }
 
     try {
-        const response = await api.login(username, password);
-        currentUser = response.user;
+        const user = await api.login(username, password);
+        currentUser = user;
         
-        localStorage.setItem('currentUser', JSON.stringify(response.user));
+        localStorage.setItem('currentUser', JSON.stringify(user));
         
         document.getElementById('login-section').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         
-        if (response.user.role === 'admin') {
+        if (user.role === 'admin') {
             document.getElementById('nav-admin').style.display = 'block';
-        } else if (response.user.role === 'caja') {
+        } else if (user.role === 'caja') {
             document.getElementById('nav-caja').style.display = 'block';
         } else {
             document.getElementById('nav-empleado').style.display = 'block';
@@ -164,9 +164,9 @@ async function login() {
         await loadProducts();
         await loadOrders();
         
-        if (response.user.role === 'caja') {
+        if (user.role === 'caja') {
             showSection('pendientes-cobrar');
-        } else if (response.user.role === 'empleado') {
+        } else if (user.role === 'empleado') {
             showSection('venta');
             // Cargar pedidos del empleado
             renderEmployeePendingOrders();
@@ -175,7 +175,7 @@ async function login() {
             showSection('venta');
         }
         
-        showNotification(`Bienvenido, ${response.user.username}!`);
+        showNotification(`Bienvenido, ${user.username}!`);
     } catch (error) {
         loginMsg.textContent = error.message || 'Usuario o contraseña incorrectos.';
     }
@@ -184,7 +184,6 @@ async function login() {
 function logout() {
     currentUser = null;
     localStorage.removeItem('currentUser');
-    api.clearToken();
     
     document.getElementById('app').style.display = 'none';
     document.getElementById('login-section').style.display = 'block';
@@ -202,6 +201,7 @@ function showSection(sectionId) {
     const adminSections = ['productos', 'empleados', 'pedidos', 'ajustes', 'facturacion', 'reportes'];
     const cajaSections = ['pendientes-cobrar', 'cobrados', 'tickets'];
     
+=======
     // Admin tiene acceso a TODO
     if (currentUser.role === 'admin') {
         // Admin puede acceder a cualquier sección, no hay restricciones
@@ -218,6 +218,7 @@ function showSection(sectionId) {
             return;
         }
     }
+=======
     
     document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
     document.getElementById(sectionId).classList.add('active');
