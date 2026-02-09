@@ -189,11 +189,17 @@ async function initializeApp() {
     // CORS configurado
     const corsOptions = {
         origin: function (origin, callback) {
-            const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['*'];
-            if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
-                callback(null, true);
+            // En producción, permitir el dominio de Render
+            if (isProduction) {
+                // Permitir peticiones sin origin (como Postman) o desde el mismo dominio
+                if (!origin || origin.includes('onrender.com')) {
+                    callback(null, true);
+                } else {
+                    callback(null, true); // Temporalmente permitir todos en producción
+                }
             } else {
-                callback(new Error('No permitido por CORS'));
+                // En desarrollo, permitir todo
+                callback(null, true);
             }
         },
         credentials: true
