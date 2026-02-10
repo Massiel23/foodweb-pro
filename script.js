@@ -348,7 +348,41 @@ function showCustomizationModal(id, name, price) {
         animation: fadeIn 0.3s ease;
     `;
     
-    const ingredientOptions = `
+    // Verificar si es el producto EXTRAS
+    const isExtras = name === 'EXTRAS';
+    
+    const ingredientOptions = isExtras ? `
+        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
+            <input type="checkbox" value="AGREGADOS" data-price="20" class="customization-checkbox extra-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <span style="color: #1a252f; font-weight: 500; flex: 1;">🥓 AGREGADOS</span>
+            <span style="color: #2ECC71; font-weight: 700;">+$20</span>
+        </label>
+        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
+            <input type="checkbox" value="TOCINO" data-price="20" class="customization-checkbox extra-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <span style="color: #1a252f; font-weight: 500; flex: 1;">🥓 TOCINO</span>
+            <span style="color: #2ECC71; font-weight: 700;">+$20</span>
+        </label>
+        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
+            <input type="checkbox" value="QUESO DERRETIDO" data-price="20" class="customization-checkbox extra-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <span style="color: #1a252f; font-weight: 500; flex: 1;">🧀 QUESO DERRETIDO</span>
+            <span style="color: #2ECC71; font-weight: 700;">+$20</span>
+        </label>
+        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
+            <input type="checkbox" value="CHAMP" data-price="10" class="customization-checkbox extra-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <span style="color: #1a252f; font-weight: 500; flex: 1;">🍄 CHAMPIÑÓN</span>
+            <span style="color: #2ECC71; font-weight: 700;">+$10</span>
+        </label>
+        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
+            <input type="checkbox" value="CEBOLLA ASADA" data-price="10" class="customization-checkbox extra-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <span style="color: #1a252f; font-weight: 500; flex: 1;">🧅 CEBOLLA ASADA</span>
+            <span style="color: #2ECC71; font-weight: 700;">+$10</span>
+        </label>
+        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
+            <input type="checkbox" value="PAPA SAZONADA" data-price="20" class="customization-checkbox extra-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+            <span style="color: #1a252f; font-weight: 500; flex: 1;">🥔 PAPA SAZONADA</span>
+            <span style="color: #2ECC71; font-weight: 700;">+$20</span>
+        </label>
+    ` : `
         <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
             <input type="checkbox" value="con todo" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #2ECC71;">
             <span style="color: #2ECC71; font-weight: 700;">✅ Con Todo</span>
@@ -430,6 +464,14 @@ function showCustomizationModal(id, name, price) {
             closeCustomizationModal();
         }
     });
+    
+    // Agregar event listeners a los checkboxes de extras para actualizar el total
+    const extraCheckboxes = modal.querySelectorAll('.extra-checkbox');
+    extraCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            updateQuantityDisplay(price);
+        });
+    });
 }
 
 // ========== FUNCIONES DE CANTIDAD ==========
@@ -464,7 +506,18 @@ function updateQuantityDisplay(unitPrice) {
         input.value = 99;
     }
     
-    const total = quantity * parseFloat(unitPrice);
+    // Calcular precio de extras si existen
+    let extrasPrice = 0;
+    const modal = document.getElementById('customization-modal');
+    if (modal) {
+        const extraCheckboxes = modal.querySelectorAll('.extra-checkbox:checked');
+        extraCheckboxes.forEach(checkbox => {
+            const price = parseFloat(checkbox.getAttribute('data-price')) || 0;
+            extrasPrice += price;
+        });
+    }
+    
+    const total = (quantity * parseFloat(unitPrice)) + (quantity * extrasPrice);
     document.getElementById('quantity-total').textContent = total.toFixed(2);
 }
 
@@ -483,13 +536,27 @@ function confirmCustomization(id, name, price, event) {
     const customizations = Array.from(checkboxes).map(cb => cb.value);
     const quantity = parseInt(document.getElementById('quantity-input').value) || 1;
     
-    const unitPrice = parseFloat(price);
-    const itemTotal = unitPrice * quantity;
+    // Calcular precio base
+    let unitPrice = parseFloat(price);
+    
+    // Calcular precio de extras si existen
+    let extrasPrice = 0;
+    const extraCheckboxes = modal.querySelectorAll('.extra-checkbox:checked');
+    extraCheckboxes.forEach(checkbox => {
+        const extraPrice = parseFloat(checkbox.getAttribute('data-price')) || 0;
+        extrasPrice += extraPrice;
+    });
+    
+    // Precio unitario total (precio base + extras)
+    const totalUnitPrice = unitPrice + extrasPrice;
+    
+    // Precio total del item (precio unitario * cantidad)
+    const itemTotal = totalUnitPrice * quantity;
     
     cart.push({ 
         id, 
         name, 
-        unitPrice: unitPrice,
+        unitPrice: totalUnitPrice,
         quantity: quantity,
         price: itemTotal,
         customizations: customizations 

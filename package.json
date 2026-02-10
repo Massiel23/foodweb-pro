@@ -17,7 +17,8 @@
     "test:security": "node tests/test-security-complete.js",
     "test:postgres": "node scripts/test-postgres.js",
     "migrate:postgres": "node scripts/migrate-to-postgres.js",
-    "reset-admin": "node scripts/reset-admin-password.js"
+    "reset-admin": "node scripts/reset-admin-password.js",
+    "add-extras": "node scripts/add-extras-product.js"
   },
   "keywords": [
     "pos",
