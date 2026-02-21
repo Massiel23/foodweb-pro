@@ -141,7 +141,7 @@ io.on('connection', (socket) => {
 });
 
 // Rutas
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'hotgogs.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'foodweb-pro.html')));
 
 // API Usuarios
 app.post('/api/login', async (req, res) => {

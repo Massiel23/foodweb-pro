@@ -236,7 +236,7 @@ async function initializeApp() {
     });
 
     // Rutas principales
-    app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'hotgogs.html')));
+    app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'foodweb-pro.html')));
 
     // Health check
     app.get('/health', (req, res) => {
