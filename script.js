@@ -164,12 +164,18 @@ function initializeSocket() {
     if (!window.kitchenTimerInterval) {
         window.kitchenTimerInterval = setInterval(() => {
             updateCountdownLabels();
-        }, 60000); // Cada minuto
+        }, 1000); // Cada segundo para cronómetro real
     }
 }
 
+function formatCountdown(seconds) {
+    if (seconds <= 0) return "0:00";
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
 function updateCountdownLabels() {
-    console.log('--- Actualizando cronómetro de cocina ---');
     const labels = document.querySelectorAll('.countdown-badge');
     labels.forEach(label => {
         const orderId = parseInt(label.getAttribute('data-order-id'));
@@ -177,9 +183,9 @@ function updateCountdownLabels() {
         if (order) {
             const times = calculateOrderTimes(orderId);
             if (order.status === 'Pendiente') {
-                label.textContent = `⏳ EN ESPERA - ~${times.startIn} min`;
+                label.textContent = `⏳ EN ESPERA - ~${formatCountdown(times.startInSeconds)}`;
             } else if (order.status === 'En Preparación') {
-                label.textContent = `🔥 PREPARANDO - ~${times.readyIn} min`;
+                label.textContent = `🔥 PREPARANDO - ~${formatCountdown(times.readyInSeconds)}`;
             }
         }
     });
@@ -1193,45 +1199,49 @@ async function loadOrders() {
     }
 }
 
-// ========== LÓGICA DE TIEMPOS DINÁMICOS CON CUENTA REGRESIVA ==========
+// ========== LÓGICA DE TIEMPOS DINÁMICOS CON CUENTA REGRESIVA REAL ==========
 function calculateOrderTimes(orderId) {
     const order = pendingOrders.find(o => o.id === orderId);
-    if (!order) return { startIn: 1, readyIn: 5 };
+    if (!order) return { startInSeconds: 60, readyInSeconds: 300 };
 
-    // Calcular minutos transcurridos desde que se creó el pedido
+    // Calcular SEGUNDOS transcurridos desde que se creó el pedido
     const createdTime = new Date(order.created_at).getTime();
     const now = new Date().getTime();
-    const elapsedMinutes = Math.floor((now - createdTime) / (1000 * 60));
+    const elapsedSeconds = (now - createdTime) / 1000;
 
     // Pedidos que están antes en la cola (Pendientes o En Preparación)
-    const activeOrders = pendingOrders.filter(o => o.status === 'Pendiente' || o.status === 'En Preparación');
+    // IMPORTANTE: Los pedidos vienen de la DB en DESC (nuevo primero), 
+    // pero para la cola cocinamos FIFO (viejo primero).
+    const activeOrders = pendingOrders
+        .filter(o => o.status === 'Pendiente' || o.status === 'En Preparación')
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // ASC: Viejo primero
+
     const orderIndex = activeOrders.findIndex(o => o.id === orderId);
 
-    if (orderIndex === -1) return { startIn: 0, readyIn: 0 };
+    if (orderIndex === -1) return { startInSeconds: 0, readyInSeconds: 0 };
 
-    // Cálculo base de tiempo para empezar
-    let startIn = 1;
+    // Cálculo base de tiempo para empezar (en segundos)
+    let startInSeconds = 60; // Base 1 min
     if (orderIndex > 0) {
+        // Sumamos 2 min por cada platillo de los pedidos anteriores en la cola
         const previousOrders = activeOrders.slice(0, orderIndex);
         const totalPreviousItems = previousOrders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + (i.quantity || 1), 0), 0);
-        startIn = totalPreviousItems * 2;
+        startInSeconds = totalPreviousItems * 120; // 120s = 2min
     }
 
     // Restar el tiempo que ya ha pasado
-    startIn = Math.max(1, startIn - elapsedMinutes);
+    startInSeconds = Math.max(1, startInSeconds - elapsedSeconds);
 
-    // Cálculo de tiempo para estar listo (una vez empezado)
+    // Cálculo de tiempo para estar listo (una vez empezado, en segundos)
     const currentItemsCount = order.items.reduce((s, i) => s + (i.quantity || 1), 0);
-    let readyIn = currentItemsCount * 3;
+    let readyInSeconds = currentItemsCount * 180; // Estimamos 3 min por platillo
 
-    // Si ya está en preparación, el readyIn también debería bajar con el tiempo
+    // Si ya está en preparación, el tiempo baja según el transcurrido desde creación (estimado)
     if (order.status === 'En Preparación') {
-        // Estimamos que empezó a prepararse poco después de crearse o cuando cambió de estado
-        // Como no tenemos started_at exacto, usamos un factor del tiempo transcurrido
-        readyIn = Math.max(1, readyIn - Math.floor(elapsedMinutes / 1.5));
+        readyInSeconds = Math.max(1, readyInSeconds - (elapsedSeconds * 0.7)); // Factor de avance
     }
 
-    return { startIn, readyIn };
+    return { startInSeconds, readyInSeconds };
 }
 
 function updateKitchenStats() {
@@ -1259,8 +1269,8 @@ function renderPendingOrders() {
 
         const times = calculateOrderTimes(order.id);
         const timeLabel = order.status === 'Pendiente'
-            ? `<p class="countdown-badge" data-order-id="${order.id}" style="color: #FF6B35; font-weight: bold;">⏳ Empieza en: ~${times.startIn} min</p>`
-            : (order.status === 'En Preparación' ? `<p class="countdown-badge" data-order-id="${order.id}" style="color: #3498db; font-weight: bold;">🔥 Listo en: ~${times.readyIn} min</p>` : '');
+            ? `<p class="countdown-badge" data-order-id="${order.id}" style="color: #FF6B35; font-weight: bold;">⏳ Empieza en: ~${formatCountdown(times.startInSeconds)}</p>`
+            : (order.status === 'En Preparación' ? `<p class="countdown-badge" data-order-id="${order.id}" style="color: #3498db; font-weight: bold;">🔥 Listo en: ~${formatCountdown(times.readyInSeconds)}</p>` : '');
 
         const div = document.createElement('div');
         div.className = `order-item ${statusClass}`;
@@ -1338,8 +1348,8 @@ function renderKitchenOrders() {
 
         const isPreparing = order.status === 'En Preparación';
         const timeBadge = isPreparing
-            ? `<span class="countdown-badge" data-order-id="${order.id}" style="background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">🔥 PREPARANDO - ~${times.readyIn} min</span>`
-            : `<span class="countdown-badge" data-order-id="${order.id}" style="background: #ff6b35; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">⏳ EN ESPERA - ~${times.startIn} min</span>`;
+            ? `<span class="countdown-badge" data-order-id="${order.id}" style="background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">🔥 PREPARANDO - ~${formatCountdown(times.readyInSeconds)}</span>`
+            : `<span class="countdown-badge" data-order-id="${order.id}" style="background: #ff6b35; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">⏳ EN ESPERA - ~${formatCountdown(times.startInSeconds)}</span>`;
 
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
@@ -2011,12 +2021,12 @@ function renderEmployeePendingOrders() {
             statusClass = 'pending';
             statusColor = '#E74C3C';
             statusIcon = '🔴';
-            timeLabel = `<p class="countdown-badge" data-order-id="${order.id}" style="color: #FF6B35; font-weight: bold; margin-bottom: 0.5rem;">⏳ Empieza en: ~${times.startIn} min</p>`;
+            timeLabel = `<p class="countdown-badge" data-order-id="${order.id}" style="color: #FF6B35; font-weight: bold; margin-bottom: 0.5rem;">⏳ Empieza en: ~${formatCountdown(times.startInSeconds)}</p>`;
         } else if (order.status === 'En Preparación') {
             statusClass = 'preparing';
             statusColor = '#3498DB';
             statusIcon = '🔵';
-            timeLabel = `<p class="countdown-badge" data-order-id="${order.id}" style="color: #3498DB; font-weight: bold; margin-bottom: 0.5rem;">🔥 Listo en: ~${times.readyIn} min</p>`;
+            timeLabel = `<p class="countdown-badge" data-order-id="${order.id}" style="color: #3498DB; font-weight: bold; margin-bottom: 0.5rem;">🔥 Listo en: ~${formatCountdown(times.readyInSeconds)}</p>`;
         } else if (order.status === 'Finalizado') {
             statusClass = 'finalizado';
             statusColor = '#2ECC71';
