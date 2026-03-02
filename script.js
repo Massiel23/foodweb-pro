@@ -418,7 +418,7 @@ async function applyUserPermissions(user) {
         document.getElementById('nav-empleado').style.display = 'block';
     }
 
-    // Sección por defecto
+    // Sección por defecto y restricción de navegación
     if (user.role === 'caja') {
         showSection('pendientes-cobrar');
     } else if (user.role === 'empleado') {

@@ -251,7 +251,6 @@
             <button onclick="showSection('venta')">Venta</button>
             <button onclick="showSection('productos')">Productos</button>
             <button onclick="showSection('pedidos')">Pedidos Pendientes</button>
-            <button onclick="showSection('empleados')">Agregar Empleado</button>
             <button onclick="showSection('perfil')">👤 Mi Perfil / Admin</button>
         </nav>
 
@@ -259,7 +258,6 @@
             <button onclick="showSection('venta')">Venta</button>
             <button onclick="showSection('mis-pedidos')">Mis Pedidos</button>
             <button onclick="showSection('historial-pedidos')">Historial</button>
-            <button onclick="showSection('perfil')">👤 Mi Perfil</button>
         </nav>
 
         <nav id="nav-caja" style="display: none;">
@@ -525,32 +523,39 @@
                         <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: flex-start;">
                             <!-- Columna: Formulario -->
                             <div class="card"
-                                style="flex: 0 0 350px; padding: 1.5rem; margin: 0; background: var(--header-bg); border: 1px solid var(--border-color);">
-                                <h4 style="margin-top: 0; color: var(--primary-color);">+ Agregar Nuevo Empleado</h4>
-                                <div style="display: grid; gap: 1rem;">
+                                style="flex: 0 0 350px; padding: 1.5rem; margin: 0; background: var(--card-bg, #ffffff); border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                                <h4 style="margin-top: 0; color: var(--primary-color); font-weight: 700;">+ Agregar
+                                    Nuevo Empleado</h4>
+                                <div style="display: grid; gap: 1.2rem;">
                                     <div>
                                         <label
-                                            style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem;">Usuario</label>
-                                        <input type="text" id="new-emp-username" placeholder="Ej: cajero1"
-                                            style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                                            style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Nombre
+                                            de Usuario</label>
+                                        <input type="text" id="new-emp-username" placeholder="Ej: cajero_juan"
+                                            style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 0.95rem;">
                                     </div>
                                     <div>
                                         <label
-                                            style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem;">Contraseña</label>
+                                            style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Contraseña</label>
                                         <input type="password" id="new-emp-password" placeholder="••••••••"
-                                            style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                                            style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 0.95rem;">
                                     </div>
                                     <div>
                                         <label
-                                            style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem;">Rol</label>
+                                            style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">Rol
+                                            del Empleado</label>
                                         <select id="new-emp-role"
-                                            style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                                            style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 0.95rem; cursor: pointer;">
                                             <option value="caja">Cajero (Caja y Cobros)</option>
                                             <option value="empleado">Mesero / Vendedor (Ventas)</option>
                                         </select>
                                     </div>
-                                    <button onclick="addEmployee()" class="btn-primary">Crear Usuario</button>
-                                    <p id="emp-msg" style="font-size: 0.9rem; text-align: center; margin: 0;"></p>
+                                    <button onclick="addEmployee()" class="btn-primary"
+                                        style="padding: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Crear
+                                        Usuario</button>
+                                    <p id="emp-msg"
+                                        style="font-size: 0.85rem; text-align: center; margin: 0; min-height: 1.2rem;">
+                                    </p>
                                 </div>
                             </div>
 
