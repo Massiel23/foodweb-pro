@@ -18,8 +18,15 @@ const AuthService = require('./src/services/authService');
 const app = express();
 const server = http.createServer(app);
 
-// IMPORTANTE: Usar el puerto de Render en producción
-const PORT = process.env.PORT || 3000;
+// PRIORIDAD: Puerto de Render en producción
+const PORT = process.env.PORT || 10000;
+
+console.log('🔍 Diagnóstico de Entorno (Secure):', {
+    port_env: process.env.PORT,
+    port_used: PORT,
+    node_env: process.env.NODE_ENV,
+    db_set: !!process.env.DATABASE_URL
+});
 
 // Detectar si estamos en producción
 const isProduction = process.env.NODE_ENV === 'production' && process.env.DATABASE_URL;
@@ -33,7 +40,7 @@ async function initializeApp() {
         // PostgreSQL para producción
         console.log('🚀 Modo PRODUCCIÓN - Usando PostgreSQL');
         const { Pool } = require('pg');
-        
+
         const pool = new Pool({
             connectionString: process.env.DATABASE_URL,
             ssl: { rejectUnauthorized: false }
@@ -75,34 +82,34 @@ async function initializeApp() {
                 );
             `);
             console.log('✅ Tablas creadas');
-            
+
             // Inicializar usuarios por defecto con contraseñas hasheadas
             const bcrypt = require('bcrypt');
-            
+
             // Verificar si ya existen usuarios
             const existingUsers = await pool.query('SELECT COUNT(*) FROM users');
             const userCount = parseInt(existingUsers.rows[0].count);
-            
+
             if (userCount === 0) {
                 console.log('👥 Creando usuarios por defecto...');
-                
+
                 // Hashear contraseñas
                 const adminHash = await bcrypt.hash('Admin2026', 10);
                 const cajaHash = await bcrypt.hash('Caja2026', 10);
-                
+
                 // Crear usuarios
                 await pool.query(
                     'INSERT INTO users (username, password, role) VALUES ($1, $2, $3)',
                     ['admin', adminHash, 'admin']
                 );
                 console.log('   ✓ Usuario admin creado (contraseña: Admin2026)');
-                
+
                 await pool.query(
                     'INSERT INTO users (username, password, role) VALUES ($1, $2, $3)',
                     ['caja', cajaHash, 'caja']
                 );
                 console.log('   ✓ Usuario caja creado (contraseña: Caja2026)');
-                
+
                 console.log('✅ Usuarios por defecto creados exitosamente');
             } else {
                 console.log(`ℹ️  Ya existen ${userCount} usuarios en la base de datos`);
@@ -147,7 +154,7 @@ async function initializeApp() {
                     else resolve({ lastID: result.rows[0]?.id, changes: result.rowCount });
                 });
             } else {
-                db.run(sql, params, function(err) {
+                db.run(sql, params, function (err) {
                     if (err) reject(err);
                     else resolve({ lastID: this.lastID, changes: this.changes });
                 });
@@ -177,10 +184,10 @@ async function initializeApp() {
     authService = new AuthService(dbGet, dbRun);
 
     // Socket.IO con CORS configurado
-    const io = socketIo(server, { 
-        cors: { 
+    const io = socketIo(server, {
+        cors: {
             origin: process.env.ALLOWED_ORIGINS?.split(',') || '*'
-        } 
+        }
     });
 
     // Configurar trust proxy para Render
@@ -240,8 +247,8 @@ async function initializeApp() {
 
     // Health check
     app.get('/health', (req, res) => {
-        res.json({ 
-            status: 'OK', 
+        res.json({
+            status: 'OK',
             timestamp: new Date().toISOString(),
             environment: process.env.NODE_ENV || 'development'
         });
@@ -317,7 +324,7 @@ async function initializeApp() {
     app.post('/api/orders', authenticateToken, orderValidators, async (req, res) => {
         const { employee, items, total, status } = req.body;
         try {
-            const result = await dbRun('INSERT INTO orders (employee, items, total, status) VALUES (?, ?, ?, ?)', 
+            const result = await dbRun('INSERT INTO orders (employee, items, total, status) VALUES (?, ?, ?, ?)',
                 [employee, JSON.stringify(items), total, status || 'Pendiente']);
             const newOrder = { id: result.lastID, employee, items, total, status: status || 'Pendiente', created_at: new Date().toISOString() };
             io.emit('newOrder', newOrder);
@@ -364,7 +371,7 @@ async function initializeApp() {
         const { order_id, employee, items, total, amount_received, change_given, payment_method } = req.body;
         try {
             const result = await dbRun(
-                'INSERT INTO tickets (order_id, employee, items, total, amount_received, change_given, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?)', 
+                'INSERT INTO tickets (order_id, employee, items, total, amount_received, change_given, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?)',
                 [order_id, employee, JSON.stringify(items), total, amount_received || 0, change_given || 0, payment_method || 'Efectivo']
             );
             const newTicket = { id: result.lastID, order_id, employee, items, total, amount_received: amount_received || 0, change_given: change_given || 0, payment_method: payment_method || 'Efectivo', printed_at: new Date().toISOString() };

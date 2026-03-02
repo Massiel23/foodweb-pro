@@ -5,12 +5,21 @@ const bodyParser = require('body-parser');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
+require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: '*' } });
 
-const PORT = process.env.PORT || 3000;
+// PRIORIDAD: Puerto de Render en producción
+const PORT = process.env.PORT || 10000;
+
+console.log('🔍 Diagnóstico de Entorno:', {
+    port_env: process.env.PORT,
+    port_used: PORT,
+    node_env: process.env.NODE_ENV,
+    db_set: !!process.env.DATABASE_URL
+});
 
 // 1. MIDDLEWARE BASE
 app.use(cors());
