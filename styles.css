@@ -305,6 +305,7 @@ nav button:active {
 
 .login-main-container {
     display: flex;
+    flex-direction: row;
     flex: 1;
     width: 100%;
 }
@@ -438,6 +439,7 @@ nav button:active {
 
 .login-right {
     flex: 0 0 500px;
+    max-width: 100%;
     background-color: var(--bg-primary);
     padding: 3rem;
     display: flex;
@@ -521,7 +523,7 @@ nav button:active {
 
 /* Responsive adjustments */
 @media (max-width: 1024px) {
-    .login-page {
+    .login-main-container {
         flex-direction: column;
     }
 
@@ -541,6 +543,7 @@ nav button:active {
 
     .login-right {
         flex: auto;
+        width: 100%;
         padding: 2rem 1.5rem;
         border-left: none;
         border-top: 1px solid var(--border-color);
