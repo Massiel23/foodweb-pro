@@ -947,88 +947,71 @@ function addToCart(id, name, price) {
 
 function showCustomizationModal(id, name, price) {
     const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
     modal.id = 'customization-modal';
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.75);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-        backdrop-filter: blur(5px);
-        animation: fadeIn 0.3s ease;
-    `;
 
-    // Buscar los modificadores del producto dinámicamente
     const product = products.find(p => p.id === id);
     let modifiersArray = [];
     if (product && product.modifiers) {
         modifiersArray = typeof product.modifiers === 'string' ? JSON.parse(product.modifiers) : product.modifiers;
     }
 
-    let ingredientOptions = '';
+    let modifierOptions = '';
     if (modifiersArray && modifiersArray.length > 0) {
-        ingredientOptions = modifiersArray.map(mod => `
-            <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-                <input type="checkbox" value="${mod}" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-                <span style="color: #1a252f; font-weight: 500;">✨ ${mod}</span>
+        modifierOptions = modifiersArray.map(mod => `
+            <label class="modifier-option">
+                <input type="checkbox" value="${mod}" class="customization-checkbox" 
+                    onchange="this.parentElement.classList.toggle('selected', this.checked); updateQuantityDisplay(${price})">
+                <span class="modifier-label">${mod}</span>
             </label>
         `).join('');
     } else {
-        ingredientOptions = '<p style="color: #999; text-align: center; grid-column: span 2;">Este producto no tiene opciones de personalización.</p>';
+        modifierOptions = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); opacity: 0.7;">Sin opciones de personalización</p>';
     }
 
     modal.innerHTML = `
-        <div style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); padding: 2.5rem; border-radius: 16px; max-width: 550px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); animation: slideUp 0.3s ease;">
-            <div style="text-align: center; margin-bottom: 2rem;">
-                <h3 style="color: #FF6B35; font-size: 1.8rem; margin-bottom: 0.5rem; font-weight: 700;">🌭 Personalizar Pedido</h3>
-                <p style="color: #1a252f; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">${name}</p>
-                <p style="color: #FF6B35; font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;">$${parseFloat(price).toFixed(2)} c/u</p>
-                
-                <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem; padding: 1rem; background: rgba(255, 107, 53, 0.1); border-radius: 12px;">
-                    <label style="color: #1a252f; font-weight: 600; font-size: 1.1rem;">Cantidad:</label>
-                    <button onclick="decreaseQuantity()" style="background: #FF6B35; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; font-weight: bold; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#E55A2B'; this.style.transform='scale(1.1)'" onmouseout="this.style.background='#FF6B35'; this.style.transform='scale(1)'">−</button>
-                    <input type="number" id="quantity-input" value="1" min="1" max="99" oninput="updateQuantityDisplay(${price})" style="width: 80px; padding: 0.75rem; border: 2px solid #FF6B35; border-radius: 8px; font-size: 1.3rem; font-weight: 700; text-align: center; color: #1a252f;">
-                    <button onclick="increaseQuantity()" style="background: #FF6B35; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; font-weight: bold; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#E55A2B'; this.style.transform='scale(1.1)'" onmouseout="this.style.background='#FF6B35'; this.style.transform='scale(1)'">+</button>
-                </div>
-                
-                <div style="background: #E8F5E9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                    <p style="color: #2ECC71; font-weight: 700; font-size: 1.3rem; margin: 0;">Total: $<span id="quantity-total">${parseFloat(price).toFixed(2)}</span></p>
-                </div>
-                
-                <p style="color: #4a5568; font-size: 0.95rem;">Personaliza tu pedido:</p>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🌭 Personalizar</h3>
+                <div class="product-info">${name} — $${parseFloat(price).toFixed(2)} c/u</div>
             </div>
             
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 2rem; padding: 1.5rem; background: rgba(255, 255, 255, 0.8); border-radius: 12px; border: 2px solid #f0f0f0;">
-                ${ingredientOptions}
+            <div class="modal-body">
+                <div class="quantity-section">
+                    <div class="modifiers-section-title">Cantidad</div>
+                    <div class="quantity-control">
+                        <button class="btn-qty" onclick="decreaseQuantity()">−</button>
+                        <input type="number" id="quantity-input" class="qty-input" value="1" min="1" max="99" oninput="updateQuantityDisplay(${price})" readonly>
+                        <button class="btn-qty" onclick="increaseQuantity()">+</button>
+                    </div>
+                </div>
+
+                <div class="modifiers-section">
+                    <div class="modifiers-section-title">Modificadores</div>
+                    <div class="modifiers-grid">
+                        ${modifierOptions}
+                    </div>
+                </div>
             </div>
-            
-            <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 2px solid #f0f0f0;">
-                <button onclick="closeCustomizationModal()" style="background: #6c757d; color: white; border: none; padding: 0.875rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.background='#5a6268'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'" onmouseout="this.style.background='#6c757d'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">Cancelar</button>
-                <button onclick="confirmCustomization(${id}, '${name}', ${price}, event)" style="background: #FF6B35; color: white; border: none; padding: 0.875rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.background='#E55A2B'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'" onmouseout="this.style.background='#FF6B35'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">✓ Agregar al Carrito</button>
+
+            <div class="modal-footer">
+                <div class="total-row">
+                    <span>Total estimado</span>
+                    <span class="total-amount">$<span id="quantity-total">${parseFloat(price).toFixed(2)}</span></span>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-modal btn-cancel" onclick="closeCustomizationModal()">Cancelar</button>
+                    <button class="btn-modal btn-confirm" onclick="confirmCustomization(${id}, '${name}', ${price}, event)">✓ Agregar al Carrito</button>
+                </div>
             </div>
         </div>
     `;
 
     document.body.appendChild(modal);
 
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeCustomizationModal();
-        }
-    });
-
-    // Agregar event listeners a los checkboxes de extras para actualizar el total
-    const extraCheckboxes = modal.querySelectorAll('.extra-checkbox');
-    extraCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', () => {
-            updateQuantityDisplay(price);
-        });
-    });
+    modal.onclick = (e) => {
+        if (e.target === modal) closeCustomizationModal();
+    };
 }
 
 // ========== FUNCIONES DE CANTIDAD ==========
@@ -1063,14 +1046,15 @@ function updateQuantityDisplay(unitPrice) {
         input.value = 99;
     }
 
-    // Calcular precio de extras si existen
+    // Calcular precio de extras si existen (aunque por ahora los modificadores no tienen precio, 
+    // mantenemos la lógica por si el usuario decide añadirlos después)
     let extrasPrice = 0;
     const modal = document.getElementById('customization-modal');
     if (modal) {
-        const extraCheckboxes = modal.querySelectorAll('.extra-checkbox:checked');
-        extraCheckboxes.forEach(checkbox => {
-            const price = parseFloat(checkbox.getAttribute('data-price')) || 0;
-            extrasPrice += price;
+        const selectedOptions = modal.querySelectorAll('.customization-checkbox:checked');
+        selectedOptions.forEach(checkbox => {
+            const priceAttr = parseFloat(checkbox.getAttribute('data-price')) || 0;
+            extrasPrice += priceAttr;
         });
     }
 
@@ -1098,7 +1082,7 @@ function confirmCustomization(id, name, price, event) {
 
     // Calcular precio de extras si existen
     let extrasPrice = 0;
-    const extraCheckboxes = modal.querySelectorAll('.extra-checkbox:checked');
+    const extraCheckboxes = modal.querySelectorAll('.customization-checkbox:checked');
     extraCheckboxes.forEach(checkbox => {
         const extraPrice = parseFloat(checkbox.getAttribute('data-price')) || 0;
         extrasPrice += extraPrice;
