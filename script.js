@@ -771,31 +771,80 @@ async function loadProducts() {
     }
 }
 
+// ========== PRODUCTOS V2 ==========
+let selectedCategory = 'all';
+
+async function loadProducts() {
+    try {
+        products = await posApi.getProducts();
+        renderCategories();
+        renderProducts();
+    } catch (error) {
+        console.error('Error cargando productos:', error);
+        showNotification('Error cargando productos');
+    }
+}
+
+function renderCategories() {
+    const filters = document.getElementById('category-filters');
+    if (!filters) return;
+
+    // Extraer categorías únicas de los productos
+    // Si no tienen categorías definidas, podríamos usar etiquetas o simplemente 'General'
+    // Como no hay campo 'category' en el objeto actual, usaremos una lógica simple o las crearemos.
+    // El usuario no pidió categorías específicas, pero para que sea PRO las simularemos o usaremos 'General'.
+    const uniqueCategories = ['all', ...new Set(products.map(p => p.category || 'General'))];
+
+    filters.innerHTML = uniqueCategories.map(cat => `
+        <span class="category-chip ${selectedCategory === cat ? 'active' : ''}" 
+              onclick="filterByCategory('${cat}')">${cat === 'all' ? 'Todos' : cat}</span>
+    `).join('');
+}
+
+function filterByCategory(category) {
+    selectedCategory = category;
+    renderCategories();
+    renderProducts();
+}
+
 function renderProducts() {
     const ventaList = document.getElementById('product-list-venta');
     const adminList = document.getElementById('product-list-admin');
+    const searchTerm = document.getElementById('product-search')?.value.toLowerCase() || '';
 
     if (ventaList) ventaList.innerHTML = '';
     if (adminList) adminList.innerHTML = '';
 
-    products.forEach((product) => {
-        const item = document.createElement('div');
-        item.className = 'product-item';
-        item.innerHTML = `
-            <div style="font-size: 2em;">${product.img}</div>
-            <h4>${product.name}</h4>
-            <p>$${parseFloat(product.price).toFixed(2)}</p>
-            <button onclick="addToCart(${product.id}, '${product.name}', ${product.price})">Agregar</button>
-        `;
-        if (ventaList) ventaList.appendChild(item.cloneNode(true));
+    const filtered = products.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(searchTerm);
+        const matchesCategory = selectedCategory === 'all' || (p.category || 'General') === selectedCategory;
+        return matchesSearch && matchesCategory;
+    });
 
+    filtered.forEach((product) => {
+        // Vista Venta (Premium)
+        if (ventaList) {
+            const card = document.createElement('div');
+            card.className = 'product-card-v2';
+            card.onclick = () => openCustomizationModal(product.id, product.name, product.price);
+            card.innerHTML = `
+                <span class="icon">${product.img || '🍔'}</span>
+                <h4>${product.name}</h4>
+                <p class="price">$${parseFloat(product.price).toFixed(2)}</p>
+            `;
+            ventaList.appendChild(card);
+        }
+
+        // Vista Admin (Tabla/Lista simple)
         if (adminList) {
-            const adminItem = item.cloneNode(true);
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'Eliminar';
-            deleteBtn.style.backgroundColor = '#f44336';
-            deleteBtn.onclick = () => removeProduct(product.id);
-            adminItem.appendChild(deleteBtn);
+            const adminItem = document.createElement('div');
+            adminItem.className = 'product-item';
+            adminItem.innerHTML = `
+                <div style="font-size: 2em;">${product.img}</div>
+                <h4>${product.name}</h4>
+                <p>$${parseFloat(product.price).toFixed(2)}</p>
+                <button onclick="removeProduct(${product.id})" style="background-color: var(--danger-color); color: white; border: none; padding: 0.5rem; border-radius: 4px; pointer-events: auto;">Eliminar</button>
+            `;
             adminList.appendChild(adminItem);
         }
     });
@@ -1078,39 +1127,46 @@ function confirmCustomization(id, name, price, event) {
 }
 
 function updateCart() {
-    const cartDiv = document.getElementById('cart');
+    const cartDiv = document.getElementById('cart-content');
+    if (!cartDiv) return;
+
     cartDiv.innerHTML = '';
 
     cart.forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'cart-item';
-        const customText = item.customizations && item.customizations.length > 0
-            ? `<br><small style="color: #FF6B35;">${item.customizations.join(', ')}</small>`
+
+        const customizations = item.customizations && item.customizations.length > 0
+            ? `<br><small style="color: var(--primary-color);">✨ ${item.customizations.join(', ')}</small>`
             : '';
 
-        const quantity = item.quantity || 1;
-        const unitPrice = item.unitPrice || item.price;
-        const displayText = quantity > 1
-            ? `${quantity}x ${item.name} @ $${unitPrice.toFixed(2)} = $${item.price.toFixed(2)}`
-            : `${item.name} - $${item.price.toFixed(2)}`;
-
         div.innerHTML = `
-            <div style="flex: 1;">
-                <strong>${displayText}</strong>${customText}
+            <div class="cart-item-info">
+                <span>${item.quantity}x ${item.name}</span>
+                <small>$${(item.unitPrice || item.price).toFixed(2)} c/u</small>
+                ${customizations}
             </div>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                ${quantity > 1 ? `
-                    <button onclick="decreaseCartQuantity(${index})" style="background: #FF6B35; color: white; width: 30px; height: 30px; border-radius: 50%; font-size: 1.2rem; padding: 0; display: flex; align-items: center; justify-content: center;">−</button>
-                    <span style="font-weight: 700; min-width: 30px; text-align: center;">${quantity}</span>
-                    <button onclick="increaseCartQuantity(${index})" style="background: #FF6B35; color: white; width: 30px; height: 30px; border-radius: 50%; font-size: 1.2rem; padding: 0; display: flex; align-items: center; justify-content: center;">+</button>
-                ` : ''}
-                <button onclick="removeFromCart(${index})" style="background: #E74C3C;">🗑️</button>
+            <div class="cart-item-controls">
+                <button class="cart-item-btn" onclick="removeFromCart(${index})" style="background:var(--danger-color); color:white; border:none;">×</button>
             </div>
         `;
         cartDiv.appendChild(div);
     });
 
-    document.getElementById('total').textContent = total.toFixed(2);
+    const totalDisplay = document.getElementById('cart-total-display');
+    if (totalDisplay) {
+        totalDisplay.textContent = `$${total.toFixed(2)}`;
+    }
+}
+
+function clearCart() {
+    if (cart.length === 0) return;
+    if (confirm('¿Vaciar todo el carrito?')) {
+        cart = [];
+        total = 0;
+        updateCart();
+        showNotification('Carrito vaciado');
+    }
 }
 
 function increaseCartQuantity(index) {
@@ -1262,33 +1318,31 @@ function renderPendingOrders() {
     pendingOrders.forEach((order) => {
         if (order.status === 'Cobrado') return;
 
-        let statusClass = '';
-        if (order.status === 'Pendiente') statusClass = 'pending';
-        else if (order.status === 'En Preparación') statusClass = 'preparing';
-        else if (order.status === 'Finalizado') statusClass = 'finalizado';
+        const div = document.createElement('div');
+        div.className = `order-card-compact ${order.status.toLowerCase().replace(' ', '-')}`;
 
         const times = calculateOrderTimes(order.id);
-        const timeLabel = order.status === 'Pendiente'
-            ? `<p class="countdown-badge" data-order-id="${order.id}" style="color: #FF6B35; font-weight: bold;">⏳ Empieza en: ~${formatCountdown(times.startInSeconds)}</p>`
-            : (order.status === 'En Preparación' ? `<p class="countdown-badge" data-order-id="${order.id}" style="color: #3498db; font-weight: bold;">🔥 Listo en: ~${formatCountdown(times.readyInSeconds)}</p>` : '');
+        const timeBadge = order.status === 'Pendiente'
+            ? `<div class="order-card-status" style="background:#fff3e0; color:#e65100;">⏳ ${formatCountdown(times.startInSeconds)}</div>`
+            : (order.status === 'En Preparación' ? `<div class="order-card-status" style="background:#e3f2fd; color:#1565c0;">🔥 ${formatCountdown(times.readyInSeconds)}</div>` : `<div class="order-card-status" style="background:#e8f5e9; color:#2e7d32;">✅ LISTO</div>`);
 
-        const div = document.createElement('div');
-        div.className = `order-item ${statusClass}`;
-
-        const itemsList = order.items.map(item => {
-            const quantity = item.quantity || 1;
-            return `<li>${quantity}x ${item.name}</li>`;
-        }).join('');
+        const itemsList = order.items.map(i => `<li>${i.quantity}x ${i.name}</li>`).join('');
 
         div.innerHTML = `
-            <h4>Pedido #${order.id} - ${order.employee || 'Anónimo'}</h4>
-            <p><strong>Estado:</strong> ${order.status}</p>
-            ${timeLabel}
-            <ul>${itemsList}</ul>
-            <p><strong>Total:</strong> $${parseFloat(order.total).toFixed(2)}</p>
-            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-                ${order.status === 'Pendiente' ? `<button onclick="updateOrderStatus(${order.id}, 'En Preparación')" style="background: #3498db; width: 100%;">🔥 Empezar</button>` : ''}
-                ${order.status === 'En Preparación' ? `<button onclick="updateOrderStatus(${order.id}, 'Finalizado')" style="background: #2ecc71; width: 100%;">✅ Listo</button>` : ''}
+            <div class="order-card-header">
+                <div>
+                    <h4>Pedido #${order.id}</h4>
+                    <small style="color:var(--text-secondary)">${order.employee || 'Admin'}</small>
+                </div>
+                ${timeBadge}
+            </div>
+            <ul class="order-card-items">${itemsList}</ul>
+            <div class="order-card-footer">
+                <span class="order-card-total">$${parseFloat(order.total).toFixed(2)}</span>
+                <div style="display:flex; gap:5px;">
+                    ${order.status === 'Pendiente' ? `<button onclick="updateOrderStatus(${order.id}, 'En Preparación')" style="background:var(--info-color); color:white; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem;">Empezar</button>` : ''}
+                    ${order.status === 'En Preparación' ? `<button onclick="updateOrderStatus(${order.id}, 'Finalizado')" style="background:var(--success-color); color:white; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem;">Listo</button>` : ''}
+                </div>
             </div>
         `;
         ordersDiv.appendChild(div);
@@ -1391,28 +1445,29 @@ function renderCashierPendingOrders() {
     const finalizados = pendingOrders.filter(o => o.status === 'Finalizado');
 
     if (finalizados.length === 0) {
-        ordersDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No hay pedidos pendientes de cobrar</p>';
+        ordersDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem; grid-column: 1/-1;">No hay pedidos listos por cobrar</p>';
         return;
     }
 
     finalizados.forEach((order) => {
-        const times = calculateOrderTimes(order.id);
         const div = document.createElement('div');
-        div.className = 'order-item finalizado';
+        div.className = 'order-card-compact finalizado';
 
-        const itemsList = order.items.map(item => {
-            const quantity = item.quantity || 1;
-            return `<li>${quantity}x ${item.name}</li>`;
-        }).join('');
+        const itemsList = order.items.map(i => `<li>${i.quantity}x ${i.name}</li>`).join('');
 
         div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <h4>Pedido #${order.id} - ${order.employee || 'Anónimo'}</h4>
-                <span style="background: #2ecc71; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">Listo para cobrar</span>
+            <div class="order-card-header">
+                <div>
+                    <h4>Pedido #${order.id}</h4>
+                    <small style="color:var(--text-secondary)">${order.employee || 'Anónimo'}</small>
+                </div>
+                <div class="order-card-status" style="background:#e8f5e9; color:#2e7d32;">✓ LISTO</div>
             </div>
-            <ul>${itemsList}</ul>
-            <p><strong>Total:</strong> $${parseFloat(order.total).toFixed(2)}</p>
-            <button onclick="showPaymentModal(${order.id}, ${order.total})" style="background: #27ae60; width: 100%; margin-top: 1rem; border-radius: 8px; padding: 0.8rem; font-weight: bold;">💰 Cobrar Pedido</button>
+            <ul class="order-card-items">${itemsList}</ul>
+            <div class="order-card-footer">
+                <span class="order-card-total">$${parseFloat(order.total).toFixed(2)}</span>
+                <button onclick="showPaymentModal(${order.id}, ${order.total})" style="background:var(--success-color); color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.85rem;">💰 Cobrar</button>
+            </div>
         `;
         ordersDiv.appendChild(div);
     });
@@ -1667,31 +1722,29 @@ function renderCashierPaidOrders() {
     const cobrados = pendingOrders.filter(o => o.status === 'Cobrado');
 
     if (cobrados.length === 0) {
-        ordersDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No hay pedidos cobrados</p>';
+        ordersDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem; grid-column: 1/-1;">No hay historial de cobros hoy</p>';
         return;
     }
 
     cobrados.forEach((order) => {
         const div = document.createElement('div');
-        div.className = 'order-item cobrado';
+        div.className = 'order-card-compact cobrado';
 
-        const itemsList = order.items.map(item => {
-            const customText = item.customizations && item.customizations.length > 0
-                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>`
-                : '';
-            const quantity = item.quantity || 1;
-            const displayText = quantity > 1
-                ? `${quantity}x ${item.name}${customText}`
-                : `${item.name}${customText}`;
-            return `<li>${displayText}</li>`;
-        }).join('');
+        const itemsList = order.items.map(i => `<li>${i.quantity}x ${i.name}</li>`).join('');
 
         div.innerHTML = `
-            <h4>Pedido #${order.id} - ${order.employee || 'Anónimo'}</h4>
-            <p><strong>Estado:</strong> ✓ Cobrado</p>
-            <ul>${itemsList}</ul>
-            <p><strong>Total:</strong> $${parseFloat(order.total).toFixed(2)}</p>
-            <p><small>${new Date(order.created_at).toLocaleString()}</small></p>
+            <div class="order-card-header">
+                <div>
+                    <h4>Pedido #${order.id}</h4>
+                    <small style="color:var(--text-secondary)">${order.employee || 'Anónimo'}</small>
+                </div>
+                <div class="order-card-status" style="background:var(--bg-primary); color:var(--text-secondary);">FINALIZADO</div>
+            </div>
+            <ul class="order-card-items">${itemsList}</ul>
+            <div class="order-card-footer">
+                <span class="order-card-total" style="color:var(--text-secondary)">$${parseFloat(order.total).toFixed(2)}</span>
+                <span style="font-size:0.7rem; color:var(--text-secondary)">${new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
         `;
         ordersDiv.appendChild(div);
     });
@@ -1968,73 +2021,39 @@ function printInvoice() {
 
 // ========== EMPLEADO - MIS PEDIDOS ==========
 function renderEmployeePendingOrders() {
-    console.log('=== renderEmployeePendingOrders llamado ===');
-    console.log('currentUser:', currentUser);
-    console.log('pendingOrders:', pendingOrders);
-    console.log('Tipo de pendingOrders:', typeof pendingOrders);
-    console.log('Es array?:', Array.isArray(pendingOrders));
-
     const ordersDiv = document.getElementById('employee-pending-orders');
-    console.log('Elemento encontrado:', ordersDiv);
-
-    if (!ordersDiv) {
-        console.error('No se encontró el elemento #employee-pending-orders');
-        return;
-    }
+    if (!ordersDiv) return;
 
     ordersDiv.innerHTML = '';
 
-    if (!currentUser) {
-        console.error('currentUser no está definido');
-        ordersDiv.innerHTML = '<p style="text-align: center; color: #E74C3C; padding: 2rem;">Error: Usuario no identificado</p>';
-        return;
-    }
+    if (!currentUser) return;
 
     // Filtrar solo los pedidos del empleado actual que NO estén cobrados
-    console.log('Filtrando pedidos del empleado:', currentUser?.username);
-    console.log('Total de pedidos:', pendingOrders?.length);
-
     const myOrders = pendingOrders.filter(o =>
-        o.employee === currentUser?.username &&
+        o.employee === currentUser.username &&
         o.status !== 'Cobrado'
     );
 
-    console.log('Pedidos del empleado filtrados:', myOrders);
-    console.log('Número de pedidos del empleado:', myOrders.length);
-
     if (myOrders.length === 0) {
-        console.log('No hay pedidos del empleado, mostrando mensaje');
-        ordersDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No tienes pedidos pendientes</p>';
+        ordersDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem; grid-column: 1/-1;">No tienes pedidos pendientes</p>';
         return;
     }
 
-    console.log('Renderizando', myOrders.length, 'pedidos del empleado');
+    myOrders.forEach((order) => {
+        const div = document.createElement('div');
+        const statusKey = order.status.toLowerCase().replace(' ', '-');
+        div.className = `order-card-compact ${statusKey}`;
 
-    myOrders.forEach((order, index) => {
         const times = calculateOrderTimes(order.id);
-        let statusClass = '';
-        let statusColor = '';
-        let statusIcon = '';
-        let timeLabel = '';
+        let timeBadge = '';
 
         if (order.status === 'Pendiente') {
-            statusClass = 'pending';
-            statusColor = '#E74C3C';
-            statusIcon = '🔴';
-            timeLabel = `<p class="countdown-badge" data-order-id="${order.id}" style="color: #FF6B35; font-weight: bold; margin-bottom: 0.5rem;">⏳ Empieza en: ~${formatCountdown(times.startInSeconds)}</p>`;
+            timeBadge = `<div class="order-card-status" style="background:#fff3e0; color:#e65100;">⏳ ${formatCountdown(times.startInSeconds)}</div>`;
         } else if (order.status === 'En Preparación') {
-            statusClass = 'preparing';
-            statusColor = '#3498DB';
-            statusIcon = '🔵';
-            timeLabel = `<p class="countdown-badge" data-order-id="${order.id}" style="color: #3498DB; font-weight: bold; margin-bottom: 0.5rem;">🔥 Listo en: ~${formatCountdown(times.readyInSeconds)}</p>`;
+            timeBadge = `<div class="order-card-status" style="background:#e3f2fd; color:#1565c0;">🔥 ${formatCountdown(times.readyInSeconds)}</div>`;
         } else if (order.status === 'Finalizado') {
-            statusClass = 'finalizado';
-            statusColor = '#2ECC71';
-            statusIcon = '🟢';
+            timeBadge = `<div class="order-card-status" style="background:#e8f5e9; color:#2e7d32;">✅ LISTO</div>`;
         }
-
-        const div = document.createElement('div');
-        div.className = `order-item ${statusClass}`;
 
         const itemsList = order.items.map(item => {
             const quantity = item.quantity || 1;
@@ -2042,21 +2061,19 @@ function renderEmployeePendingOrders() {
         }).join('');
 
         div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h4 style="margin: 0;">Pedido #${order.id}</h4>
-                <span style="background: ${statusColor}; color: white; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.9rem;">
-                    ${statusIcon} ${order.status}
-                </span>
+            <div class="order-card-header">
+                <h4>Pedido #${order.id}</h4>
+                ${timeBadge}
             </div>
-            ${timeLabel}
-            <ul>${itemsList}</ul>
-            <p><strong>Total:</strong> $${parseFloat(order.total).toFixed(2)}</p>
-            <p><small>Creado: ${new Date(order.created_at).toLocaleString()}</small></p>
-            ${order.status === 'Finalizado' ? '<p style="background: #2ECC71; color: white; padding: 1rem; border-radius: 8px; text-align: center; font-weight: 700; margin-top: 1rem;">🎉 ¡LISTO PARA ENTREGAR!</p>' : ''}
+            <p style="font-size:0.75rem; color:var(--text-secondary); margin:0;">Estado: <strong>${order.status}</strong></p>
+            <ul class="order-card-items">${itemsList}</ul>
+            <div class="order-card-footer">
+                <span class="order-card-total">$${parseFloat(order.total).toFixed(2)}</span>
+                ${order.status === 'Finalizado' ? '<span style="font-size:0.75rem; font-weight:700; color:var(--success-color); border:1px solid; padding:2px 6px; border-radius:4px;">ENTREGAR YA</span>' : ''}
+            </div>
         `;
         ordersDiv.appendChild(div);
     });
-
     console.log('Pedidos del empleado renderizados exitosamente');
 }
 
@@ -2074,29 +2091,14 @@ function filterEmployeeHistory(filter) {
 }
 
 function renderEmployeeOrderHistory(filter = 'all') {
-    console.log('=== renderEmployeeOrderHistory llamado ===');
-    console.log('filter:', filter);
-    console.log('currentUser:', currentUser);
-    console.log('pendingOrders:', pendingOrders);
-
     const historyDiv = document.getElementById('employee-order-history');
-    if (!historyDiv) {
-        console.error('No se encontró el elemento #employee-order-history');
-        return;
-    }
+    if (!historyDiv) return;
 
     historyDiv.innerHTML = '';
 
-    if (!currentUser) {
-        console.error('currentUser no está definido');
-        historyDiv.innerHTML = '<p style="text-align: center; color: #E74C3C; padding: 2rem;">Error: Usuario no identificado</p>';
-        return;
-    }
+    if (!currentUser) return;
 
-    // Filtrar pedidos del empleado
     let myOrders = pendingOrders.filter(o => o.employee === currentUser.username);
-
-    console.log('Pedidos filtrados del empleado:', myOrders);
 
     // Aplicar filtro de fecha
     const now = new Date();
@@ -2109,90 +2111,44 @@ function renderEmployeeOrderHistory(filter = 'all') {
     }
 
     if (myOrders.length === 0) {
-        historyDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No hay pedidos en este período</p>';
+        historyDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem; grid-column: 1/-1;">No hay historial en este periodo</p>';
         return;
     }
 
-    // Ordenar por fecha (más recientes primero)
     myOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     myOrders.forEach((order) => {
-        let statusClass = '';
-        let statusColor = '';
-        let statusIcon = '';
-
-        if (order.status === 'Pendiente') {
-            statusClass = 'pending';
-            statusColor = '#E74C3C';
-            statusIcon = '🔴';
-        } else if (order.status === 'En Preparación') {
-            statusClass = 'preparing';
-            statusColor = '#3498DB';
-            statusIcon = '🔵';
-        } else if (order.status === 'Finalizado') {
-            statusClass = 'finalizado';
-            statusColor = '#2ECC71';
-            statusIcon = '🟢';
-        } else if (order.status === 'Cobrado') {
-            statusClass = 'cobrado';
-            statusColor = '#27AE60';
-            statusIcon = '✅';
-        }
-
         const div = document.createElement('div');
-        div.className = `order-item ${statusClass}`;
-        div.style.marginBottom = '1rem';
+        const statusKey = order.status.toLowerCase().replace(' ', '-');
+        div.className = `order-card-compact ${statusKey}`;
 
-        const itemsList = order.items.map(item => {
-            const customText = item.customizations && item.customizations.length > 0
-                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>`
-                : '';
-            const quantity = item.quantity || 1;
-            const displayText = quantity > 1
-                ? `${quantity}x ${item.name}${customText}`
-                : `${item.name}${customText}`;
-            return `<li>${displayText}</li>`;
-        }).join('');
+        const itemsList = order.items.map(i => `<li>${i.quantity}x ${i.name}</li>`).join('');
 
         div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <h4 style="margin: 0;">Pedido #${order.id}</h4>
-                <span style="background: ${statusColor}; color: white; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.9rem;">
-                    ${statusIcon} ${order.status}
-                </span>
+            <div class="order-card-header">
+                <h4>Pedido #${order.id}</h4>
+                <div class="order-card-status" style="font-size:0.6rem; background:var(--bg-primary);">${order.status}</div>
             </div>
-            <ul style="margin: 0.5rem 0;">${itemsList}</ul>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                <p style="margin: 0;"><strong>Total:</strong> $${parseFloat(order.total).toFixed(2)}</p>
-                <p style="margin: 0; color: #666; font-size: 0.9rem;">${new Date(order.created_at).toLocaleString()}</p>
+            <ul class="order-card-items" style="max-height:60px;">${itemsList}</ul>
+            <div class="order-card-footer">
+                <span class="order-card-total">$${parseFloat(order.total).toFixed(2)}</span>
+                <span style="font-size:0.7rem; color:var(--text-secondary)">${new Date(order.created_at).toLocaleDateString()}</span>
             </div>
         `;
         historyDiv.appendChild(div);
     });
 
-    // Mostrar estadísticas del empleado
+    // Mostrar estadísticas del empleado (se mantiene la lógica pero con mejor diseño en styles.css si existe, o inline corregido)
     const totalPedidos = myOrders.length;
     const totalVentas = myOrders.reduce((sum, o) => sum + parseFloat(o.total), 0);
     const pedidosCobrados = myOrders.filter(o => o.status === 'Cobrado').length;
 
     const statsDiv = document.createElement('div');
-    statsDiv.style.cssText = 'background: linear-gradient(135deg, #FF6B35 0%, #E55A2B 100%); color: white; padding: 1.5rem; border-radius: 12px; margin-top: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
+    statsDiv.style.cssText = 'grid-column: 1 / -1; background: var(--header-bg); color: white; padding: 1.5rem; border-radius: 12px; margin-top: 1rem; display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; gap: 1rem;';
     statsDiv.innerHTML = `
-        <h3 style="margin-top: 0; color: white;">📊 Tus Estadísticas</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
-            <div style="text-align: center;">
-                <p style="font-size: 2rem; font-weight: 700; margin: 0;">${totalPedidos}</p>
-                <p style="margin: 0; opacity: 0.9;">Pedidos Totales</p>
-            </div>
-            <div style="text-align: center;">
-                <p style="font-size: 2rem; font-weight: 700; margin: 0;">$${totalVentas.toFixed(2)}</p>
-                <p style="margin: 0; opacity: 0.9;">Ventas Totales</p>
-            </div>
-            <div style="text-align: center;">
-                <p style="font-size: 2rem; font-weight: 700; margin: 0;">${pedidosCobrados}</p>
-                <p style="margin: 0; opacity: 0.9;">Pedidos Cobrados</p>
-            </div>
-        </div>
+        <div><h2 style="margin:0;">${totalPedidos}</h2><p style="margin:0; font-size:0.8rem; opacity:0.8;">Pedidos</p></div>
+        <div><h2 style="margin:0;">$${totalVentas.toFixed(0)}</h2><p style="margin:0; font-size:0.8rem; opacity:0.8;">Ventas</p></div>
+        <div><h2 style="margin:0;">${pedidosCobrados}</h2><p style="margin:0; font-size:0.8rem; opacity:0.8;">Cobrados</p></div>
     `;
     historyDiv.appendChild(statsDiv);
 }

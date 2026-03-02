@@ -271,23 +271,57 @@
             <button onclick="showSection('historial-cocina')">📜 Historial Cocina</button>
         </nav>
 
-        <!-- Ventana de Venta (Página Principal) -->
+        <!-- Ventana de Venta (Página Principal Profesional) -->
         <div id="venta" class="section active">
-            <h2>Ventana de Venta</h2>
+            <div class="sales-layout">
+                <!-- Panel de Productos -->
+                <div class="products-panel">
+                    <div class="card" style="padding: 1.5rem;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h2 style="margin: 0;">🍕 Menú de Ventas</h2>
+                            <div style="position: relative; width: 300px;">
+                                <span
+                                    style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);">🔍</span>
+                                <input type="text" id="product-search" placeholder="Buscar producto..."
+                                    oninput="renderProducts()"
+                                    style="width: 100%; padding: 0.7rem 1rem 0.7rem 2.5rem; border-radius: 20px; border: 1px solid var(--border-color); background: var(--bg-primary);">
+                            </div>
+                        </div>
 
-            <!-- Barra de Búsqueda -->
-            <div style="margin-bottom: 1.5rem;">
-                <input type="text" id="search-products" placeholder="🔍 Buscar productos..."
-                    oninput="searchProducts(this.value)"
-                    style="width: 100%; max-width: 100%; padding: 1rem; font-size: 1.1rem; border: 1px solid var(--border-color); border-radius: 8px;">
+                        <div id="category-filters" class="category-filter">
+                            <span class="category-chip active" onclick="filterByCategory('all')">Todos</span>
+                            <!-- Más categorías dinámicas -->
+                        </div>
+
+                        <div id="product-list-venta" class="products-grid-v2">
+                            <!-- Los productos se renderizan aquí -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Carrito Lateral Fijo -->
+                <aside class="cart-sidebar">
+                    <div class="cart-header">
+                        <h3 style="margin: 0;">🛒 Carrito</h3>
+                        <button onclick="clearCart()"
+                            style="background: none; border: none; color: var(--danger-color); font-weight: bold; cursor: pointer; font-size: 0.8rem;">VACIAR</button>
+                    </div>
+                    <div id="cart-content" class="cart-items">
+                        <!-- Items del carrito -->
+                    </div>
+                    <div class="cart-footer">
+                        <div class="cart-total">
+                            <span>Total:</span>
+                            <span id="cart-total-display">$0.00</span>
+                        </div>
+                        <button onclick="sendOrder()" class="btn-primary"
+                            style="margin-top: 0; padding: 1.2rem; font-size: 1.1rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);">
+                            ENVIAR A COCINA 🚀
+                        </button>
+                    </div>
+                </aside>
             </div>
-
-            <div class="product-list" id="product-list-venta"></div>
-            <h3>Carrito</h3>
-            <div id="cart"></div>
-            <p style="font-size: 1.2rem; font-weight: bold;">Total: $<span id="total">0.00</span></p>
-            <button onclick="sendOrder()" class="btn-primary" style="width: 100%; padding: 1rem; font-size: 1.2rem;">🚀
-                Enviar Pedido a Cocina</button>
         </div>
 
         <!-- Productos (Solo Admin) -->
@@ -327,20 +361,20 @@
 
         <!-- Pedidos Pendientes (Solo Admin) -->
         <div id="pedidos" class="section">
-            <h2>Pedidos Pendientes</h2>
-            <div id="pending-orders"></div>
+            <h2 style="margin-bottom: 0.5rem;">📋 Pedidos Pendientes de Preparar</h2>
+            <div id="pending-orders" class="order-grid-compact"></div>
         </div>
 
         <!-- Pedidos Pendientes de Cobrar (Solo Caja) -->
         <div id="pendientes-cobrar" class="section">
-            <h2>Pedidos Pendientes de Cobrar</h2>
-            <div id="cashier-pending-orders"></div>
+            <h2 style="margin-bottom: 0.5rem;">💰 Pedidos Listos para Cobrar</h2>
+            <div id="cashier-pending-orders" class="order-grid-compact"></div>
         </div>
 
         <!-- Pedidos Cobrados (Solo Caja) -->
         <div id="cobrados" class="section">
-            <h2>Pedidos Cobrados</h2>
-            <div id="cashier-paid-orders"></div>
+            <h2 style="margin-bottom: 0.5rem;">✅ Historial de Pedidos Cobrados</h2>
+            <div id="cashier-paid-orders" class="order-grid-compact"></div>
         </div>
 
         <!-- Tickets (Solo Caja) -->
@@ -372,19 +406,21 @@
 
         <!-- Mis Pedidos (Solo Empleado) -->
         <div id="mis-pedidos" class="section">
-            <h2>Mis Pedidos Pendientes</h2>
-            <div id="employee-pending-orders"></div>
+            <h2 style="margin-bottom: 0.5rem;">🏃‍♂️ Mis Pedidos en Proceso</h2>
+            <div id="employee-pending-orders" class="order-grid-compact"></div>
         </div>
 
         <!-- Historial de Pedidos (Solo Empleado) -->
         <div id="historial-pedidos" class="section">
-            <h2>Historial de Pedidos</h2>
-            <div style="margin-bottom: 1rem;">
-                <button onclick="filterEmployeeHistory('today')" class="filter-btn">Hoy</button>
-                <button onclick="filterEmployeeHistory('week')" class="filter-btn">Esta Semana</button>
-                <button onclick="filterEmployeeHistory('all')" class="filter-btn active">Todos</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0;">📜 Historial de Pedidos</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="filterEmployeeHistory('today')" class="filter-btn">Hoy</button>
+                    <button onclick="filterEmployeeHistory('week')" class="filter-btn">Semana</button>
+                    <button onclick="filterEmployeeHistory('all')" class="filter-btn active">Todo</button>
+                </div>
             </div>
-            <div id="employee-order-history"></div>
+            <div id="employee-order-history" class="order-grid-compact"></div>
         </div>
 
         <!-- Mi Perfil (Contenedor Maestro para Reportes, Ajustes y Facturación) -->
