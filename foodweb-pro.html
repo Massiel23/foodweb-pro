@@ -319,21 +319,7 @@
             </div>
         </div>
 
-        <!-- Agregar Empleado (Solo Admin) -->
-        <div id="empleados" class="section">
-            <h2>Agregar Empleado</h2>
-            <input type="text" id="new-emp-username" placeholder="Usuario">
-            <input type="password" id="new-emp-password" placeholder="Contraseña">
-            <select id="new-emp-role">
-                <option value="empleado">Empleado</option>
-                <option value="caja">Caja</option>
-                <option value="admin">Administrador</option>
-            </select>
-            <button onclick="addEmployee()">Agregar Empleado</button>
-            <p id="emp-msg"></p>
-            <h3>Listado de Empleados</h3>
-            <div class="employee-list" id="employee-list"></div>
-        </div>
+
 
         <!-- Pedidos Pendientes (Solo Admin) -->
         <div id="pedidos" class="section">
@@ -531,70 +517,80 @@
                         </div>
                     </div>
 
-            </div>
 
-            <!-- Tab: Usuarios -->
-            <div id="tab-usuarios" class="profile-tab-content" style="display: none;">
-                <h2 style="margin-top: 0;">👥 Gestión de Usuarios</h2>
-                <div class="card" style="padding: 1.5rem; margin-bottom: 2rem; max-width: 500px;">
-                    <h3>Agregar Nuevo Empleado</h3>
-                    <div style="display: grid; gap: 1rem;">
-                        <div>
-                            <label style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem;">Usuario</label>
-                            <input type="text" id="new-emp-username" placeholder="Ej: cajero1"
-                                style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                    <!-- Tab: Usuarios -->
+                    <div id="tab-usuarios" class="profile-tab-content" style="display: none;">
+                        <h2 style="margin-top: 0;">👥 Gestión de Usuarios</h2>
+
+                        <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: flex-start;">
+                            <!-- Columna: Formulario -->
+                            <div class="card"
+                                style="flex: 0 0 350px; padding: 1.5rem; margin: 0; background: var(--header-bg); border: 1px solid var(--border-color);">
+                                <h4 style="margin-top: 0; color: var(--primary-color);">+ Agregar Nuevo Empleado</h4>
+                                <div style="display: grid; gap: 1rem;">
+                                    <div>
+                                        <label
+                                            style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem;">Usuario</label>
+                                        <input type="text" id="new-emp-username" placeholder="Ej: cajero1"
+                                            style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                                    </div>
+                                    <div>
+                                        <label
+                                            style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem;">Contraseña</label>
+                                        <input type="password" id="new-emp-password" placeholder="••••••••"
+                                            style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                                    </div>
+                                    <div>
+                                        <label
+                                            style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem;">Rol</label>
+                                        <select id="new-emp-role"
+                                            style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                                            <option value="caja">Cajero (Caja y Cobros)</option>
+                                            <option value="empleado">Mesero / Vendedor (Ventas)</option>
+                                        </select>
+                                    </div>
+                                    <button onclick="addEmployee()" class="btn-primary">Crear Usuario</button>
+                                    <p id="emp-msg" style="font-size: 0.9rem; text-align: center; margin: 0;"></p>
+                                </div>
+                            </div>
+
+                            <!-- Columna: Lista -->
+                            <div style="flex: 1; min-width: 300px;">
+                                <h4 style="margin-top: 0;">Usuarios Activos</h4>
+                                <div id="employee-list"
+                                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                                    <!-- Cargando... -->
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem;">Contraseña</label>
-                            <input type="password" id="new-emp-password" placeholder="••••••••"
-                                style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
-                        </div>
-                        <div>
-                            <label style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem;">Rol</label>
-                            <select id="new-emp-role"
-                                style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
-                                <option value="caja">Cajero (Caja y Cobros)</option>
-                                <option value="empleado">Mesero / Vendedor (Ventas)</option>
-                            </select>
-                        </div>
-                        <button onclick="addEmployee()" class="btn-primary">Crear Usuario</button>
-                        <p id="emp-msg" style="font-size: 0.9rem; text-align: center; margin: 0;"></p>
                     </div>
-                </div>
 
-                <h3>Lista de Usuarios</h3>
-                <div id="employee-list"
-                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
-                    <!-- Cargando... -->
-                </div>
+                    <!-- Tab: Facturación -->
+                    <div id="tab-facturacion" class="profile-tab-content" style="display: none;">
+                        <h2 style="margin-top: 0;">📄 Facturación y Pagos</h2>
+                        <button onclick="generateInvoice()" class="btn-primary" style="width: auto;">Generar Factura
+                            Mensual</button>
+                        <div id="invoice"
+                            style="margin-top: 2rem; padding: 1.5rem; border: 1px solid var(--border-color); display: none;">
+                            <div id="invoice-content"></div>
+                        </div>
+                    </div>
+                </main>
             </div>
-
-            <!-- Tab: Facturación -->
-            <div id="tab-facturacion" class="profile-tab-content" style="display: none;">
-                <h2 style="margin-top: 0;">📄 Facturación y Pagos</h2>
-                <button onclick="generateInvoice()" class="btn-primary" style="width: auto;">Generar Factura
-                    Mensual</button>
-                <div id="invoice" style="margin-top: 2rem; padding: 1.5rem; border: 1px solid #eee; display: none;">
-                    <div id="invoice-content"></div>
-                </div>
-            </div>
-
-            </main>
         </div>
-    </div>
 
-    <!-- Ticket de Compra (Para Caja) -->
-    <div id="receipt" style="display: none;">
-        <h3>FoodWeb Pro</h3>
-        <h3>Ticket de Compra</h3>
-        <div id="receipt-content"></div>
-        <button onclick="printReceipt()">Imprimir</button>
-        <button onclick="cancelReceipt()">Cancelar</button>
-    </div>
+        <!-- Ticket de Compra (Para Caja) -->
+        <div id="receipt" style="display: none;">
+            <h3>FoodWeb Pro</h3>
+            <h3>Ticket de Compra</h3>
+            <div id="receipt-content"></div>
+            <button onclick="printReceipt()">Imprimir</button>
+            <button onclick="cancelReceipt()">Cancelar</button>
+        </div>
 
-    <footer>
-        <p>&copy; 2026 FoodWeb Pro. ¡Los mejores productos!</p>
-    </footer>
+        <footer>
+            <p>&copy; 2026 FoodWeb Pro. ¡Los mejores productos!</p>
+        </footer>
     </div>
 
     <script src="api.js?v=1.1"></script>
