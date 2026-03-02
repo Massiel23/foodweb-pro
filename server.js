@@ -44,7 +44,8 @@ if (isProduction) {
 // Helpers DB
 const dbQuery = (sql, params = []) => new Promise((resolve, reject) => {
     if (isProduction) {
-        const pgSql = sql.replace(/\?/g, (_, i) => `$${params.slice(0, i).length + 1}`);
+        let index = 0;
+        const pgSql = sql.replace(/\?/g, () => `$${++index}`);
         db.query(pgSql, params, (err, result) => err ? reject(err) : resolve(result.rows));
     } else {
         db.all(sql, params, (err, rows) => err ? reject(err) : resolve(rows));
