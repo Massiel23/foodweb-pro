@@ -159,6 +159,30 @@ function initializeSocket() {
         console.log('Ticket impreso:', ticket);
         loadTickets();
     });
+
+    // Iniciar el cronómetro global de cocina
+    if (!window.kitchenTimerInterval) {
+        window.kitchenTimerInterval = setInterval(() => {
+            updateCountdownLabels();
+        }, 60000); // Cada minuto
+    }
+}
+
+function updateCountdownLabels() {
+    console.log('--- Actualizando cronómetro de cocina ---');
+    const labels = document.querySelectorAll('.countdown-badge');
+    labels.forEach(label => {
+        const orderId = parseInt(label.getAttribute('data-order-id'));
+        const order = pendingOrders.find(o => o.id === orderId);
+        if (order) {
+            const times = calculateOrderTimes(orderId);
+            if (order.status === 'Pendiente') {
+                label.textContent = `⏳ EN ESPERA - ~${times.startIn} min`;
+            } else if (order.status === 'En Preparación') {
+                label.textContent = `🔥 PREPARANDO - ~${times.readyIn} min`;
+            }
+        }
+    });
 }
 
 // ========== NOTIFICACIONES ==========
@@ -1169,10 +1193,15 @@ async function loadOrders() {
     }
 }
 
-// ========== LÓGICA DE TIEMPOS DINÁMICOS ==========
+// ========== LÓGICA DE TIEMPOS DINÁMICOS CON CUENTA REGRESIVA ==========
 function calculateOrderTimes(orderId) {
     const order = pendingOrders.find(o => o.id === orderId);
     if (!order) return { startIn: 1, readyIn: 5 };
+
+    // Calcular minutos transcurridos desde que se creó el pedido
+    const createdTime = new Date(order.created_at).getTime();
+    const now = new Date().getTime();
+    const elapsedMinutes = Math.floor((now - createdTime) / (1000 * 60));
 
     // Pedidos que están antes en la cola (Pendientes o En Preparación)
     const activeOrders = pendingOrders.filter(o => o.status === 'Pendiente' || o.status === 'En Preparación');
@@ -1180,18 +1209,27 @@ function calculateOrderTimes(orderId) {
 
     if (orderIndex === -1) return { startIn: 0, readyIn: 0 };
 
-    // Cálculo de tiempo para empezar
-    let startIn = 1; // Mínimo 1 minuto
+    // Cálculo base de tiempo para empezar
+    let startIn = 1;
     if (orderIndex > 0) {
-        // Sumamos 2 min por cada platillo de los pedidos anteriores
         const previousOrders = activeOrders.slice(0, orderIndex);
         const totalPreviousItems = previousOrders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + (i.quantity || 1), 0), 0);
         startIn = totalPreviousItems * 2;
     }
 
+    // Restar el tiempo que ya ha pasado
+    startIn = Math.max(1, startIn - elapsedMinutes);
+
     // Cálculo de tiempo para estar listo (una vez empezado)
     const currentItemsCount = order.items.reduce((s, i) => s + (i.quantity || 1), 0);
-    let readyIn = currentItemsCount * 3; // Estimamos 3 min por platillo
+    let readyIn = currentItemsCount * 3;
+
+    // Si ya está en preparación, el readyIn también debería bajar con el tiempo
+    if (order.status === 'En Preparación') {
+        // Estimamos que empezó a prepararse poco después de crearse o cuando cambió de estado
+        // Como no tenemos started_at exacto, usamos un factor del tiempo transcurrido
+        readyIn = Math.max(1, readyIn - Math.floor(elapsedMinutes / 1.5));
+    }
 
     return { startIn, readyIn };
 }
@@ -1221,8 +1259,8 @@ function renderPendingOrders() {
 
         const times = calculateOrderTimes(order.id);
         const timeLabel = order.status === 'Pendiente'
-            ? `<p style="color: #FF6B35; font-weight: bold;">⏳ Empieza en: ${times.startIn} min</p>`
-            : (order.status === 'En Preparación' ? `<p style="color: #3498db; font-weight: bold;">🔥 Listo en: ${times.readyIn} min</p>` : '');
+            ? `<p class="countdown-badge" data-order-id="${order.id}" style="color: #FF6B35; font-weight: bold;">⏳ Empieza en: ~${times.startIn} min</p>`
+            : (order.status === 'En Preparación' ? `<p class="countdown-badge" data-order-id="${order.id}" style="color: #3498db; font-weight: bold;">🔥 Listo en: ~${times.readyIn} min</p>` : '');
 
         const div = document.createElement('div');
         div.className = `order-item ${statusClass}`;
@@ -1262,9 +1300,31 @@ function renderKitchenOrders() {
     const sortedOrders = [...pendingOrders].reverse();
 
     sortedOrders.forEach(order => {
-        if (order.status === 'Cobrado') return;
-
         const times = calculateOrderTimes(order.id);
+
+        if (order.status === 'Finalizado' || order.status === 'Cobrado') {
+            if (kitchenHistoryDiv) {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'card';
+                historyItem.style.padding = '0.75rem';
+                historyItem.style.marginBottom = '0.5rem';
+                historyItem.style.opacity = '0.7';
+                historyItem.style.borderLeft = order.status === 'Cobrado' ? '5px solid #27ae60' : '5px solid #2ecc71';
+
+                const itemsStr = order.items.map(i => `${i.quantity}x ${i.name}`).join(', ');
+
+                historyItem.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h4 style="margin:0;">Pedido #${order.id}</h4>
+                        <span style="font-size: 0.7rem; font-weight: bold; color: ${order.status === 'Cobrado' ? '#27ae60' : '#2ecc71'};">${order.status.toUpperCase()}</span>
+                    </div>
+                    <small style="color: var(--text-secondary);">${itemsStr}</small>
+                `;
+                kitchenHistoryDiv.appendChild(historyItem);
+            }
+            return;
+        }
+
         const div = document.createElement('div');
         div.className = `card order-card-kitchen ${order.status === 'En Preparación' ? 'preparing-glow' : ''}`;
         div.style.borderLeft = order.status === 'En Preparación' ? '8px solid #3498db' : '8px solid #ff6b35';
@@ -1278,20 +1338,8 @@ function renderKitchenOrders() {
 
         const isPreparing = order.status === 'En Preparación';
         const timeBadge = isPreparing
-            ? `<span style="background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">🔥 PREPARANDO - Finalizar en ~${times.readyIn} min</span>`
-            : `<span style="background: #ff6b35; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">⏳ EN ESPERA - Cola: ~${times.startIn} min</span>`;
-
-        if (order.status === 'Finalizado') {
-            if (kitchenHistoryDiv) {
-                const historyItem = document.createElement('div');
-                historyItem.className = 'card';
-                historyItem.style.padding = '1rem';
-                historyItem.style.opacity = '0.7';
-                historyItem.innerHTML = `<h4>Pedido #${order.id}</h4><p>ENTREGADO</p>`;
-                kitchenHistoryDiv.appendChild(historyItem);
-            }
-            return;
-        }
+            ? `<span class="countdown-badge" data-order-id="${order.id}" style="background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">🔥 PREPARANDO - ~${times.readyIn} min</span>`
+            : `<span class="countdown-badge" data-order-id="${order.id}" style="background: #ff6b35; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">⏳ EN ESPERA - ~${times.startIn} min</span>`;
 
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
@@ -1629,7 +1677,7 @@ function renderCashierPaidOrders() {
         }).join('');
 
         div.innerHTML = `
-            <h4>Pedido #${order.id} - ${order.username}</h4>
+            <h4>Pedido #${order.id} - ${order.employee || 'Anónimo'}</h4>
             <p><strong>Estado:</strong> ✓ Cobrado</p>
             <ul>${itemsList}</ul>
             <p><strong>Total:</strong> $${parseFloat(order.total).toFixed(2)}</p>
@@ -1791,17 +1839,38 @@ async function renderEmployees() {
 
         users.forEach((user) => {
             const div = document.createElement('div');
-            div.className = 'card employee-item';
-            div.style.padding = '1rem';
-            div.style.display = 'flex';
-            div.style.justifyContent = 'space-between';
-            div.style.alignItems = 'center';
+            div.className = 'employee-row';
+            div.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 0.75rem 1rem;
+                background: var(--bg-primary);
+                border-bottom: 1px solid var(--border-color);
+                border-radius: 8px;
+                margin-bottom: 0.5rem;
+            `;
+
+            const roleIcons = {
+                'admin': '🛡️',
+                'caja': '💰',
+                'empleado': '🏃',
+                'cocinero': '👨‍🍳'
+            };
+            const icon = roleIcons[user.role] || '👤';
+
             div.innerHTML = `
-                <div>
-                    <h4 style="margin:0; color: var(--text-primary);">${user.username}</h4>
-                    <p style="margin:0; font-size: 0.85rem; color: var(--text-secondary);">Rol: ${user.role.toUpperCase()}</p>
+                <div style="width: 40px; height: 40px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                    ${icon}
                 </div>
-                <span style="font-size: 0.75rem; background: var(--bg-primary); padding: 4px 8px; border-radius: 4px; color: var(--primary-color); font-weight: bold;">Activo</span>
+                <div style="flex: 1;">
+                    <h4 style="margin:0; font-size: 1rem; color: var(--text-primary);">${user.username}</h4>
+                    <p style="margin:0; font-size: 0.8rem; color: var(--text-secondary);">${user.role.toUpperCase()}</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px; color: #2ecc71; font-size: 0.75rem; font-weight: bold;">
+                    <div style="width: 8px; height: 8px; background: #2ecc71; border-radius: 50%;"></div>
+                    ACTIVO
+                </div>
             `;
             employeeList.appendChild(div);
         });
@@ -1942,12 +2011,12 @@ function renderEmployeePendingOrders() {
             statusClass = 'pending';
             statusColor = '#E74C3C';
             statusIcon = '🔴';
-            timeLabel = `<p style="color: #FF6B35; font-weight: bold; margin-bottom: 0.5rem;">⏳ Empieza en: ~${times.startIn} min</p>`;
+            timeLabel = `<p class="countdown-badge" data-order-id="${order.id}" style="color: #FF6B35; font-weight: bold; margin-bottom: 0.5rem;">⏳ Empieza en: ~${times.startIn} min</p>`;
         } else if (order.status === 'En Preparación') {
             statusClass = 'preparing';
             statusColor = '#3498DB';
             statusIcon = '🔵';
-            timeLabel = `<p style="color: #3498DB; font-weight: bold; margin-bottom: 0.5rem;">🔥 Listo en: ~${times.readyIn} min</p>`;
+            timeLabel = `<p class="countdown-badge" data-order-id="${order.id}" style="color: #3498DB; font-weight: bold; margin-bottom: 0.5rem;">🔥 Listo en: ~${times.readyIn} min</p>`;
         } else if (order.status === 'Finalizado') {
             statusClass = 'finalizado';
             statusColor = '#2ECC71';
