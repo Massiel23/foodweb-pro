@@ -1719,8 +1719,22 @@ body.dark-mode .login-card input {
 }
 
 body.dark-mode .login-footer {
-    opacity: 0;
-    pointer-events: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .login-footer h4,
+body.dark-mode .login-footer .footer-logo {
+    color: white;
+}
+
+body.dark-mode .login-footer a {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+body.dark-mode .login-footer a:hover {
+    color: white;
 }
 
 body.dark-mode .filter-btn {
