@@ -1755,6 +1755,10 @@ footer:not(.login-footer) {
     font-size: 0.85rem;
 }
 
+body.dark-mode footer:not(.login-footer) {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
 #app {
     padding-bottom: 40px;
     /* Space for the fixed footer so it doesnt cover content */
