@@ -1,32 +1,78 @@
-// ========== VARIABLES GLOBALES ==========
-let currentUser = null;
+// Estado global
+let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+let currentRestaurantPlan = 'basico'; // Por defecto
+let categories = [];
 let products = [];
 let cart = [];
+let currentOrder = null;
+let printedTickets = [];
+let socket = null;
+let employeeHistoryFilter = 'all';
+let newProductModifiers = [];
 let total = 0;
 let taxRate = 10;
 let pendingOrders = [];
-let printedTickets = [];
-let socket = null;
 
 // ========== INICIALIZACIÓN ==========
 document.addEventListener('DOMContentLoaded', async () => {
     // Inicializar Socket.IO
     initializeSocket();
-    
+
     // Cargar configuración desde localStorage
     const savedTaxRate = localStorage.getItem('taxRate');
     if (savedTaxRate) {
         taxRate = parseFloat(savedTaxRate);
-        document.getElementById('tax-rate').value = taxRate;
+        const taxInput = document.getElementById('tax-rate');
+        if (taxInput) taxInput.value = taxRate;
     }
+
+    // Verificar si ya hay una sesión activa
+    await checkAutoLogin();
+
+    // Cargar Tema
+    checkSavedTheme();
 });
+
+async function checkAutoLogin() {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+        try {
+            currentUser = JSON.parse(storedUser);
+            console.log('🔄 Sesión detectada para:', currentUser.username);
+
+            // Si hay un restaurantId en localStorage pero no coincide con el del usuario
+            // (sucede al cambiar de sucursal), priorizamos el de localStorage
+            const savedResId = localStorage.getItem('restaurantId');
+            if (savedResId) {
+                const newId = parseInt(savedResId);
+                // Re-unirse al socket si el ID cambió o para asegurar persistencia
+                if (socket) {
+                    socket.emit('joinRestaurant', newId);
+                }
+                currentUser.restaurant_id = newId;
+                posApi.restaurantId = savedResId;
+            }
+
+            await applyUserPermissions(currentUser);
+
+            // Cargar datos iniciales
+            await loadProducts();
+            await loadOrders();
+
+            showNotification(`Bienvenido de nuevo, ${currentUser.username}`);
+        } catch (e) {
+            console.error('Error en auto-login:', e);
+            logout();
+        }
+    }
+}
 
 // ========== SOCKET.IO ==========
 function initializeSocket() {
     // Detectar automáticamente la URL correcta para Socket.IO
     let socketURL;
     const hostname = window.location.hostname;
-    
+
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
         // Estamos en la computadora (desarrollo local)
         socketURL = 'http://localhost:3000';
@@ -40,30 +86,40 @@ function initializeSocket() {
         // Por defecto, usar la URL actual del sitio
         socketURL = window.location.origin;
     }
-    
+
     console.log('🔌 Conectando Socket.IO a:', socketURL);
     socket = io(socketURL);
-    
+
     socket.on('connect', () => {
         console.log('✅ Conectado al servidor Socket.IO');
+        // Unirse a la sala si hay un usuario logueado en caché
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+            try {
+                const parsed = JSON.parse(storedUser);
+                if (parsed.restaurant_id) {
+                    socket.emit('joinRestaurant', parsed.restaurant_id);
+                }
+            } catch (e) { }
+        }
     });
-    
+
     socket.on('disconnect', () => {
         console.log('Desconectado del servidor');
     });
-    
+
     // Escuchar nuevos pedidos
     socket.on('newOrder', (order) => {
         console.log('Nuevo pedido recibido:', order);
         loadOrders();
         showNotification('Nuevo pedido recibido');
     });
-    
+
     // Escuchar actualizaciones de pedidos
     socket.on('orderUpdated', (data) => {
         console.log('Pedido actualizado:', data);
         loadOrders();
-        
+
         // Notificar al empleado si su pedido está listo
         if (currentUser && currentUser.role === 'empleado' && data.status === 'Finalizado') {
             // Verificar si el pedido es del empleado actual
@@ -77,19 +133,19 @@ function initializeSocket() {
             showNotification(`Pedido #${data.id} actualizado a: ${data.status}`);
         }
     });
-    
+
     // Escuchar nuevos productos
     socket.on('productAdded', (product) => {
         console.log('Nuevo producto agregado:', product);
         loadProducts();
     });
-    
+
     // Escuchar productos eliminados
     socket.on('productDeleted', (data) => {
         console.log('Producto eliminado:', data);
         loadProducts();
     });
-    
+
     // Escuchar nuevos usuarios
     socket.on('userAdded', (user) => {
         console.log('Nuevo usuario agregado:', user);
@@ -97,7 +153,7 @@ function initializeSocket() {
             renderEmployees();
         }
     });
-    
+
     // Escuchar tickets impresos
     socket.on('ticketPrinted', (ticket) => {
         console.log('Ticket impreso:', ticket);
@@ -114,7 +170,7 @@ function showNotification(message) {
         position: fixed;
         top: 20px;
         right: 20px;
-        background: #4CAF50;
+        background: ${document.body.classList.contains('dark-mode') ? 'var(--header-bg)' : '#4CAF50'};
         color: white;
         padding: 15px 20px;
         border-radius: 5px;
@@ -122,21 +178,195 @@ function showNotification(message) {
         z-index: 10000;
         animation: slideIn 0.3s ease-out;
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease-out';
         setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
 
-// ========== AUTENTICACIÓN ==========
+// ========== TEMA (MODO OSCURO) ==========
+function toggleDarkMode() {
+    const isDark = document.body.classList.toggle('dark-mode');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+    // Actualizar icono del botón
+    const btn = document.querySelector('.dark-mode-toggle');
+    if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+
+    showNotification(isDark ? 'Modo Oscuro Activado' : 'Modo Claro Activado');
+
+    // Regenerar reportes si estamos en la pestaña de reportes para actualizar gráficos
+    if (document.getElementById('tab-reportes').style.display !== 'none') {
+        generateReports(document.querySelector('.filter-btn.active')?.getAttribute('onclick').match(/'([^']+)'/)[1] || 'all');
+    }
+}
+
+function checkSavedTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        const btn = document.querySelector('.dark-mode-toggle');
+        if (btn) btn.textContent = '☀️';
+    }
+}
+
+// ========== AUTENTICACIÓN Y SAAS (PAYWALL) ==========
+let selectedPlan = null;
+let pendingRegistration = null;
+
+function showPricingForm() {
+    document.getElementById('login-form-container').style.display = 'none';
+    document.getElementById('register-form-container').style.display = 'none';
+    document.getElementById('payment-container').style.display = 'none';
+    document.getElementById('pricing-container').style.display = 'block';
+    document.getElementById('login-msg').textContent = '';
+}
+
+function showLoginForm() {
+    document.getElementById('pricing-container').style.display = 'none';
+    document.getElementById('register-form-container').style.display = 'none';
+    document.getElementById('payment-container').style.display = 'none';
+    document.getElementById('forgot-password-container').style.display = 'none';
+    document.getElementById('login-form-container').style.display = 'block';
+    selectedPlan = null;
+    document.getElementById('login-msg').textContent = '';
+}
+
+function showForgotPassword() {
+    document.getElementById('login-form-container').style.display = 'none';
+    document.getElementById('forgot-password-container').style.display = 'block';
+}
+
+async function handleForgotPassword() {
+    const email = document.getElementById('forgot-email').value.trim();
+    if (!email) return alert('Por favor ingresa tu correo electrónico');
+    try {
+        const res = await posApi.forgotPassword(email);
+        alert(res.message);
+        showLoginForm();
+    } catch (e) {
+        alert(e.message);
+    }
+}
+
+function toggleRegisterForm() {
+    // Redirigir al inicio del flujo transaccional (Precios)
+    showPricingForm();
+}
+
+function selectPlan(planType) {
+    selectedPlan = planType;
+    document.getElementById('pricing-container').style.display = 'none';
+
+    // Actualizar Badge visual
+    const badge = document.getElementById('selected-plan-badge');
+    if (planType === 'Basico') {
+        badge.innerHTML = 'Plan Básico ($260 MXN/mes)';
+        badge.style.color = 'var(--text-secondary)';
+    } else {
+        badge.innerHTML = 'Plan Pro ($499 MXN/mes)';
+        badge.style.color = 'var(--primary-color)';
+    }
+
+    document.getElementById('register-form-container').style.display = 'block';
+}
+
+async function handleRegister() {
+    const name = document.getElementById('reg-restaurant').value.trim();
+    const fullName = document.getElementById('reg-fullname').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const pass = document.getElementById('reg-password').value.trim();
+    const loginMsg = document.getElementById('login-msg');
+    loginMsg.textContent = '';
+
+    if (!name || !fullName || !email || !pass) {
+        loginMsg.textContent = 'Por favor completa todos los campos.';
+        return;
+    }
+
+    if (!selectedPlan) {
+        loginMsg.textContent = 'Por favor selecciona un plan primero.';
+        return;
+    }
+
+    try {
+        // Registrar en backend pre-pago
+        const response = await posApi.registerRestaurant(name, email, fullName, pass, selectedPlan);
+
+        // Guardar temporalmente para auto-login tras el pago
+        // El backend genera un username automático, lo guardamos para el login final
+        pendingRegistration = { username: response.username, password: pass };
+
+        // Mostrar contenedor de pago
+        document.getElementById('register-form-container').style.display = 'none';
+        document.getElementById('pay-rest-name').textContent = name;
+        document.getElementById('payment-container').style.display = 'block';
+
+        // Renderizar botones de PayPal reales
+        renderPayPalButtons();
+
+    } catch (error) {
+        loginMsg.textContent = error.message || 'Error al crear el restaurante.';
+    }
+}
+
+function renderPayPalButtons() {
+    const container = document.getElementById('paypal-button-container');
+    container.innerHTML = ''; // Limpiar previo
+
+    const planId = selectedPlan === 'Basico'
+        ? 'P-3D508941XX4410022NGSINVY'
+        : 'P-1YS68428Y6663370UNGSILUY';
+
+    paypal.Buttons({
+        style: {
+            shape: 'rect',
+            color: 'gold',
+            layout: 'vertical',
+            label: 'subscribe'
+        },
+        createSubscription: function (data, actions) {
+            return actions.subscription.create({
+                'plan_id': planId
+            });
+        },
+        onApprove: function (data, actions) {
+            console.log('Suscripción aprobada:', data.subscriptionID);
+            handlePaymentSuccess(data.subscriptionID);
+        },
+        onError: function (err) {
+            console.error('Error en PayPal:', err);
+            document.getElementById('login-msg').textContent = 'Hubo un error al procesar el pago con PayPal.';
+        }
+    }).render('#paypal-button-container');
+}
+
+async function handlePaymentSuccess(subscriptionID) {
+    if (!pendingRegistration) return;
+
+    showNotification(`¡Suscripción activa! ID: ${subscriptionID}`);
+
+    // Proceder con login automático
+    document.getElementById('username').value = pendingRegistration.username;
+    document.getElementById('password').value = pendingRegistration.password;
+
+    pendingRegistration = null;
+    selectedPlan = null;
+
+    document.getElementById('payment-container').style.display = 'none';
+    document.getElementById('login-form-container').style.display = 'block';
+
+    await login();
+}
+
 async function login() {
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value.trim();
     const loginMsg = document.getElementById('login-msg');
-    
+
     loginMsg.textContent = '';
 
     if (!username || !password) {
@@ -145,63 +375,87 @@ async function login() {
     }
 
     try {
-        const response = await api.login(username, password);
+        const response = await posApi.login(username, password);
         currentUser = response.user;
-        
+
         localStorage.setItem('currentUser', JSON.stringify(response.user));
-        
-        document.getElementById('login-section').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        
-        if (response.user.role === 'admin') {
-            document.getElementById('nav-admin').style.display = 'block';
-        } else if (response.user.role === 'caja') {
-            document.getElementById('nav-caja').style.display = 'block';
-        } else {
-            document.getElementById('nav-empleado').style.display = 'block';
-        }
-        
+
+        await applyUserPermissions(response.user);
+
         await loadProducts();
         await loadOrders();
-        
-        if (response.user.role === 'caja') {
-            showSection('pendientes-cobrar');
-        } else if (response.user.role === 'empleado') {
-            showSection('venta');
-            // Cargar pedidos del empleado
-            renderEmployeePendingOrders();
-            renderEmployeeOrderHistory('all');
-        } else {
-            showSection('venta');
-        }
-        
+
         showNotification(`Bienvenido, ${response.user.username}!`);
     } catch (error) {
         loginMsg.textContent = error.message || 'Usuario o contraseña incorrectos.';
     }
 }
 
+async function applyUserPermissions(user) {
+    if (!user) return;
+
+    // Actualizar UI básica
+    if (user.restaurant_name) {
+        document.getElementById('header-restaurant-name').textContent = user.restaurant_name.toUpperCase();
+        document.title = user.restaurant_name + " - POS";
+    }
+
+    // Ocultar login y mostrar app
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+
+    // Reset de Navs
+    document.getElementById('nav-admin').style.display = 'none';
+    document.getElementById('nav-caja').style.display = 'none';
+    document.getElementById('nav-empleado').style.display = 'none';
+
+    // Mostrar Nav según rol
+    if (user.role === 'admin') {
+        document.getElementById('nav-admin').style.display = 'block';
+    } else if (user.role === 'caja') {
+        document.getElementById('nav-caja').style.display = 'block';
+    } else {
+        document.getElementById('nav-empleado').style.display = 'block';
+    }
+
+    // Sección por defecto
+    if (user.role === 'caja') {
+        showSection('pendientes-cobrar');
+    } else if (user.role === 'empleado') {
+        showSection('venta');
+    } else {
+        showSection('venta');
+    }
+}
+
 function logout() {
     currentUser = null;
     localStorage.removeItem('currentUser');
-    api.clearToken();
-    
+    posApi.logout(); // Limpia localStorage del posApi.js
+
     document.getElementById('app').style.display = 'none';
     document.getElementById('login-section').style.display = 'block';
     document.getElementById('nav-admin').style.display = 'none';
     document.getElementById('nav-empleado').style.display = 'none';
     document.getElementById('nav-caja').style.display = 'none';
-    
+
+    // Limpiar campos de login
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+
+    document.getElementById('header-restaurant-name').textContent = 'FOODWEB POS';
+    document.title = 'POS -FoodWeb Pro';
+
     cart = [];
     total = 0;
     updateCart();
 }
 
 // ========== NAVEGACIÓN ==========
-function showSection(sectionId) {
+async function showSection(sectionId) {
     const adminSections = ['productos', 'empleados', 'pedidos', 'ajustes', 'facturacion', 'reportes'];
     const cajaSections = ['pendientes-cobrar', 'cobrados', 'tickets'];
-    
+
     // Admin tiene acceso a TODO
     if (currentUser.role === 'admin') {
         // Admin puede acceder a cualquier sección, no hay restricciones
@@ -218,10 +472,20 @@ function showSection(sectionId) {
             return;
         }
     }
-    
+
+    // Ocultar sección anterior y remover clase active de los botones
     document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-    document.getElementById(sectionId).classList.add('active');
-    
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-nav'));
+
+    // Mostrar sección actual
+    const target = document.getElementById(sectionId);
+    if (target) {
+        target.classList.add('active');
+        // Buscar botón de navegación y activarlo
+        const btn = Array.from(document.querySelectorAll('nav button')).find(b => b.getAttribute('onclick')?.includes(`'${sectionId}'`));
+        if (btn) btn.classList.add('active-nav');
+    }
+
     if (sectionId === 'venta' || sectionId === 'productos') {
         renderProducts();
     }
@@ -249,12 +513,216 @@ function showSection(sectionId) {
     if (sectionId === 'historial-pedidos') {
         renderEmployeeOrderHistory('all');
     }
+    if (sectionId === 'perfil') {
+        await showProfile();
+        showProfileTab('datos'); // Default tab
+    }
+}
+
+async function showProfile() {
+    if (!currentUser) return;
+    try {
+        console.log('📡 Fetching profile for user:', currentUser.id);
+        const { user, restaurant, branches } = await posApi.getProfile(currentUser.id);
+
+        if (!restaurant) throw new Error('Restaurante no encontrado');
+
+        // Guardar sucursales globalmente
+        window.myBranches = branches || [];
+        currentRestaurantPlan = (restaurant.plan || 'Basico').toLowerCase();
+
+        console.log('✅ Perfil cargado:', { plan: currentRestaurantPlan, branch: restaurant.name });
+
+        document.getElementById('profile-name-display').textContent = user.full_name || 'Sin Nombre';
+        document.getElementById('profile-username-display').textContent = '@' + user.username;
+        document.getElementById('profile-fullname').value = user.full_name || '';
+        document.getElementById('profile-email').value = user.email || '';
+        document.getElementById('profile-restaurant-name').value = restaurant.name || '';
+        document.getElementById('profile-branch-display').textContent = restaurant.name || 'Sucursal';
+
+        // Mostrar Plan
+        const isPro = currentRestaurantPlan === 'pro';
+
+        const planInput = document.getElementById('profile-plan-name');
+        const planBadge = document.getElementById('profile-plan-badge');
+
+        if (planInput) planInput.value = isPro ? 'Plan Pro ($499 MXN/mes)' : 'Plan Básico ($260 MXN/mes)';
+        if (planBadge) {
+            planBadge.textContent = isPro ? 'PLAN PRO' : 'PLAN BÁSICO';
+            planBadge.style.background = isPro ? 'rgba(99, 102, 241, 0.1)' : 'rgba(100, 116, 139, 0.1)';
+            planBadge.style.color = isPro ? 'var(--primary-color)' : 'var(--text-secondary)';
+        }
+
+        // Iniciales
+        const names = (user.full_name || user.username).split(' ');
+        const initials = names.length > 1 ? (names[0][0] + (names[1] ? names[1][0] : '')) : names[0].substring(0, 2);
+        document.getElementById('profile-initials').textContent = initials.toUpperCase();
+
+    } catch (e) {
+        console.error('❌ Error en showProfile:', e);
+        showNotification('Error al cargar datos del perfil');
+    }
+}
+
+async function updateUserProfile() {
+    const fullName = document.getElementById('profile-fullname').value.trim();
+    const email = document.getElementById('profile-email').value.trim();
+    const restaurantName = document.getElementById('profile-restaurant-name').value.trim();
+
+    try {
+        await posApi.updateProfile(currentUser.id, fullName, email, restaurantName);
+        showNotification('✅ Perfil actualizado correctamente');
+
+        // Actualizar datos locales
+        currentUser.full_name = fullName;
+        currentUser.email = email;
+        currentUser.restaurant_name = restaurantName;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+        // Actualizar UI inmediata
+        document.getElementById('header-restaurant-name').textContent = restaurantName.toUpperCase();
+        showProfile();
+    } catch (e) {
+        alert('Error al actualizar: ' + e.message);
+    }
+}
+
+// ========== GESTIÓN DE PESTAÑAS DE PERFIL ==========
+function showProfileTab(tabName) {
+    // Ocultar todas las pestañas
+    document.querySelectorAll('.profile-tab-content').forEach(tab => tab.style.display = 'none');
+    // Quitar clase activa de los botones
+    document.querySelectorAll('.profile-tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.profile-tab-btn').forEach(btn => {
+        btn.style.background = 'none';
+        btn.style.color = 'var(--text-secondary)';
+    });
+
+    // Mostrar pestaña seleccionada
+    const targetTab = document.getElementById(`tab-${tabName}`);
+    if (targetTab) {
+        targetTab.style.display = 'block';
+
+        // Resaltar botón
+        const btn = Array.from(document.querySelectorAll('.profile-tab-btn')).find(b => b.getAttribute('onclick').includes(`'${tabName}'`));
+        if (btn) {
+            btn.classList.add('active');
+            btn.style.background = 'var(--bg-primary)';
+            btn.style.color = 'var(--primary-color)';
+        }
+
+        // Si es reportes, generar reportes
+        if (tabName === 'reportes') {
+            generateReports();
+        }
+        // Si es sucursales, cargar sucursales
+        if (tabName === 'sucursales') {
+            renderBranches();
+        }
+    }
+}
+
+function renderBranches() {
+    const list = document.getElementById('branches-list');
+    const addForm = document.getElementById('add-branch-form-container');
+    const upgradeMsg = document.getElementById('branch-pro-only-msg');
+
+    list.innerHTML = '';
+
+    // Control de Plan Pro - Usar el estado global robusto
+    const isPro = currentRestaurantPlan === 'pro';
+    console.log('🏢 Renderizando sucursales - IsPro:', isPro);
+
+    if (isPro) {
+        if (addForm) addForm.style.display = 'block';
+        if (upgradeMsg) upgradeMsg.style.display = 'none';
+    } else {
+        if (addForm) addForm.style.display = 'none';
+        if (upgradeMsg) upgradeMsg.style.display = 'block';
+    }
+
+    if (!window.myBranches || window.myBranches.length === 0) {
+        list.innerHTML = '<p style="color: #666; text-align: center; padding: 2rem;">No se encontraron sucursales.</p>';
+        return;
+    }
+
+    window.myBranches.forEach(branch => {
+        const isCurrent = branch.id === parseInt(localStorage.getItem('restaurantId'));
+        const div = document.createElement('div');
+        div.style.cssText = `
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: ${isCurrent ? 'var(--bg-primary)' : 'var(--bg-secondary)'};
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            border: 1px solid ${isCurrent ? 'var(--primary-color)' : 'var(--border-color)'};
+            transition: all 0.2s;
+        `;
+
+        div.innerHTML = `
+            <div>
+                <h4 style="margin: 0; color: var(--text-primary);">${branch.name} ${isCurrent ? '<span style="font-size: 0.7rem; background: var(--primary-color); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">ACTIVA</span>' : ''}</h4>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">${branch.plan} Plan</p>
+            </div>
+            ${!isCurrent ? `<button onclick="switchBranch(${branch.id}, '${branch.name}')" class="btn-primary" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">Cambiar a esta</button>` : ''}
+        `;
+        list.appendChild(div);
+    });
+}
+
+async function switchBranch(id, name) {
+    if (!confirm(`¿Deseas cambiar a la sucursal "${name}"?`)) return;
+
+    // Guardar el nuevo ID de restaurante
+    localStorage.setItem('restaurantId', id);
+
+    // Actualizar el objeto de usuario local para mantener la sesión activa
+    if (currentUser) {
+        currentUser.restaurant_id = id;
+        currentUser.restaurant_name = name;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+        // También actualizar el objeto global
+        window.currentUser = currentUser;
+    }
+
+    // Notificar al API del cambio antes de recargar
+    posApi.restaurantId = id;
+
+    alert(`Cambiando a sucursal: ${name}`);
+    location.reload();
+}
+
+async function handleAddBranch() {
+    const input = document.getElementById('new-branch-name');
+    const name = input.value.trim();
+
+    if (!name) {
+        alert('Por favor, ingresa el nombre de la sucursal.');
+        return;
+    }
+
+    try {
+        const response = await posApi.createBranch(name);
+        if (response.success) {
+            alert('¡Sucursal "' + name + '" creada con éxito!');
+            input.value = ''; // Limpiar campo
+            // Recargar perfil para ver cambios
+            showProfile();
+            showProfileTab('sucursales');
+        } else {
+            alert('Error: ' + response.error);
+        }
+    } catch (e) {
+        alert('Error al crear sucursal: ' + e.message);
+    }
 }
 
 // ========== PRODUCTOS ==========
 async function loadProducts() {
     try {
-        products = await api.getProducts();
+        products = await posApi.getProducts();
         renderProducts();
     } catch (error) {
         console.error('Error cargando productos:', error);
@@ -265,10 +733,10 @@ async function loadProducts() {
 function renderProducts() {
     const ventaList = document.getElementById('product-list-venta');
     const adminList = document.getElementById('product-list-admin');
-    
+
     if (ventaList) ventaList.innerHTML = '';
     if (adminList) adminList.innerHTML = '';
-    
+
     products.forEach((product) => {
         const item = document.createElement('div');
         item.className = 'product-item';
@@ -295,16 +763,18 @@ function renderProducts() {
 async function addProduct() {
     const name = document.getElementById('new-product-name').value.trim();
     const price = parseFloat(document.getElementById('new-product-price').value);
-    
+
     if (!name || !price || price <= 0) {
         alert('Por favor ingresa un nombre y precio válidos');
         return;
     }
-    
+
     try {
-        await api.addProduct(name, price, '🍔');
+        await posApi.addProduct(name, price, '🍔', newProductModifiers);
         document.getElementById('new-product-name').value = '';
         document.getElementById('new-product-price').value = '';
+        newProductModifiers = [];
+        renderModifierTags();
         showNotification('Producto agregado exitosamente');
         await loadProducts();
     } catch (error) {
@@ -312,11 +782,65 @@ async function addProduct() {
     }
 }
 
+// ========== LOGICA DE MODIFICADORES DINAMICOS ==========
+function handleModifierEnter(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        addModifierTag();
+    }
+}
+
+function addModifierTag() {
+    const input = document.getElementById('new-modifier-input');
+    const value = input.value.trim();
+
+    if (value && !newProductModifiers.includes(value)) {
+        newProductModifiers.push(value);
+        input.value = '';
+        renderModifierTags();
+    }
+}
+
+function removeModifierTag(index) {
+    newProductModifiers.splice(index, 1);
+    renderModifierTags();
+}
+
+function renderModifierTags() {
+    const container = document.getElementById('modifiers-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    newProductModifiers.forEach((mod, index) => {
+        const tag = document.createElement('div');
+        tag.style.cssText = `
+            background: #E0E7FF;
+            color: #3730A3;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        `;
+
+        tag.innerHTML = `
+            ${mod}
+            <span onclick="removeModifierTag(${index})" style="cursor: pointer; color: #4F46E5; font-weight: bold; padding-left: 0.2rem;">&times;</span>
+        `;
+
+        container.appendChild(tag);
+    });
+}
+
 async function removeProduct(id) {
     if (!confirm('¿Estás seguro de eliminar este producto?')) return;
-    
+
     try {
-        await api.deleteProduct(id);
+        await posApi.deleteProduct(id);
         showNotification('Producto eliminado');
         await loadProducts();
     } catch (error) {
@@ -347,84 +871,26 @@ function showCustomizationModal(id, name, price) {
         backdrop-filter: blur(5px);
         animation: fadeIn 0.3s ease;
     `;
-    
-    // Verificar si es el producto EXTRAS
-    const isExtras = name === 'EXTRAS';
-    
-    const ingredientOptions = isExtras ? `
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="AGREGADOS" data-price="20" class="customization-checkbox extra-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500; flex: 1;">🥓 AGREGADOS</span>
-            <span style="color: #2ECC71; font-weight: 700;">+$20</span>
-        </label>
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="TOCINO" data-price="20" class="customization-checkbox extra-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500; flex: 1;">🥓 TOCINO</span>
-            <span style="color: #2ECC71; font-weight: 700;">+$20</span>
-        </label>
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="QUESO DERRETIDO" data-price="20" class="customization-checkbox extra-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500; flex: 1;">🧀 QUESO DERRETIDO</span>
-            <span style="color: #2ECC71; font-weight: 700;">+$20</span>
-        </label>
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="CHAMP" data-price="10" class="customization-checkbox extra-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500; flex: 1;">🍄 CHAMPIÑÓN</span>
-            <span style="color: #2ECC71; font-weight: 700;">+$10</span>
-        </label>
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="CEBOLLA ASADA" data-price="10" class="customization-checkbox extra-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500; flex: 1;">🧅 CEBOLLA ASADA</span>
-            <span style="color: #2ECC71; font-weight: 700;">+$10</span>
-        </label>
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="PAPA SAZONADA" data-price="20" class="customization-checkbox extra-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500; flex: 1;">🥔 PAPA SAZONADA</span>
-            <span style="color: #2ECC71; font-weight: 700;">+$20</span>
-        </label>
-    ` : `
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="con todo" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #2ECC71;">
-            <span style="color: #2ECC71; font-weight: 700;">✅ Con Todo</span>
-        </label>
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="cebolla asada" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500;">🔥 Cebolla Asada</span>
-        </label>
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin tomate" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500;">🍅 Sin Tomate</span>
-        </label>
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin cebolla" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500;">🧅 Sin Cebolla</span>
-        </label>
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin chile" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500;">🌶️ Sin Chile</span>
-        </label>
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin catsup" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500;">🍅 Sin Catsup</span>
-        </label>
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin mayonesa" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500;">🥚 Sin Mayonesa</span>
-        </label>
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin champiñón" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500;">🍄 Sin Champiñón</span>
-        </label>
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin queso rayado" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500;">🧀 Sin Queso Rayado</span>
-        </label>
-        <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
-            <input type="checkbox" value="sin queso amarillo" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
-            <span style="color: #1a252f; font-weight: 500;">🟡 Sin Queso Amarillo</span>
-        </label>
-    `;
-    
+
+    // Buscar los modificadores del producto dinámicamente
+    const product = products.find(p => p.id === id);
+    let modifiersArray = [];
+    if (product && product.modifiers) {
+        modifiersArray = typeof product.modifiers === 'string' ? JSON.parse(product.modifiers) : product.modifiers;
+    }
+
+    let ingredientOptions = '';
+    if (modifiersArray && modifiersArray.length > 0) {
+        ingredientOptions = modifiersArray.map(mod => `
+            <label style="display: flex; align-items: center; padding: 0.75rem; background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent;" onmouseover="this.style.borderColor='#FF6B35'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
+                <input type="checkbox" value="${mod}" class="customization-checkbox" style="margin-right: 0.75rem; width: 18px; height: 18px; cursor: pointer; accent-color: #FF6B35;">
+                <span style="color: #1a252f; font-weight: 500;">✨ ${mod}</span>
+            </label>
+        `).join('');
+    } else {
+        ingredientOptions = '<p style="color: #999; text-align: center; grid-column: span 2;">Este producto no tiene opciones de personalización.</p>';
+    }
+
     modal.innerHTML = `
         <div style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); padding: 2.5rem; border-radius: 16px; max-width: 550px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); animation: slideUp 0.3s ease;">
             <div style="text-align: center; margin-bottom: 2rem;">
@@ -456,15 +922,15 @@ function showCustomizationModal(id, name, price) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             closeCustomizationModal();
         }
     });
-    
+
     // Agregar event listeners a los checkboxes de extras para actualizar el total
     const extraCheckboxes = modal.querySelectorAll('.extra-checkbox');
     extraCheckboxes.forEach(checkbox => {
@@ -496,7 +962,7 @@ function decreaseQuantity() {
 function updateQuantityDisplay(unitPrice) {
     const input = document.getElementById('quantity-input');
     let quantity = parseInt(input.value) || 1;
-    
+
     if (quantity < 1) {
         quantity = 1;
         input.value = 1;
@@ -505,7 +971,7 @@ function updateQuantityDisplay(unitPrice) {
         quantity = 99;
         input.value = 99;
     }
-    
+
     // Calcular precio de extras si existen
     let extrasPrice = 0;
     const modal = document.getElementById('customization-modal');
@@ -516,7 +982,7 @@ function updateQuantityDisplay(unitPrice) {
             extrasPrice += price;
         });
     }
-    
+
     const total = (quantity * parseFloat(unitPrice)) + (quantity * extrasPrice);
     document.getElementById('quantity-total').textContent = total.toFixed(2);
 }
@@ -530,15 +996,15 @@ function closeCustomizationModal() {
 
 function confirmCustomization(id, name, price, event) {
     if (event) event.preventDefault();
-    
+
     const modal = document.getElementById('customization-modal');
     const checkboxes = modal.querySelectorAll('input[type="checkbox"]:checked');
     const customizations = Array.from(checkboxes).map(cb => cb.value);
     const quantity = parseInt(document.getElementById('quantity-input').value) || 1;
-    
+
     // Calcular precio base
     let unitPrice = parseFloat(price);
-    
+
     // Calcular precio de extras si existen
     let extrasPrice = 0;
     const extraCheckboxes = modal.querySelectorAll('.extra-checkbox:checked');
@@ -546,25 +1012,25 @@ function confirmCustomization(id, name, price, event) {
         const extraPrice = parseFloat(checkbox.getAttribute('data-price')) || 0;
         extrasPrice += extraPrice;
     });
-    
+
     // Precio unitario total (precio base + extras)
     const totalUnitPrice = unitPrice + extrasPrice;
-    
+
     // Precio total del item (precio unitario * cantidad)
     const itemTotal = totalUnitPrice * quantity;
-    
-    cart.push({ 
-        id, 
-        name, 
+
+    cart.push({
+        id,
+        name,
         unitPrice: totalUnitPrice,
         quantity: quantity,
         price: itemTotal,
-        customizations: customizations 
+        customizations: customizations
     });
     total += itemTotal;
     updateCart();
     closeCustomizationModal();
-    
+
     const customText = customizations.length > 0 ? ` (${customizations.join(', ')})` : '';
     const quantityText = quantity > 1 ? `${quantity}x ` : '';
     showNotification(`${quantityText}${name}${customText} agregado al carrito`);
@@ -573,20 +1039,20 @@ function confirmCustomization(id, name, price, event) {
 function updateCart() {
     const cartDiv = document.getElementById('cart');
     cartDiv.innerHTML = '';
-    
+
     cart.forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'cart-item';
-        const customText = item.customizations && item.customizations.length > 0 
-            ? `<br><small style="color: #FF6B35;">${item.customizations.join(', ')}</small>` 
+        const customText = item.customizations && item.customizations.length > 0
+            ? `<br><small style="color: #FF6B35;">${item.customizations.join(', ')}</small>`
             : '';
-        
+
         const quantity = item.quantity || 1;
         const unitPrice = item.unitPrice || item.price;
-        const displayText = quantity > 1 
+        const displayText = quantity > 1
             ? `${quantity}x ${item.name} @ $${unitPrice.toFixed(2)} = $${item.price.toFixed(2)}`
             : `${item.name} - $${item.price.toFixed(2)}`;
-        
+
         div.innerHTML = `
             <div style="flex: 1;">
                 <strong>${displayText}</strong>${customText}
@@ -602,7 +1068,7 @@ function updateCart() {
         `;
         cartDiv.appendChild(div);
     });
-    
+
     document.getElementById('total').textContent = total.toFixed(2);
 }
 
@@ -643,20 +1109,20 @@ async function sendOrder() {
         alert('El carrito está vacío.');
         return;
     }
-    
+
     try {
-        const order = await api.createOrder(
+        const order = await posApi.createOrder(
             currentUser.username,
             cart,
             total,
             'Pendiente'
         );
-        
+
         showNotification('Pedido enviado exitosamente');
         cart = [];
         total = 0;
         updateCart();
-        
+
         await loadOrders();
     } catch (error) {
         alert('Error al enviar pedido: ' + error.message);
@@ -667,22 +1133,22 @@ async function sendOrder() {
 async function loadOrders() {
     try {
         console.log('=== loadOrders iniciado ===');
-        pendingOrders = await api.getOrders();
+        pendingOrders = await posApi.getOrders();
         console.log('Pedidos cargados:', pendingOrders);
         console.log('Número de pedidos:', pendingOrders.length);
         console.log('Usuario actual:', currentUser);
-        
+
         renderPendingOrders();
         renderCashierPendingOrders();
         renderCashierPaidOrders();
-        
+
         // Si es empleado, actualizar sus vistas también
         if (currentUser && currentUser.role === 'empleado') {
             console.log('Usuario es empleado, actualizando vistas de empleado...');
             renderEmployeePendingOrders();
             renderEmployeeOrderHistory(employeeHistoryFilter);
         }
-        
+
         console.log('=== loadOrders completado ===');
     } catch (error) {
         console.error('Error cargando pedidos:', error);
@@ -693,31 +1159,31 @@ async function loadOrders() {
 function renderPendingOrders() {
     const ordersDiv = document.getElementById('pending-orders');
     if (!ordersDiv) return;
-    
+
     ordersDiv.innerHTML = '';
-    
+
     pendingOrders.forEach((order) => {
         let statusClass = '';
         if (order.status === 'Pendiente') statusClass = 'pending';
         else if (order.status === 'En Preparación') statusClass = 'preparing';
         else if (order.status === 'Finalizado') statusClass = 'finalizado';
-        
+
         const div = document.createElement('div');
         div.className = `order-item ${statusClass}`;
-        
+
         const itemsList = order.items.map(item => {
-            const customText = item.customizations && item.customizations.length > 0 
-                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>` 
+            const customText = item.customizations && item.customizations.length > 0
+                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>`
                 : '';
             const quantity = item.quantity || 1;
-            const displayText = quantity > 1 
-                ? `${quantity}x ${item.name}${customText}` 
+            const displayText = quantity > 1
+                ? `${quantity}x ${item.name}${customText}`
                 : `${item.name}${customText}`;
             return `<li>${displayText}</li>`;
         }).join('');
-        
+
         div.innerHTML = `
-            <h4>Pedido #${order.id} - ${order.username}</h4>
+            <h4>Pedido #${order.id} - ${order.employee || 'Anónimo'}</h4>
             <p><strong>Estado:</strong> ${order.status}</p>
             <ul>${itemsList}</ul>
             <p><strong>Total:</strong> $${parseFloat(order.total).toFixed(2)}</p>
@@ -734,7 +1200,7 @@ function renderPendingOrders() {
 
 async function updateOrderStatus(orderId, newStatus) {
     try {
-        await api.updateOrderStatus(orderId, newStatus);
+        await posApi.updateOrderStatus(orderId, newStatus);
         showNotification(`Pedido #${orderId} actualizado a: ${newStatus}`);
         await loadOrders();
     } catch (error) {
@@ -746,33 +1212,33 @@ async function updateOrderStatus(orderId, newStatus) {
 function renderCashierPendingOrders() {
     const ordersDiv = document.getElementById('cashier-pending-orders');
     if (!ordersDiv) return;
-    
+
     ordersDiv.innerHTML = '';
-    
+
     const finalizados = pendingOrders.filter(o => o.status === 'Finalizado');
-    
+
     if (finalizados.length === 0) {
         ordersDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No hay pedidos pendientes de cobrar</p>';
         return;
     }
-    
+
     finalizados.forEach((order) => {
         const div = document.createElement('div');
         div.className = 'order-item finalizado';
-        
+
         const itemsList = order.items.map(item => {
-            const customText = item.customizations && item.customizations.length > 0 
-                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>` 
+            const customText = item.customizations && item.customizations.length > 0
+                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>`
                 : '';
             const quantity = item.quantity || 1;
-            const displayText = quantity > 1 
-                ? `${quantity}x ${item.name}${customText}` 
+            const displayText = quantity > 1
+                ? `${quantity}x ${item.name}${customText}`
                 : `${item.name}${customText}`;
             return `<li>${displayText}</li>`;
         }).join('');
-        
+
         div.innerHTML = `
-            <h4>Pedido #${order.id} - ${order.username}</h4>
+            <h4>Pedido #${order.id} - ${order.employee || 'Anónimo'}</h4>
             <ul>${itemsList}</ul>
             <p><strong>Total:</strong> $${parseFloat(order.total).toFixed(2)}</p>
             <p><small>${new Date(order.created_at).toLocaleString()}</small></p>
@@ -799,7 +1265,7 @@ function showPaymentModal(orderId, total) {
         z-index: 10000;
         backdrop-filter: blur(5px);
     `;
-    
+
     modal.innerHTML = `
         <div style="background: white; padding: 2.5rem; border-radius: 16px; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
             <h3 style="color: #FF6B35; margin-bottom: 1.5rem; text-align: center;">💰 Cobrar Pedido #${orderId}</h3>
@@ -840,15 +1306,15 @@ function showPaymentModal(orderId, total) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             closePaymentModal();
         }
     });
-    
+
     setTimeout(() => {
         document.getElementById('payment-amount').focus();
     }, 100);
@@ -860,7 +1326,7 @@ function handlePaymentMethodChange(total) {
     const changeDisplay = document.getElementById('change-display');
     const insufficientDisplay = document.getElementById('insufficient-display');
     const confirmBtn = document.getElementById('confirm-payment-btn');
-    
+
     if (paymentMethod === 'Tarjeta' || paymentMethod === 'Transferencia') {
         // Para tarjeta y transferencia, el monto es exacto
         amountInput.value = parseFloat(total).toFixed(2);
@@ -868,7 +1334,7 @@ function handlePaymentMethodChange(total) {
         amountInput.style.background = '#f0f0f0';
         changeDisplay.style.display = 'none';
         insufficientDisplay.style.display = 'none';
-        
+
         // Habilitar botón de confirmar
         confirmBtn.disabled = false;
         confirmBtn.style.background = '#27ae60';
@@ -880,12 +1346,12 @@ function handlePaymentMethodChange(total) {
         amountInput.style.background = 'white';
         changeDisplay.style.display = 'none';
         insufficientDisplay.style.display = 'none';
-        
+
         // Deshabilitar botón hasta que se ingrese un monto válido
         confirmBtn.disabled = true;
         confirmBtn.style.background = '#ccc';
         confirmBtn.style.cursor = 'not-allowed';
-        
+
         amountInput.focus();
     }
 }
@@ -894,11 +1360,11 @@ function calculateChange(total) {
     const amountInput = document.getElementById('payment-amount');
     const amount = parseFloat(amountInput.value) || 0;
     const change = amount - total;
-    
+
     const changeDisplay = document.getElementById('change-display');
     const insufficientDisplay = document.getElementById('insufficient-display');
     const confirmBtn = document.getElementById('confirm-payment-btn');
-    
+
     if (amount >= total && amount > 0) {
         changeDisplay.style.display = 'block';
         insufficientDisplay.style.display = 'none';
@@ -931,45 +1397,45 @@ function closePaymentModal() {
 async function confirmPayment(orderId, total) {
     console.log('=== INICIO confirmPayment ===');
     console.log('orderId:', orderId, 'total:', total);
-    
+
     const amount = parseFloat(document.getElementById('payment-amount').value) || 0;
     console.log('amount:', amount);
-    
+
     if (amount < total) {
         alert('El monto recibido es insuficiente');
         return;
     }
-    
+
     try {
         // Obtener el pedido antes de actualizar Y HACER UNA COPIA PROFUNDA
         console.log('Buscando pedido en pendingOrders...');
         const order = pendingOrders.find(o => o.id === orderId);
         console.log('Pedido encontrado:', order);
-        
+
         if (!order) {
             alert('Pedido no encontrado');
             return;
         }
-        
+
         // IMPORTANTE: Hacer una copia profunda del pedido ANTES de cualquier actualización
         // porque después de loadOrders() el pedido ya no estará en pendingOrders
         const orderCopy = JSON.parse(JSON.stringify(order));
         console.log('Copia del pedido creada:', orderCopy);
-        
+
         const change = amount - total;
         console.log('Cambio calculado:', change);
-        
+
         // Actualizar estado del pedido
         console.log('Actualizando estado del pedido...');
-        await api.updateOrderStatus(orderId, 'Cobrado');
+        await posApi.updateOrderStatus(orderId, 'Cobrado');
         console.log('Estado actualizado');
-        
+
         // Guardar el ticket en la base de datos usando createTicket
         console.log('Creando ticket...');
-        
+
         // Asegurarse de que tenemos el nombre del empleado correcto
         const employeeName = orderCopy.employee || orderCopy.username || currentUser.username;
-        
+
         console.log('Parámetros para createTicket:', {
             order_id: orderId,
             employee: employeeName,
@@ -978,11 +1444,11 @@ async function confirmPayment(orderId, total) {
             amount_received: amount,
             change_given: change
         });
-        
+
         // Obtener el método de pago seleccionado
         const paymentMethod = document.getElementById('payment-method').value;
-        
-        await api.createTicket(
+
+        await posApi.createTicket(
             orderId,
             employeeName,
             orderCopy.items,
@@ -992,29 +1458,29 @@ async function confirmPayment(orderId, total) {
             paymentMethod
         );
         console.log('Ticket creado');
-        
+
         // Cerrar modal de pago
         console.log('Cerrando modal de pago...');
         closePaymentModal();
-        
+
         // IMPORTANTE: Mostrar el ticket ANTES de actualizar las listas
         // para asegurar que se muestre correctamente
         console.log('Llamando a showReceipt...');
         console.log('Datos para showReceipt:', { orderCopy, amount, change, paymentMethod });
         showReceipt(orderCopy, amount, change, paymentMethod);
         console.log('Ticket mostrado');
-        
+
         // Mostrar notificación según el método de pago
         const changeMsg = change > 0 ? ` Cambio: $${change.toFixed(2)}` : '';
         showNotification(`Pedido #${orderId} cobrado con ${paymentMethod}.${changeMsg}`);
-        
+
         // Actualizar listas DESPUÉS de mostrar el ticket
         console.log('Actualizando listas...');
         await loadOrders();
         await loadTickets();
         console.log('Listas actualizadas');
         console.log('=== FIN confirmPayment ===');
-        
+
     } catch (error) {
         console.error('Error completo:', error);
         alert('Error al procesar el pago: ' + error.message);
@@ -1025,31 +1491,31 @@ async function confirmPayment(orderId, total) {
 function renderCashierPaidOrders() {
     const ordersDiv = document.getElementById('cashier-paid-orders');
     if (!ordersDiv) return;
-    
+
     ordersDiv.innerHTML = '';
-    
+
     const cobrados = pendingOrders.filter(o => o.status === 'Cobrado');
-    
+
     if (cobrados.length === 0) {
         ordersDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No hay pedidos cobrados</p>';
         return;
     }
-    
+
     cobrados.forEach((order) => {
         const div = document.createElement('div');
         div.className = 'order-item cobrado';
-        
+
         const itemsList = order.items.map(item => {
-            const customText = item.customizations && item.customizations.length > 0 
-                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>` 
+            const customText = item.customizations && item.customizations.length > 0
+                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>`
                 : '';
             const quantity = item.quantity || 1;
-            const displayText = quantity > 1 
-                ? `${quantity}x ${item.name}${customText}` 
+            const displayText = quantity > 1
+                ? `${quantity}x ${item.name}${customText}`
                 : `${item.name}${customText}`;
             return `<li>${displayText}</li>`;
         }).join('');
-        
+
         div.innerHTML = `
             <h4>Pedido #${order.id} - ${order.username}</h4>
             <p><strong>Estado:</strong> ✓ Cobrado</p>
@@ -1065,7 +1531,7 @@ function renderCashierPaidOrders() {
 async function loadTickets() {
     try {
         console.log('Cargando tickets...');
-        printedTickets = await api.getTickets();
+        printedTickets = await posApi.getTickets();
         console.log('Tickets cargados:', printedTickets);
         renderTickets();
     } catch (error) {
@@ -1080,24 +1546,24 @@ function renderTickets() {
         console.error('No se encontró el elemento #ticket-list');
         return;
     }
-    
+
     ticketsDiv.innerHTML = '';
-    
+
     console.log('Número de tickets:', printedTickets.length);
-    
+
     if (printedTickets.length === 0) {
         ticketsDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No hay tickets impresos</p>';
         return;
     }
-    
+
     printedTickets.forEach((ticket) => {
         console.log('Renderizando ticket:', ticket);
-        
+
         // Determinar el icono del método de pago
         let paymentIcon = '💵';
         if (ticket.payment_method === 'Tarjeta') paymentIcon = '💳';
         else if (ticket.payment_method === 'Transferencia') paymentIcon = '📱';
-        
+
         const div = document.createElement('div');
         div.className = 'ticket-item';
         div.innerHTML = `
@@ -1121,7 +1587,7 @@ async function reprintTicket(orderId, amount, change, paymentMethod = 'Efectivo'
             alert('Pedido no encontrado');
             return;
         }
-        
+
         showReceipt(order, amount, change, paymentMethod);
     } catch (error) {
         alert('Error al reimprimir ticket: ' + error.message);
@@ -1130,39 +1596,39 @@ async function reprintTicket(orderId, amount, change, paymentMethod = 'Efectivo'
 
 function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efectivo') {
     console.log('showReceipt llamado con:', { order, amountReceived, changeGiven, paymentMethod });
-    
+
     const receiptDiv = document.getElementById('receipt');
     const contentDiv = document.getElementById('receipt-content');
-    
+
     if (!receiptDiv) {
         console.error('No se encontró el elemento #receipt');
         alert('Error: No se encontró el elemento del ticket');
         return;
     }
-    
+
     if (!contentDiv) {
         console.error('No se encontró el elemento #receipt-content');
         alert('Error: No se encontró el contenedor del ticket');
         return;
     }
-    
+
     const itemsList = order.items.map(item => {
-        const customText = item.customizations && item.customizations.length > 0 
-            ? ` [${item.customizations.join(', ')}]` 
+        const customText = item.customizations && item.customizations.length > 0
+            ? ` [${item.customizations.join(', ')}]`
             : '';
         const quantity = item.quantity || 1;
         const unitPrice = item.unitPrice || item.price;
-        const displayText = quantity > 1 
-            ? `${quantity}x ${item.name}${customText} @ $${unitPrice.toFixed(2)} = $${item.price.toFixed(2)}` 
+        const displayText = quantity > 1
+            ? `${quantity}x ${item.name}${customText} @ $${unitPrice.toFixed(2)} = $${item.price.toFixed(2)}`
             : `${item.name}${customText} - $${item.price.toFixed(2)}`;
         return `<li>${displayText}</li>`;
     }).join('');
-    
+
     // Determinar el icono del método de pago
     let paymentIcon = '💵';
     if (paymentMethod === 'Tarjeta') paymentIcon = '💳';
     else if (paymentMethod === 'Transferencia') paymentIcon = '📱';
-    
+
     contentDiv.innerHTML = `
         <p><strong>Pedido #${order.id}</strong></p>
         <p>Atendido por: ${order.username}</p>
@@ -1178,7 +1644,7 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
         <p style="text-align: center;">¡Gracias por su compra!</p>
         <p style="text-align: center;">🌭 Vuelva pronto 🌭</p>
     `;
-    
+
     // Asegurarse de que el ticket sea visible con estilos inline
     receiptDiv.style.display = 'block';
     receiptDiv.style.position = 'fixed';
@@ -1192,7 +1658,7 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
     receiptDiv.style.boxShadow = '0 20px 60px rgba(0,0,0,0.3)';
     receiptDiv.style.maxWidth = '500px';
     receiptDiv.style.width = '90%';
-    
+
     console.log('Ticket mostrado correctamente');
 }
 
@@ -1207,10 +1673,10 @@ function cancelReceipt() {
 // ========== EMPLEADOS ==========
 async function renderEmployees() {
     try {
-        const users = await api.getUsers();
+        const users = await posApi.getUsers();
         const employeeList = document.getElementById('employee-list');
         employeeList.innerHTML = '';
-        
+
         users.forEach((user) => {
             const div = document.createElement('div');
             div.className = 'employee-item';
@@ -1230,17 +1696,17 @@ async function addEmployee() {
     const password = document.getElementById('new-emp-password').value.trim();
     const role = document.getElementById('new-emp-role').value;
     const empMsg = document.getElementById('emp-msg');
-    
+
     empMsg.textContent = '';
-    
+
     if (!username || !password) {
         empMsg.textContent = 'Por favor ingresa usuario y contraseña';
         empMsg.style.color = 'red';
         return;
     }
-    
+
     try {
-        await api.addUser(username, password, role);
+        await posApi.addUser(username, password, role);
         document.getElementById('new-emp-username').value = '';
         document.getElementById('new-emp-password').value = '';
         empMsg.textContent = 'Empleado agregado exitosamente';
@@ -1259,7 +1725,7 @@ function saveSettings() {
         document.getElementById('settings-msg').textContent = 'Tasa de impuesto inválida';
         return;
     }
-    
+
     taxRate = newTaxRate;
     localStorage.setItem('taxRate', taxRate);
     document.getElementById('settings-msg').textContent = 'Configuración guardada';
@@ -1272,16 +1738,16 @@ function saveSettings() {
 async function generateInvoice() {
     try {
         const cobrados = pendingOrders.filter(o => o.status === 'Cobrado');
-        
+
         if (cobrados.length === 0) {
             alert('No hay pedidos cobrados para facturar');
             return;
         }
-        
+
         const totalVentas = cobrados.reduce((sum, order) => sum + parseFloat(order.total), 0);
         const impuesto = totalVentas * (taxRate / 100);
         const totalConImpuesto = totalVentas + impuesto;
-        
+
         const invoiceContent = document.getElementById('invoice-content');
         invoiceContent.innerHTML = `
             <p><strong>Fecha:</strong> ${new Date().toLocaleString()}</p>
@@ -1291,7 +1757,7 @@ async function generateInvoice() {
             <p>Impuesto (${taxRate}%): $${impuesto.toFixed(2)}</p>
             <p><strong>Total: $${totalConImpuesto.toFixed(2)}</strong></p>
         `;
-        
+
         document.getElementById('invoice').style.display = 'block';
     } catch (error) {
         alert('Error al generar factura: ' + error.message);
@@ -1309,49 +1775,49 @@ function renderEmployeePendingOrders() {
     console.log('pendingOrders:', pendingOrders);
     console.log('Tipo de pendingOrders:', typeof pendingOrders);
     console.log('Es array?:', Array.isArray(pendingOrders));
-    
+
     const ordersDiv = document.getElementById('employee-pending-orders');
     console.log('Elemento encontrado:', ordersDiv);
-    
+
     if (!ordersDiv) {
         console.error('No se encontró el elemento #employee-pending-orders');
         return;
     }
-    
+
     ordersDiv.innerHTML = '';
-    
+
     if (!currentUser) {
         console.error('currentUser no está definido');
         ordersDiv.innerHTML = '<p style="text-align: center; color: #E74C3C; padding: 2rem;">Error: Usuario no identificado</p>';
         return;
     }
-    
+
     // Filtrar solo los pedidos del empleado actual que NO estén cobrados
     console.log('Filtrando pedidos del empleado:', currentUser?.username);
     console.log('Total de pedidos:', pendingOrders?.length);
-    
-    const myOrders = pendingOrders.filter(o => 
-        o.employee === currentUser?.username && 
+
+    const myOrders = pendingOrders.filter(o =>
+        o.employee === currentUser?.username &&
         o.status !== 'Cobrado'
     );
-    
+
     console.log('Pedidos del empleado filtrados:', myOrders);
     console.log('Número de pedidos del empleado:', myOrders.length);
-    
+
     if (myOrders.length === 0) {
         console.log('No hay pedidos del empleado, mostrando mensaje');
         ordersDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No tienes pedidos pendientes</p>';
         return;
     }
-    
+
     console.log('Renderizando', myOrders.length, 'pedidos del empleado');
-    
+
     myOrders.forEach((order, index) => {
         console.log(`Renderizando pedido ${index + 1}:`, order);
         let statusClass = '';
         let statusColor = '';
         let statusIcon = '';
-        
+
         if (order.status === 'Pendiente') {
             statusClass = 'pending';
             statusColor = '#E74C3C';
@@ -1365,21 +1831,21 @@ function renderEmployeePendingOrders() {
             statusColor = '#2ECC71';
             statusIcon = '🟢';
         }
-        
+
         const div = document.createElement('div');
         div.className = `order-item ${statusClass}`;
-        
+
         const itemsList = order.items.map(item => {
-            const customText = item.customizations && item.customizations.length > 0 
-                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>` 
+            const customText = item.customizations && item.customizations.length > 0
+                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>`
                 : '';
             const quantity = item.quantity || 1;
-            const displayText = quantity > 1 
-                ? `${quantity}x ${item.name}${customText}` 
+            const displayText = quantity > 1
+                ? `${quantity}x ${item.name}${customText}`
                 : `${item.name}${customText}`;
             return `<li>${displayText}</li>`;
         }).join('');
-        
+
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h4 style="margin: 0;">Pedido #${order.id}</h4>
@@ -1394,22 +1860,20 @@ function renderEmployeePendingOrders() {
         `;
         ordersDiv.appendChild(div);
     });
-    
+
     console.log('Pedidos del empleado renderizados exitosamente');
 }
 
 // ========== EMPLEADO - HISTORIAL DE PEDIDOS ==========
-let employeeHistoryFilter = 'all';
-
 function filterEmployeeHistory(filter) {
     employeeHistoryFilter = filter;
-    
+
     // Actualizar botones activos
     document.querySelectorAll('#historial-pedidos .filter-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     event.target.classList.add('active');
-    
+
     renderEmployeeOrderHistory(filter);
 }
 
@@ -1418,26 +1882,26 @@ function renderEmployeeOrderHistory(filter = 'all') {
     console.log('filter:', filter);
     console.log('currentUser:', currentUser);
     console.log('pendingOrders:', pendingOrders);
-    
+
     const historyDiv = document.getElementById('employee-order-history');
     if (!historyDiv) {
         console.error('No se encontró el elemento #employee-order-history');
         return;
     }
-    
+
     historyDiv.innerHTML = '';
-    
+
     if (!currentUser) {
         console.error('currentUser no está definido');
         historyDiv.innerHTML = '<p style="text-align: center; color: #E74C3C; padding: 2rem;">Error: Usuario no identificado</p>';
         return;
     }
-    
+
     // Filtrar pedidos del empleado
     let myOrders = pendingOrders.filter(o => o.employee === currentUser.username);
-    
+
     console.log('Pedidos filtrados del empleado:', myOrders);
-    
+
     // Aplicar filtro de fecha
     const now = new Date();
     if (filter === 'today') {
@@ -1447,20 +1911,20 @@ function renderEmployeeOrderHistory(filter = 'all') {
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         myOrders = myOrders.filter(o => new Date(o.created_at) >= weekAgo);
     }
-    
+
     if (myOrders.length === 0) {
         historyDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No hay pedidos en este período</p>';
         return;
     }
-    
+
     // Ordenar por fecha (más recientes primero)
     myOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    
+
     myOrders.forEach((order) => {
         let statusClass = '';
         let statusColor = '';
         let statusIcon = '';
-        
+
         if (order.status === 'Pendiente') {
             statusClass = 'pending';
             statusColor = '#E74C3C';
@@ -1478,22 +1942,22 @@ function renderEmployeeOrderHistory(filter = 'all') {
             statusColor = '#27AE60';
             statusIcon = '✅';
         }
-        
+
         const div = document.createElement('div');
         div.className = `order-item ${statusClass}`;
         div.style.marginBottom = '1rem';
-        
+
         const itemsList = order.items.map(item => {
-            const customText = item.customizations && item.customizations.length > 0 
-                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>` 
+            const customText = item.customizations && item.customizations.length > 0
+                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>`
                 : '';
             const quantity = item.quantity || 1;
-            const displayText = quantity > 1 
-                ? `${quantity}x ${item.name}${customText}` 
+            const displayText = quantity > 1
+                ? `${quantity}x ${item.name}${customText}`
                 : `${item.name}${customText}`;
             return `<li>${displayText}</li>`;
         }).join('');
-        
+
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                 <h4 style="margin: 0;">Pedido #${order.id}</h4>
@@ -1509,12 +1973,12 @@ function renderEmployeeOrderHistory(filter = 'all') {
         `;
         historyDiv.appendChild(div);
     });
-    
+
     // Mostrar estadísticas del empleado
     const totalPedidos = myOrders.length;
     const totalVentas = myOrders.reduce((sum, o) => sum + parseFloat(o.total), 0);
     const pedidosCobrados = myOrders.filter(o => o.status === 'Cobrado').length;
-    
+
     const statsDiv = document.createElement('div');
     statsDiv.style.cssText = 'background: linear-gradient(135deg, #FF6B35 0%, #E55A2B 100%); color: white; padding: 1.5rem; border-radius: 12px; margin-top: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
     statsDiv.innerHTML = `
@@ -1548,16 +2012,35 @@ function playNotificationSound() {
     }
 }
 
-// ========== REPORTES (MEJORA #3) ==========
-async function generateReports() {
+// ========== REPORTES (MEJORA #3 Y FASE 4) ==========
+let salesChartInstance = null;
+let topProductsChartInstance = null;
+
+async function generateReports(period = 'all') {
     try {
-        const allOrders = await api.getOrders();
-        
+        let allOrders = await posApi.getOrders();
+
+        // Filtrar por periodo
+        const now = new Date();
+        const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+
+        if (period === 'today') {
+            allOrders = allOrders.filter(o => new Date(o.created_at) >= startOfDay);
+        } else if (period === 'week') {
+            const lastWeek = new Date();
+            lastWeek.setDate(lastWeek.getDate() - 7);
+            allOrders = allOrders.filter(o => new Date(o.created_at) >= lastWeek);
+        } else if (period === 'month') {
+            const lastMonth = new Date();
+            lastMonth.setMonth(lastMonth.getMonth() - 1);
+            allOrders = allOrders.filter(o => new Date(o.created_at) >= lastMonth);
+        }
+
         // Estadísticas generales
         const totalOrders = allOrders.length;
-        const totalSales = allOrders.reduce((sum, order) => sum + parseFloat(order.total), 0);
+        const totalSales = allOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
         const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
-        
+
         // Pedidos por estado
         const ordersByStatus = {
             'Pendiente': allOrders.filter(o => o.status === 'Pendiente').length,
@@ -1565,10 +2048,11 @@ async function generateReports() {
             'Finalizado': allOrders.filter(o => o.status === 'Finalizado').length,
             'Cobrado': allOrders.filter(o => o.status === 'Cobrado').length
         };
-        
+
         // Productos más vendidos
         const productCount = {};
         allOrders.forEach(order => {
+            if (!order.items) return;
             order.items.forEach(item => {
                 const quantity = item.quantity || 1;
                 if (productCount[item.name]) {
@@ -1578,93 +2062,191 @@ async function generateReports() {
                 }
             });
         });
-        
+
         const topProducts = Object.entries(productCount)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5);
-        
+
         // Ventas por empleado
         const salesByEmployee = {};
         allOrders.forEach(order => {
-            if (salesByEmployee[order.username]) {
-                salesByEmployee[order.username].count++;
-                salesByEmployee[order.username].total += parseFloat(order.total);
+            const empName = order.employee || order.username || 'Sistema';
+            if (salesByEmployee[empName]) {
+                salesByEmployee[empName].count++;
+                salesByEmployee[empName].total += (parseFloat(order.total) || 0);
             } else {
-                salesByEmployee[order.username] = {
+                salesByEmployee[empName] = {
                     count: 1,
-                    total: parseFloat(order.total)
+                    total: (parseFloat(order.total) || 0)
                 };
             }
         });
-        
-        // Renderizar reportes
-        const reportsSection = document.getElementById('reportes');
-        if (!reportsSection) return;
-        
-        reportsSection.innerHTML = `
-            <h2>📊 Reportes y Estadísticas</h2>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-                <div class="stat-card">
-                    <h3>📦 Total de Pedidos</h3>
-                    <p class="stat-value">${totalOrders}</p>
+
+        // Configurar los gráficos de Chart.js
+        const chartColors = ['#FF6B35', '#4CAF50', '#3498DB', '#9C27B0', '#F1C40F'];
+
+        // Datos para gráfico de top productos
+        const topProductsLabels = topProducts.map(p => p[0]);
+        const topProductsData = topProducts.map(p => p[1]);
+
+        // Datos para gráfico de ventas (últimos 7 días)
+        const last7Days = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - (6 - i));
+            return d.toISOString().split('T')[0];
+        });
+
+        const salesData = last7Days.map(date => {
+            return allOrders
+                .filter(o => o.created_at && o.created_at.startsWith(date))
+                .reduce((sum, o) => sum + parseFloat(o.total), 0);
+        });
+
+        // Renderizar reportes textuales
+        const statsDashboard = document.getElementById('stats-dashboard');
+        if (statsDashboard) {
+            statsDashboard.innerHTML = `
+                <div class="card" style="padding: 1.5rem;">
+                    <h3 style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0;">📦 Total de Pedidos</h3>
+                    <p style="font-size: 2rem; font-weight: bold; color: var(--primary-color); margin: 0.5rem 0;">${totalOrders}</p>
                 </div>
-                <div class="stat-card">
-                    <h3>💰 Ventas Totales</h3>
-                    <p class="stat-value">$${totalSales.toFixed(2)}</p>
+                <div class="card" style="padding: 1.5rem;">
+                    <h3 style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0;">💰 Ventas Totales</h3>
+                    <p style="font-size: 2rem; font-weight: bold; color: var(--success-color); margin: 0.5rem 0;">$${totalSales.toFixed(2)}</p>
                 </div>
-                <div class="stat-card">
-                    <h3>📈 Ticket Promedio</h3>
-                    <p class="stat-value">$${avgOrderValue.toFixed(2)}</p>
+                <div class="card" style="padding: 1.5rem;">
+                    <h3 style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0;">📈 Ticket Promedio</h3>
+                    <p style="font-size: 2rem; font-weight: bold; color: var(--info-color); margin: 0.5rem 0;">$${avgOrderValue.toFixed(2)}</p>
                 </div>
+            `;
+        }
+
+        // Renderizar Gráficos Chart.js
+        setTimeout(() => {
+            const isDark = document.body.classList.contains('dark-mode');
+            const textColor = isDark ? '#94A3B8' : '#64748B';
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+
+            const ctxSales = document.getElementById('salesChart');
+            if (ctxSales) {
+                if (salesChartInstance) salesChartInstance.destroy();
+                salesChartInstance = new Chart(ctxSales, {
+                    type: 'line',
+                    data: {
+                        labels: last7Days,
+                        datasets: [{
+                            label: 'Ventas Diarias ($)',
+                            data: salesData,
+                            borderColor: '#6366F1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: { color: textColor }
+                            }
+                        },
+                        scales: {
+                            y: { grid: { color: gridColor }, ticks: { color: textColor } },
+                            x: { grid: { color: gridColor }, ticks: { color: textColor } }
+                        }
+                    }
+                });
+            }
+
+            const ctxProducts = document.getElementById('topProductsChart');
+            if (ctxProducts) {
+                if (topProductsChartInstance) topProductsChartInstance.destroy();
+                topProductsChartInstance = new Chart(ctxProducts, {
+                    type: 'doughnut',
+                    data: {
+                        labels: topProductsLabels,
+                        datasets: [{
+                            data: topProductsData,
+                            backgroundColor: chartColors,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: textColor }
+                            }
+                        }
+                    }
+                });
+            }
+        }, 100);
+
+        // Actualizar listas HTML secundarias
+        document.getElementById('top-products').innerHTML = topProducts.map(([product, count], index) => `
+            <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--bg-primary); border-radius: 6px; margin-bottom: 0.5rem; border: 1px solid var(--border-color);">
+                <span style="color: var(--text-primary);">${index + 1}. ${product}</span>
+                <strong style="color: var(--primary-color);">${count} unidades</strong>
             </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
-                <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    <h3 style="color: #FF6B35; margin-bottom: 1rem;">📊 Pedidos por Estado</h3>
-                    <div style="display: grid; gap: 0.75rem;">
-                        ${Object.entries(ordersByStatus).map(([status, count]) => `
-                            <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: #f8f9fa; border-radius: 6px;">
-                                <span>${status}</span>
-                                <strong>${count}</strong>
-                            </div>
-                        `).join('')}
+        `).join('');
+
+        document.getElementById('payment-methods-stats').innerHTML = `
+            <div style="display: grid; gap: 0.75rem; margin-bottom: 1.5rem;">
+                ${Object.entries(salesByEmployee).map(([employee, data]) => `
+                    <div style="padding: 0.75rem; background: var(--bg-primary); border-radius: 6px; display: flex; justify-content: space-between; border: 1px solid var(--border-color);">
+                        <strong style="color: var(--text-primary);">Empleado: ${employee}</strong>
+                        <span style="color: var(--secondary-color); font-weight: 600;">$${data.total.toFixed(2)} (${data.count} pedidos)</span>
                     </div>
-                </div>
-                
-                <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    <h3 style="color: #FF6B35; margin-bottom: 1rem;">🏆 Productos Más Vendidos</h3>
-                    <div style="display: grid; gap: 0.75rem;">
-                        ${topProducts.map(([product, count], index) => `
-                            <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: #f8f9fa; border-radius: 6px;">
-                                <span>${index + 1}. ${product}</span>
-                                <strong>${count} unidades</strong>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                
-                <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    <h3 style="color: #FF6B35; margin-bottom: 1rem;">👥 Ventas por Empleado</h3>
-                    <div style="display: grid; gap: 0.75rem;">
-                        ${Object.entries(salesByEmployee).map(([employee, data]) => `
-                            <div style="padding: 0.75rem; background: #f8f9fa; border-radius: 6px;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-                                    <strong>${employee}</strong>
-                                    <span>${data.count} pedidos</span>
-                                </div>
-                                <div style="color: #FF6B35; font-weight: 600;">
-                                    Total: $${data.total.toFixed(2)}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
+                `).join('')}
             </div>
         `;
-        
+
     } catch (error) {
         console.error('Error generando reportes:', error);
         alert('Error al generar reportes: ' + error.message);
+    }
+}
+
+function filterReports(period) {
+    // Actualizar botones UI
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${period}'`));
+    });
+    generateReports(period);
+}
+
+async function generateCashReport() {
+    const reportDiv = document.getElementById('cash-report');
+    reportDiv.innerHTML = '<p>Generando corte...</p>';
+
+    try {
+        const orders = await posApi.getOrders();
+        const today = new Date().toISOString().split('T')[0];
+        const todaysOrders = orders.filter(o => o.created_at.startsWith(today) && o.status === 'Cobrado');
+
+        const total = todaysOrders.reduce((sum, o) => sum + parseFloat(o.total), 0);
+        const methods = {};
+        todaysOrders.forEach(o => {
+            methods[o.payment_method] = (methods[o.payment_method] || 0) + parseFloat(o.total);
+        });
+
+        reportDiv.innerHTML = `
+            <div style="background: white; padding: 1.5rem; border-radius: 8px; border-left: 5px solid #2ECC71;">
+                <h4>Corte de Caja - ${new Date().toLocaleDateString()}</h4>
+                <p><strong>Ventas Totales:</strong> $${total.toFixed(2)}</p>
+                <hr>
+                <h5>Desglose por método:</h5>
+                <ul>
+                    ${Object.entries(methods).map(([m, val]) => `<li>${m}: $${val.toFixed(2)}</li>`).join('')}
+                </ul>
+                <button onclick="window.print()" class="btn-primary" style="width: auto; margin-top: 1rem;">Imprimir Ticket de Corte</button>
+            </div>
+        `;
+    } catch (e) {
+        reportDiv.innerHTML = `<p style="color: red;">Error: ${e.message}</p>`;
     }
 }

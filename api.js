@@ -4,7 +4,7 @@ class API {
         // Detectar automáticamente la URL correcta
         if (!baseURL) {
             const hostname = window.location.hostname;
-            
+
             if (hostname === 'localhost' || hostname === '127.0.0.1') {
                 // Estamos en la computadora (desarrollo local)
                 baseURL = 'http://localhost:3000';
@@ -21,6 +21,7 @@ class API {
         }
         this.baseURL = baseURL;
         this.token = localStorage.getItem('token');
+        this.restaurantId = localStorage.getItem('restaurantId');
         console.log('🌐 API conectada a:', this.baseURL);
     }
 
@@ -29,24 +30,35 @@ class API {
         const headers = {
             'Content-Type': 'application/json'
         };
-        
+
         if (this.token) {
             headers['Authorization'] = `Bearer ${this.token}`;
         }
-        
+        if (this.restaurantId) {
+            headers['x-restaurant-id'] = this.restaurantId;
+        }
+
         return headers;
     }
 
-    // Guardar token
-    setToken(token) {
-        this.token = token;
-        localStorage.setItem('token', token);
+    // Guardar autenticación
+    setAuthDetails(token, restaurantId) {
+        if (token) {
+            this.token = token;
+            localStorage.setItem('token', token);
+        }
+        if (restaurantId) {
+            this.restaurantId = restaurantId;
+            localStorage.setItem('restaurantId', restaurantId);
+        }
     }
 
     // Eliminar token
     clearToken() {
         this.token = null;
+        this.restaurantId = null;
         localStorage.removeItem('token');
+        localStorage.removeItem('restaurantId');
         localStorage.removeItem('currentUser');
     }
 
@@ -58,10 +70,14 @@ class API {
                 ...options
             });
 
-            const data = await response.json();
+            let data;
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                data = await response.json();
+            }
 
             if (!response.ok) {
-                // Si el token expiró, limpiar y redirigir al login
+                // Si el token expiró o hay error 401
                 if (response.status === 401 || response.status === 403) {
                     this.clearToken();
                     if (window.location.pathname !== '/') {
@@ -69,7 +85,7 @@ class API {
                         window.location.href = '/';
                     }
                 }
-                throw new Error(data.error || 'Error en la petición');
+                throw new Error((data && data.error) ? data.error : `Error HTTP: ${response.status}`);
             }
 
             return data;
@@ -79,40 +95,71 @@ class API {
         }
     }
 
-    // ========== AUTENTICACIÓN ==========
-    async login(username, password) {
-        const response = await this.request('/api/auth/login', {
+    // ========== MODO SAAS (Multi-Tenant) ==========
+    async registerRestaurant(restaurantName, email, fullName, password, plan) {
+        const response = await this.request('/api/restaurants/register', {
             method: 'POST',
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ restaurantName, email, fullName, password, plan })
         });
-        
-        // Guardar token
-        if (response.token) {
-            this.setToken(response.token);
+
+        if (response.restaurantId) {
+            this.setAuthDetails('dummy-token', response.restaurantId);
         }
-        
+
         return response;
     }
 
-    async logout() {
-        try {
-            await this.request('/api/auth/logout', {
-                method: 'POST'
-            });
-        } finally {
-            this.clearToken();
-        }
-    }
-
-    async verifyToken() {
-        return this.request('/api/auth/verify');
-    }
-
-    async changePassword(oldPassword, newPassword) {
-        return this.request('/api/auth/change-password', {
+    async createBranch(name) {
+        return this.request('/api/restaurants/branch', {
             method: 'POST',
-            body: JSON.stringify({ oldPassword, newPassword })
+            body: JSON.stringify({ name })
         });
+    }
+
+    // ========== PERFIL Y SEGURIDAD ==========
+    async getProfile(userId) {
+        return this.request(`/api/profile?userId=${userId}`);
+    }
+
+    async updateProfile(userId, fullName, email, restaurantName) {
+        return this.request(`/api/profile?userId=${userId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ fullName, email, restaurantName })
+        });
+    }
+
+    async forgotPassword(email) {
+        return this.request('/api/forgot-password', {
+            method: 'POST',
+            body: JSON.stringify({ email })
+        });
+    }
+
+    async resetPassword(email, newPassword) {
+        return this.request('/api/reset-password', {
+            method: 'POST',
+            body: JSON.stringify({ email, newPassword })
+        });
+    }
+
+    // ========== AUTENTICACIÓN ==========
+    async login(username, password) {
+        const response = await this.request('/api/login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password })
+        });
+
+        // Guardar token y restaurant_id
+        if (response) {
+            // El backend por ahora no devuelve JWT real, pero seteamos restaurant_id
+            this.setAuthDetails('dummy-token', response.restaurant_id);
+        }
+
+        return { user: response, token: 'dummy-token' }; // Compatibilidad con el frontend actual
+    }
+
+    async logout() {
+        this.clearToken();
     }
 
     // ========== USUARIOS ==========
@@ -121,7 +168,7 @@ class API {
     }
 
     async addUser(username, password, role) {
-        return this.request('/api/auth/register', {
+        return this.request('/api/users', {
             method: 'POST',
             body: JSON.stringify({ username, password, role })
         });
@@ -138,10 +185,10 @@ class API {
         return this.request('/api/products');
     }
 
-    async addProduct(name, price, img) {
+    async addProduct(name, price, img, modifiers = []) {
         return this.request('/api/products', {
             method: 'POST',
-            body: JSON.stringify({ name, price, img })
+            body: JSON.stringify({ name, price, img, modifiers })
         });
     }
 
@@ -190,4 +237,4 @@ class API {
 }
 
 // Exportar instancia única de la API
-const api = new API();
+const posApi = new API();

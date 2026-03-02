@@ -18,11 +18,24 @@ const db = new sqlite3.Database('./pos.db', (err) => {
 });
 
 db.serialize(() => {
+    // Crear tabla de restaurantes
+    db.run(`CREATE TABLE restaurants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+        if (err) console.error('❌ Error al crear tabla restaurants:', err.message);
+        else console.log('✅ Tabla restaurants creada');
+    });
+
     // Crear tabla de usuarios
     db.run(`CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        restaurant_id INTEGER,
         username TEXT UNIQUE,
         password TEXT,
+        email TEXT UNIQUE,
+        full_name TEXT,
         role TEXT
     )`, (err) => {
         if (err) {
@@ -35,9 +48,11 @@ db.serialize(() => {
     // Crear tabla de productos
     db.run(`CREATE TABLE products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        restaurant_id INTEGER,
         name TEXT,
         price REAL,
-        img TEXT
+        img TEXT,
+        modifiers TEXT
     )`, (err) => {
         if (err) {
             console.error('❌ Error al crear tabla products:', err.message);
@@ -49,6 +64,7 @@ db.serialize(() => {
     // Crear tabla de pedidos
     db.run(`CREATE TABLE orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        restaurant_id INTEGER,
         employee TEXT,
         items TEXT,
         total REAL,
@@ -65,10 +81,15 @@ db.serialize(() => {
     // Crear tabla de tickets
     db.run(`CREATE TABLE tickets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        restaurant_id INTEGER,
         order_id INTEGER,
         employee TEXT,
         items TEXT,
         total REAL,
+        amount_received REAL,
+        change_given REAL,
+        payment_method TEXT DEFAULT 'Efectivo',
+        printed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         date TEXT,
         FOREIGN KEY (order_id) REFERENCES orders(id)
     )`, (err) => {
@@ -79,8 +100,14 @@ db.serialize(() => {
         }
     });
 
-    // Insertar usuarios por defecto
-    db.run(`INSERT INTO users (username, password, role) VALUES ('admin', 'admin', 'admin')`, (err) => {
+    // Insertar restaurante por defecto
+    db.run(`INSERT INTO restaurants (name) VALUES ('Restaurante Demo')`, (err) => {
+        if (err) console.error('❌ Error al insertar restaurante:', err.message);
+        else console.log('✅ Restaurante por defecto creado');
+    });
+
+    // Insertar usuarios por defecto asociados al restaurante (restaurant_id = 1)
+    db.run(`INSERT INTO users (restaurant_id, username, password, role) VALUES (1, 'admin', 'admin', 'admin')`, (err) => {
         if (err) {
             console.error('❌ Error al insertar usuario admin:', err.message);
         } else {
@@ -88,7 +115,7 @@ db.serialize(() => {
         }
     });
 
-    db.run(`INSERT INTO users (username, password, role) VALUES ('caja', 'caja', 'caja')`, (err) => {
+    db.run(`INSERT INTO users (restaurant_id, username, password, role) VALUES (1, 'caja', 'caja', 'caja')`, (err) => {
         if (err) {
             console.error('❌ Error al insertar usuario caja:', err.message);
         } else {
@@ -108,7 +135,7 @@ db.serialize(() => {
 
     let productCount = 0;
     defaultProducts.forEach(product => {
-        db.run(`INSERT INTO products (name, price, img) VALUES (?, ?, ?)`, 
+        db.run(`INSERT INTO products (restaurant_id, name, price, img) VALUES (1, ?, ?, ?)`,
             [product.name, product.price, product.img],
             (err) => {
                 if (err) {
@@ -134,7 +161,7 @@ db.serialize(() => {
                     console.log(`   - ${user.username} (${user.role})`);
                 });
             }
-            
+
             db.close((err) => {
                 if (err) {
                     console.error('❌ Error al cerrar base de datos:', err.message);

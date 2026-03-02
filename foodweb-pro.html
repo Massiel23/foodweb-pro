@@ -1,36 +1,238 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>POS -FoodWeb Pro</title>
+    <!-- PayPal SDK for Subscriptions -->
+    <script
+        src="https://www.paypal.com/sdk/js?client-id=AfbxzwIJXzw7WYOANGp0htcN3c3bXY9T4j6-ph2dJZJ2Ph_ZqmJq0wD2aoiix3rSvCy8zPG0rYHq9Pcf&vault=true&intent=subscription"
+        data-sdk-integration-source="button-factory"></script>
     <link rel="stylesheet" href="styles.css">
     <style>
         body {
-            background-image: url('fondo.png');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
+            background-color: var(--bg-primary);
         }
     </style>
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7039470528487687"
-     crossorigin="anonymous"></script>
+        crossorigin="anonymous"></script>
 </head>
+
 <body>
-    <div id="login-section" class="login">
-        <h2>Iniciar Sesión</h2>
-        <input type="text" id="username" placeholder="Usuario" required>
-        <input type="password" id="password" placeholder="Contraseña" required>
-        <button onclick="login()">Iniciar Sesión</button>
-        <p id="login-msg" style="color: red;"></p>
+    <div id="login-section" class="login-page">
+        <!-- Contenedor Principal (Dos Columnas) -->
+        <div class="login-main-container">
+            <div class="login-left">
+                <h1 class="login-logo">FOODWEB</h1>
+                <p class="login-subtitle">SOFTWARE PARA RESTAURANTES, BARES Y CAFÉS</p>
+                <h2 class="login-main-title">Transforma tu negocio<br>gastronómico <span>con FoodWeb</span></h2>
+
+                <div class="login-banner">
+                    <h3>Digitaliza tu restaurante desde</h3>
+                    <div class="login-price">
+                        <span class="currency">$</span>
+                        <span class="amount">260</span>
+                        <span class="period">MXN/mes<br><small>Ventas ilimitadas</small></span>
+                    </div>
+                </div>
+
+                <p class="login-desc-title">Descubre todo lo que puedes hacer con nuestro sistema:</p>
+
+                <div class="login-features">
+                    <div class="feature"><span class="icon">🖨️</span> Impresión de comandas y precuentas</div>
+                    <div class="feature"><span class="icon">📦</span> Control de stock eficiente</div>
+                    <div class="feature"><span class="icon">👥</span> Creación de múltiples usuarios y roles</div>
+                    <div class="feature"><span class="icon">📱</span> Punto de venta responsivo</div>
+                </div>
+            </div>
+
+            <div class="login-right">
+                <div class="login-card">
+                    <div id="login-form-container">
+                        <h3 class="login-card-title">Inicia Sesión en tu Restaurante</h3>
+                        <label>Usuario o Email</label>
+                        <input type="text" id="username" placeholder="Tu usuario o correo" required>
+                        <label>Contraseña</label>
+                        <input type="password" id="password" placeholder="Tu contraseña" required>
+                        <div style="text-align: right; margin-bottom: 1rem;">
+                            <a href="#" onclick="showForgotPassword()"
+                                style="font-size: 0.85rem; color: var(--primary-color);">¿Olvidaste tu contraseña?</a>
+                        </div>
+                        <button onclick="login()" class="btn-primary">Ingresar</button>
+                        <p style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
+                            ¿Nuevo aquí? <br><a href="#" onclick="toggleRegisterForm()"
+                                style="color: var(--primary-color); font-weight: bold; display: inline-block; margin-top: 5px;">Crea
+                                tu Restaurante gratis</a>
+                        </p>
+                    </div>
+
+                    <!-- Recuperación de Contraseña -->
+                    <div id="forgot-password-container" style="display: none;">
+                        <h3 class="login-card-title">Recuperar Contraseña</h3>
+                        <p
+                            style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem; text-align: center;">
+                            Introduce tu correo y te enviaremos instrucciones.</p>
+                        <label>Correo Electrónico</label>
+                        <input type="email" id="forgot-email" placeholder="ejemplo@correo.com" required>
+                        <button onclick="handleForgotPassword()" class="btn-primary">Enviar Instrucciones</button>
+                        <p style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
+                            <a href="#" onclick="showLoginForm()" style="color: var(--text-secondary);">&larr; Volver al
+                                Login</a>
+                        </p>
+                    </div>
+
+                    <div id="pricing-container" style="display: none;">
+                        <h3 class="login-card-title">Selecciona tu Plan</h3>
+
+                        <div style="display: grid; gap: 1rem; margin-bottom: 1.5rem;">
+                            <!-- Plan Básico -->
+                            <div style="border: 2px solid var(--border-color); border-radius: 8px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.3s;"
+                                onclick="selectPlan('Basico')" id="plan-basico-card" class="plan-card">
+                                <h4 style="color: var(--text-primary); margin-bottom: 0.5rem; font-size: 1.2rem;">Plan
+                                    Básico</h4>
+                                <p style="font-size: 2rem; font-weight: bold; color: var(--primary-color);">$260 <span
+                                        style="font-size: 1rem; color: var(--text-secondary);">MXN / mes</span></p>
+                                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem;">1 Caja o
+                                    2
+                                    Empleados<br>Ventas ilimitadas</p>
+                                <button class="btn-primary"
+                                    style="margin-top: 1rem; padding: 0.5rem; font-size: 0.9rem;">Elegir Básico</button>
+                            </div>
+
+                            <!-- Plan Pro -->
+                            <div style="border: 2px solid var(--primary-color); border-radius: 8px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.3s; position: relative; background: rgba(99, 102, 241, 0.05);"
+                                onclick="selectPlan('Pro')" id="plan-pro-card" class="plan-card">
+                                <span
+                                    style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--primary-color); color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">Recomendado</span>
+                                <h4 style="color: var(--primary-color); margin-bottom: 0.5rem; font-size: 1.2rem;">Plan
+                                    Pro
+                                </h4>
+                                <p style="font-size: 2rem; font-weight: bold; color: var(--primary-color);">$499 <span
+                                        style="font-size: 1rem; color: var(--text-secondary);">MXN / mes</span></p>
+                                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                                    Usuarios/Sucursales Ilimitadas<br>Facturación y Reportes avanzados</p>
+                                <button class="btn-primary"
+                                    style="margin-top: 1rem; padding: 0.5rem; font-size: 0.9rem; background: var(--primary-color);">Elegir
+                                    Pro</button>
+                            </div>
+                        </div>
+                        <p style="text-align: center; margin-top: 10px; font-size: 0.9rem;">
+                            <a href="#" onclick="showLoginForm()" style="color: var(--text-secondary);">&larr; Volver al
+                                inicio de sesión</a>
+                        </p>
+                    </div>
+
+                    <div id="register-form-container" style="display: none;">
+                        <h3 class="login-card-title">Crea tu cuenta <br><span id="selected-plan-badge"
+                                style="font-size: 0.9rem; background: #E2E8F0; padding: 3px 8px; border-radius: 10px;"></span>
+                        </h3>
+                        <label>Nombre del negocio</label>
+                        <input type="text" id="reg-restaurant" placeholder="Ej: Pizza Planet" required>
+                        <label>Tu Nombre Completo</label>
+                        <input type="text" id="reg-fullname" placeholder="Ej: Juan Pérez" required>
+                        <label>Correo Electrónico</label>
+                        <input type="email" id="reg-email" placeholder="ejemplo@correo.com" required>
+                        <label>Contraseña para tu cuenta</label>
+                        <input type="password" id="reg-password" placeholder="Mínimo 8 caracteres" required>
+                        <button onclick="handleRegister()" class="btn-primary">Continuar al Pago</button>
+                        <p style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
+                            <a href="#" onclick="showPricingForm()" style="color: var(--text-secondary);">&larr; Cambiar
+                                de
+                                Plan</a>
+                        </p>
+                    </div>
+
+                    <div id="payment-container" style="display: none; text-align: center;">
+                        <h3 class="login-card-title">Activar Suscripción</h3>
+                        <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Completa el pago seguro vía
+                            PayPal
+                            para activar tu restaurante: <strong id="pay-rest-name"></strong>.</p>
+                        <div id="paypal-button-container"
+                            style="min-height: 150px; background: white; border-radius: 8px; padding: 1rem; border: 1px solid var(--border-color);">
+                            <!-- Aquí se renderizará el botón real de PayPal -->
+                        </div>
+                        <button onclick="showPricingForm()" class="btn-secondary"
+                            style="margin-top: 1rem; width: 100%;">Cancelar y volver</button>
+                    </div>
+
+                    <p id="login-msg" style="color: red; text-align: center; margin-top: 15px;"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SAAS FOOTER -->
+        <footer class="login-footer">
+            <div class="footer-top">
+                <div class="footer-logo">FOODWEB</div>
+                <div class="footer-socials">
+                    <a href="#" title="Facebook" style="font-family: sans-serif; font-weight: bold;">f</a>
+                    <a href="#" title="Instagram" style="font-family: sans-serif; font-weight: bold;">i</a>
+                    <a href="#" title="WhatsApp" style="font-family: sans-serif; font-weight: bold;">w</a>
+                </div>
+            </div>
+
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4>Sobre FoodWeb</h4>
+                    <ul>
+                        <li><a href="#">Funcionalidades</a></li>
+                        <li><a href="#">Planes y Precios</a></li>
+                        <li><a href="#">Historias de éxito</a></li>
+                        <li><a href="#">Cultura</a></li>
+                        <li><a href="#">Trabajá con nosotros</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Recursos</h4>
+                    <ul>
+                        <li><a href="#">Preguntas frecuentes</a></li>
+                        <li><a href="#">Refiere un restaurante</a></li>
+                        <li><a href="#">Programa de partners</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Centro de ayuda</a></li>
+                        <li><a href="#">Tutoriales</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Dónde estamos</h4>
+                    <p class="footer-contact-info">
+                        México<br>
+                        Av Oaxaca 96, Roma Norte<br>
+                        Ciudad de México
+                    </p>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Contacto</h4>
+                    <p class="footer-contact-info">
+                        (+52) 155 9225 6031<br>
+                        Lun a Sáb: 06:00 a.m. a 09:00 p.m.<br>
+                        Dom: 07:00 a.m. a 08:00 p.m.
+                        <strong>Comercial: hola@foodweb.pro</strong>
+                        <strong>Soporte: ayuda@foodweb.pro</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 FoodWeb POS. Todos los derechos reservados.</p>
+                <div class="footer-country-sel">
+                    <span>México</span>
+                    <small>∨</small>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <div id="app" style="display: none;">
         <header>
-            <div class="logo-text">FOODWEB PRO</div>
-            <p class="animal-msg">¡LOS MEJORES PRODUCTOS!</p>
+            <div id="header-restaurant-name" class="logo">FOODWEB POS</div>
+            <p id="header-restaurant-subtitle" class="animal-msg">Plataforma de Punto de Venta</p>
             <button onclick="logout()" class="logout-btn">Cerrar Sesión</button>
             <button onclick="toggleDarkMode()" class="dark-mode-toggle" title="Modo Oscuro">🌙</button>
         </header>
@@ -38,17 +240,16 @@
         <nav id="nav-admin" style="display: none;">
             <button onclick="showSection('venta')">Venta</button>
             <button onclick="showSection('productos')">Productos</button>
-            <button onclick="showSection('empleados')">Agregar Empleado</button>
             <button onclick="showSection('pedidos')">Pedidos Pendientes</button>
-            <button onclick="showSection('reportes')">📊 Reportes</button>
-            <button onclick="showSection('ajustes')">Ajustes</button>
-            <button onclick="showSection('facturacion')">Facturación</button>
+            <button onclick="showSection('empleados')">Agregar Empleado</button>
+            <button onclick="showSection('perfil')">👤 Mi Perfil / Admin</button>
         </nav>
 
         <nav id="nav-empleado" style="display: none;">
             <button onclick="showSection('venta')">Venta</button>
             <button onclick="showSection('mis-pedidos')">Mis Pedidos</button>
             <button onclick="showSection('historial-pedidos')">Historial</button>
+            <button onclick="showSection('perfil')">👤 Mi Perfil</button>
         </nav>
 
         <nav id="nav-caja" style="display: none;">
@@ -60,14 +261,14 @@
         <!-- Ventana de Venta (Página Principal) -->
         <div id="venta" class="section active">
             <h2>Ventana de Venta</h2>
-            
+
             <!-- Barra de Búsqueda -->
             <div style="margin-bottom: 1.5rem;">
-                <input type="text" id="search-products" placeholder="🔍 Buscar productos..." 
+                <input type="text" id="search-products" placeholder="🔍 Buscar productos..."
                     oninput="searchProducts(this.value)"
-                    style="width: 100%; max-width: 100%; padding: 1rem; font-size: 1.1rem; border: 2px solid #FF6B35;">
+                    style="width: 100%; max-width: 100%; padding: 1rem; font-size: 1.1rem; border: 1px solid var(--border-color); border-radius: 8px;">
             </div>
-            
+
             <div class="product-list" id="product-list-venta"></div>
             <h3>Carrito</h3>
             <div id="cart"></div>
@@ -80,9 +281,32 @@
             <h2>Productos</h2>
             <div class="product-list" id="product-list-admin"></div>
             <h3>Agregar Producto</h3>
-            <input type="text" id="new-product-name" placeholder="Nombre">
-            <input type="number" id="new-product-price" placeholder="Precio" step="0.01">
-            <button onclick="addProduct()">Agregar</button>
+            <div class="card"
+                style="display: flex; flex-direction: column; gap: 0.8rem; max-width: 400px; margin-bottom: 1.5rem; padding: 1.5rem;">
+                <input type="text" id="new-product-name" placeholder="Nombre (ej. Hamburguesa)"
+                    style="padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px;">
+                <input type="number" id="new-product-price" placeholder="Precio" step="0.01"
+                    style="padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px;">
+
+                <div style="margin-top: 0.5rem;">
+                    <label
+                        style="font-size: 0.9rem; font-weight: 600; color: #4b5563; margin-bottom: 0.5rem; display: block;">Modificadores
+                        Opcionales (ej. Sin Cebolla)</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="new-modifier-input" placeholder="Escribe y presiona Enter..."
+                            style="flex: 1; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 8px;"
+                            onkeypress="handleModifierEnter(event)">
+                        <button onclick="addModifierTag()"
+                            style="background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 0 1rem;">Añadir</button>
+                    </div>
+                    <div id="modifiers-container"
+                        style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem; min-height: 30px;">
+                        <!-- Tags de modificadores irán aquí -->
+                    </div>
+                </div>
+
+                <button onclick="addProduct()" class="btn-primary" style="margin-top: 1rem;">Guardar Producto</button>
+            </div>
         </div>
 
         <!-- Agregar Empleado (Solo Admin) -->
@@ -142,65 +366,170 @@
             <div id="employee-order-history"></div>
         </div>
 
-        <!-- Reportes (Solo Admin) -->
-        <div id="reportes" class="section">
-            <h2>📊 Reportes y Estadísticas</h2>
-            
-            <!-- Filtros de Fecha -->
-            <div style="background: rgba(255,255,255,0.9); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-                <h3>Filtrar por Período</h3>
-                <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-                    <button onclick="filterReports('today')" class="filter-btn" data-filter="today">Hoy</button>
-                    <button onclick="filterReports('week')" class="filter-btn" data-filter="week">Esta Semana</button>
-                    <button onclick="filterReports('month')" class="filter-btn" data-filter="month">Este Mes</button>
-                    <button onclick="filterReports('all')" class="filter-btn active" data-filter="all">Todo</button>
-                </div>
-            </div>
-            
-            <!-- Dashboard de Estadísticas -->
-            <div id="stats-dashboard" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-                <!-- Las tarjetas se generarán dinámicamente -->
-            </div>
-            
-            <!-- Productos Más Vendidos -->
-            <div style="background: rgba(255,255,255,0.9); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-                <h3>🏆 Productos Más Vendidos</h3>
-                <div id="top-products"></div>
-            </div>
-            
-            <!-- Ventas por Método de Pago -->
-            <div style="background: rgba(255,255,255,0.9); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-                <h3>💳 Ventas por Método de Pago</h3>
-                <div id="payment-methods-stats"></div>
-            </div>
-            
-            <!-- Corte de Caja -->
-            <div style="background: rgba(255,255,255,0.9); padding: 1.5rem; border-radius: 8px;">
-                <h3>💰 Corte de Caja</h3>
-                <button onclick="generateCashReport()" style="background: #2ECC71; font-size: 1.1rem; padding: 1rem 2rem;">
-                    Generar Corte de Caja
-                </button>
-                <div id="cash-report" style="margin-top: 1rem;"></div>
-            </div>
-        </div>
+        <!-- Mi Perfil (Contenedor Maestro para Reportes, Ajustes y Facturación) -->
+        <div id="perfil" class="section">
+            <div class="card"
+                style="display: flex; gap: 2rem; align-items: flex-start; padding: 1.5rem; min-height: 600px;">
 
-        <!-- Ajustes (Solo Admin) -->
-        <div id="ajustes" class="section">
-            <h2>Ajustes</h2>
-            <p>Configuraciones básicas:</p>
-            <label>Impuesto (%): <input type="number" id="tax-rate" value="10" step="0.01"></label>
-            <button onclick="saveSettings()">Guardar</button>
-            <p id="settings-msg"></p>
-        </div>
+                <!-- Sidebar de Perfil -->
+                <aside style="flex: 0 0 240px; border-right: 1px solid var(--border-color); padding-right: 1.5rem;">
+                    <div style="text-align: center; margin-bottom: 2rem;">
+                        <div style="width: 70px; height: 70px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 1rem; font-weight: bold;"
+                            id="profile-initials">--</div>
+                        <h4 id="profile-name-display" style="margin: 0; font-size: 1.1rem;">Cargando...</h4>
+                        <p id="profile-username-display" style="margin: 0; font-size: 0.85rem; color: #94a3b8;">@admin
+                        </p>
+                        <p id="profile-branch-display"
+                            style="margin: 2px 0 0; font-size: 0.85rem; color: #64748b; font-weight: 600;">Sucursal...
+                        </p>
+                        <span id="profile-plan-badge"
+                            style="font-size: 0.75rem; background: var(--bg-primary); padding: 4px 10px; border-radius: 20px; color: var(--primary-color); font-weight: bold; margin-top: 8px; display: inline-block;">Plan...</span>
+                    </div>
 
-        <!-- Facturación (Solo Admin) -->
-        <div id="facturacion" class="section">
-            <h2>Facturación</h2>
-            <button onclick="generateInvoice()">Generar Factura</button>
-            <div id="invoice" style="display: none;">
-                <h3>Factura</h3>
-                <div id="invoice-content"></div>
-                <button onclick="printInvoice()">Imprimir</button>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;" id="profile-tabs">
+                        <button onclick="showProfileTab('datos')" class="profile-tab-btn active"
+                            style="text-align: left; padding: 0.8rem 1rem; border-radius: 8px; border: none; background: none; font-weight: 600; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;">
+                            👤 Mis Datos</button>
+                        <button onclick="showProfileTab('reportes')" class="profile-tab-btn"
+                            style="text-align: left; padding: 0.8rem 1rem; border-radius: 8px; border: none; background: none; font-weight: 600; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;">
+                            📊 Reportes</button>
+                        <button onclick="showProfileTab('ajustes')" class="profile-tab-btn"
+                            style="text-align: left; padding: 0.8rem 1rem; border-radius: 8px; border: none; background: none; font-weight: 600; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;">
+                            ⚙️ Ajustes</button>
+                        <button onclick="showProfileTab('sucursales')" class="profile-tab-btn"
+                            style="text-align: left; padding: 0.8rem 1rem; border-radius: 8px; border: none; background: none; font-weight: 600; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;">
+                            🏢 Sucursales</button>
+                        <button onclick="showProfileTab('facturacion')" class="profile-tab-btn"
+                            style="text-align: left; padding: 0.8rem 1rem; border-radius: 8px; border: none; background: none; font-weight: 600; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;">
+                            📄 Facturación</button>
+                    </div>
+                </aside>
+
+                <!-- Contenido de Pestañas -->
+                <main style="flex: 1; padding-left: 0.5rem; overflow-y: auto;">
+
+                    <!-- Tab: Datos -->
+                    <div id="tab-datos" class="profile-tab-content">
+                        <h2 style="margin-top: 0;">Mis Datos</h2>
+                        <div style="display: grid; gap: 1.5rem; max-width: 500px;">
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Nombre
+                                    Completo</label>
+                                <input type="text" id="profile-fullname"
+                                    style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Correo
+                                    Electrónico</label>
+                                <input type="email" id="profile-email"
+                                    style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Nombre del
+                                    Restaurante</label>
+                                <input type="text" id="profile-restaurant-name"
+                                    style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Plan
+                                    Suscrito</label>
+                                <input type="text" id="profile-plan-name" readonly
+                                    style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc; font-weight: bold; color: var(--primary-color);">
+                            </div>
+                            <button onclick="updateUserProfile()" class="btn-primary">Guardar Cambios</button>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Reportes (Movido de la sección anterior) -->
+                    <div id="tab-reportes" class="profile-tab-content" style="display: none;">
+                        <h2 style="margin-top: 0;">📊 Reportes y Estadísticas</h2>
+                        <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+                            <h3>Filtrar por Período</h3>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                <button onclick="filterReports('today')" class="filter-btn">Hoy</button>
+                                <button onclick="filterReports('week')" class="filter-btn">Esta Semana</button>
+                                <button onclick="filterReports('month')" class="filter-btn">Este Mes</button>
+                                <button onclick="filterReports('all')" class="filter-btn active">Todo</button>
+                            </div>
+                        </div>
+                        <div id="stats-dashboard"
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                        </div>
+                        <div
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                            <div class="card" style="padding: 1rem;">
+                                <canvas id="salesChart" width="400" height="250"></canvas>
+                            </div>
+                            <div class="card" style="padding: 1rem;">
+                                <canvas id="topProductsChart" width="400" height="250"></canvas>
+                                <div id="top-products"></div>
+                            </div>
+                        </div>
+                        <div id="payment-methods-stats"></div>
+                        <div class="card" style="padding: 1.5rem;">
+                            <h3>💰 Corte de Caja</h3>
+                            <button onclick="generateCashReport()" class="btn-primary"
+                                style="background: var(--success-color); width: auto;">Generar Corte</button>
+                            <div id="cash-report" style="margin-top: 1rem;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Ajustes -->
+                    <div id="tab-ajustes" class="profile-tab-content" style="display: none;">
+                        <h2 style="margin-top: 0;">⚙️ Ajustes del Sistema</h2>
+                        <div style="display: grid; gap: 1rem; max-width: 400px;">
+                            <label>Impuesto de Venta (%):</label>
+                            <input type="number" id="tax-rate" value="10" step="0.01"
+                                style="padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1;">
+                            <button onclick="saveSettings()" class="btn-primary">Guardar Ajustes</button>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Sucursales (Solo Plan Pro) -->
+                    <div id="tab-sucursales" class="profile-tab-content" style="display: none;">
+                        <h2 style="margin-bottom: 1.5rem;">🏢 Gestión de Sucursales</h2>
+
+                        <!-- Formulario para agregar sucursal -->
+                        <div id="add-branch-form-container" class="card"
+                            style="padding: 1.5rem; margin-bottom: 2rem; display: none;">
+                            <h4 style="margin-top: 0; margin-bottom: 1rem; color: var(--primary-color);">+ Crear Nueva
+                                Sucursal</h4>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="new-branch-name"
+                                    placeholder="Nombre de la nueva sucursal (ej: Sucursal Centro)"
+                                    style="flex: 1; padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1;">
+                                <button onclick="handleAddBranch()" class="btn-primary"
+                                    style="width: auto; padding: 0.8rem 1.5rem;">Crear Ahora</button>
+                            </div>
+                            <p style="font-size: 0.8rem; color: #64748b; margin-top: 10px; margin-bottom: 0;">
+                                Nota: El administrador tendrá acceso con sus mismas credenciales.
+                            </p>
+                        </div>
+
+                        <div id="branches-list" style="display: grid; gap: 1rem;">
+                            <!-- Listado de sucursales -->
+                        </div>
+
+                        <div id="branch-pro-only-msg"
+                            style="background: #FFF9C4; padding: 1.5rem; border-radius: 8px; border-left: 5px solid #FBC02D; margin-top: 1rem; display: none;">
+                            <p style="margin: 0; font-weight: 600; color: #856404;">⭐ Esta función es exclusiva del Plan
+                                Pro.</p>
+                            <p style="margin: 5px 0 0; font-size: 0.9rem;">El Plan Básico solo permite una sucursal.</p>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Facturación -->
+                    <div id="tab-facturacion" class="profile-tab-content" style="display: none;">
+                        <h2 style="margin-top: 0;">📄 Facturación y Pagos</h2>
+                        <button onclick="generateInvoice()" class="btn-primary" style="width: auto;">Generar Factura
+                            Mensual</button>
+                        <div id="invoice"
+                            style="margin-top: 2rem; padding: 1.5rem; border: 1px solid #eee; display: none;">
+                            <div id="invoice-content"></div>
+                        </div>
+                    </div>
+
+                </main>
             </div>
         </div>
 
@@ -218,7 +547,8 @@
         </footer>
     </div>
 
-    <script src="api.js"></script>
-    <script src="script.js"></script>
+    <script src="api.js?v=1.1"></script>
+    <script src="script.js?v=1.1"></script>
 </body>
+
 </html>

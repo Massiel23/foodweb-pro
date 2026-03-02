@@ -10,298 +10,232 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: '*' } });
 
-// IMPORTANTE: Usar el puerto de Render en producción
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// 1. MIDDLEWARE BASE
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(__dirname));
 
-// Detectar si estamos en producción
+// Log de todas las peticiones para depuración (CRITICAL)
+app.use((req, res, next) => {
+    console.log(`📡 [${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
+    next();
+});
+
+// 2. ARCHIVOS ESTÁTICOS (Prioridad para evitar errores de CSS/JS)
+app.use(express.static(path.join(__dirname)));
+
+// 3. BASE DE DATOS
 const isProduction = process.env.DATABASE_URL !== undefined;
-
 let db;
 
 if (isProduction) {
-    // PostgreSQL para producción
     console.log('🚀 Modo PRODUCCIÓN - Usando PostgreSQL');
     const { Pool } = require('pg');
-    
-    const pool = new Pool({
+    db = new Pool({
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false }
     });
-
-    // Crear tablas
-    pool.query(`
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username TEXT UNIQUE,
-            password TEXT,
-            role TEXT
-        );
-        CREATE TABLE IF NOT EXISTS products (
-            id SERIAL PRIMARY KEY,
-            name TEXT,
-            price REAL,
-            img TEXT
-        );
-        CREATE TABLE IF NOT EXISTS orders (
-            id SERIAL PRIMARY KEY,
-            employee TEXT,
-            items TEXT,
-            total REAL,
-            status TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE TABLE IF NOT EXISTS tickets (
-            id SERIAL PRIMARY KEY,
-            order_id INTEGER,
-            employee TEXT,
-            items TEXT,
-            total REAL,
-            amount_received REAL,
-            change_given REAL,
-            payment_method TEXT DEFAULT 'Efectivo',
-            printed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    `).then(() => {
-        console.log('✅ Tablas creadas');
-        // Insertar datos por defecto
-        pool.query(`INSERT INTO users (username, password, role) VALUES ('admin', 'admin', 'admin') ON CONFLICT (username) DO NOTHING`);
-        pool.query(`INSERT INTO users (username, password, role) VALUES ('caja', 'caja', 'caja') ON CONFLICT (username) DO NOTHING`);
-    });
-
-    db = pool;
 } else {
-    // SQLite para desarrollo
     console.log('💻 Modo DESARROLLO - Usando SQLite');
     db = new sqlite3.Database('./pos.db');
 }
 
-// Helper functions
-const dbQuery = (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-        if (isProduction) {
-            const pgSql = sql.replace(/\?/g, (_, i) => `$${params.slice(0, i).length + 1}`);
-            db.query(pgSql, params, (err, result) => {
-                if (err) reject(err);
-                else resolve(result.rows);
-            });
-        } else {
-            db.all(sql, params, (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows);
-            });
-        }
-    });
-};
+// Helpers DB
+const dbQuery = (sql, params = []) => new Promise((resolve, reject) => {
+    if (isProduction) {
+        const pgSql = sql.replace(/\?/g, (_, i) => `$${params.slice(0, i).length + 1}`);
+        db.query(pgSql, params, (err, result) => err ? reject(err) : resolve(result.rows));
+    } else {
+        db.all(sql, params, (err, rows) => err ? reject(err) : resolve(rows));
+    }
+});
 
-const dbRun = (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-        if (isProduction) {
-            let index = 0;
-            const pgSql = sql.replace(/\?/g, () => `$${++index}`);
-            db.query(pgSql + ' RETURNING id', params, (err, result) => {
-                if (err) reject(err);
-                else resolve({ lastID: result.rows[0]?.id, changes: result.rowCount });
-            });
-        } else {
-            db.run(sql, params, function(err) {
-                if (err) reject(err);
-                else resolve({ lastID: this.lastID, changes: this.changes });
-            });
-        }
-    });
-};
+const dbRun = (sql, params = []) => new Promise((resolve, reject) => {
+    if (isProduction) {
+        let index = 0;
+        const pgSql = sql.replace(/\?/g, () => `$${++index}`);
+        db.query(pgSql + ' RETURNING id', params, (err, result) => err ? reject(err) : resolve({ lastID: result.rows[0]?.id, changes: result.rowCount }));
+    } else {
+        db.run(sql, params, function (err) { err ? reject(err) : resolve({ lastID: this.lastID, changes: this.changes }); });
+    }
+});
 
-const dbGet = (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-        if (isProduction) {
-            let index = 0;
-            const pgSql = sql.replace(/\?/g, () => `$${++index}`);
-            db.query(pgSql, params, (err, result) => {
-                if (err) reject(err);
-                else resolve(result.rows[0]);
-            });
-        } else {
-            db.get(sql, params, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        }
-    });
-};
+const dbGet = (sql, params = []) => new Promise((resolve, reject) => {
+    if (isProduction) {
+        let index = 0;
+        const pgSql = sql.replace(/\?/g, () => `$${++index}`);
+        db.query(pgSql, params, (err, result) => err ? reject(err) : resolve(result.rows[0]));
+    } else {
+        db.get(sql, params, (err, row) => err ? reject(err) : resolve(row));
+    }
+});
 
-// Socket.IO
+// 4. SOCKET.IO
 io.on('connection', (socket) => {
-    console.log('Usuario conectado:', socket.id);
-    socket.on('disconnect', () => console.log('Usuario desconectado:', socket.id));
-});
-
-// Rutas
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'foodweb-pro.html')));
-
-// API Usuarios
-app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
-    try {
-        const row = await dbGet('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
-        if (!row) return res.status(401).json({ error: 'Credenciales inválidas' });
-        res.json(row);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.get('/api/users', async (req, res) => {
-    try {
-        const rows = await dbQuery('SELECT id, username, role FROM users');
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.post('/api/users', async (req, res) => {
-    const { username, password, role } = req.body;
-    if (!username || !password || !role) return res.status(400).json({ error: 'Todos los campos requeridos' });
-    try {
-        const result = await dbRun('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, password, role]);
-        const newUser = { id: result.lastID, username, role };
-        io.emit('userAdded', newUser);
-        res.json(newUser);
-    } catch (err) {
-        if (err.message.includes('UNIQUE') || err.message.includes('duplicate')) {
-            return res.status(400).json({ error: 'Usuario ya existe' });
+    socket.on('joinRestaurant', (restaurantId) => {
+        if (restaurantId) {
+            socket.join(`restaurant_${restaurantId}`);
+            console.log(`Socket ${socket.id} unido a restaurante ${restaurantId}`);
         }
-        res.status(500).json({ error: err.message });
-    }
+    });
 });
 
-app.delete('/api/users/:id', async (req, res) => {
+// 5. MIDDLEWARE API
+const requireRestaurantId = (req, res, next) => {
+    const publicPaths = ['/login', '/restaurants/register', '/forgot-password', '/reset-password'];
+    if (publicPaths.includes(req.path)) return next();
+
+    const restaurantId = req.headers['x-restaurant-id'];
+    if (!restaurantId) return res.status(400).json({ error: 'Restaurant ID es requerido' });
+    req.restaurantId = parseInt(restaurantId);
+    next();
+};
+
+const apiRouter = express.Router();
+apiRouter.use(requireRestaurantId);
+app.use('/api', apiRouter);
+
+// 6. RUTAS DE API (Consolidadas en apiRouter)
+
+// Auth & Registro
+apiRouter.post('/login', async (req, res) => {
+    const { username, password } = req.body;
     try {
-        const result = await dbRun('DELETE FROM users WHERE id = ?', [req.params.id]);
-        io.emit('userDeleted', { id: req.params.id });
-        res.json({ changes: result.changes });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+        const user = await dbGet('SELECT * FROM users WHERE (username = ? OR email = ?) AND password = ?', [username, username, password]);
+        if (!user) return res.status(401).json({ error: 'Credenciales inválidas' });
+        const rest = await dbGet('SELECT name FROM restaurants WHERE id = ?', [user.restaurant_id]);
+        user.restaurant_name = rest ? rest.name : 'Mi Restaurante';
+        res.json(user);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// API Productos
-app.get('/api/products', async (req, res) => {
+apiRouter.post('/restaurants/register', async (req, res) => {
+    const { restaurantName, email, fullName, password, plan } = req.body;
     try {
-        const rows = await dbQuery('SELECT * FROM products');
+        const restResult = await dbRun('INSERT INTO restaurants (name, plan, owner_email) VALUES (?, ?, ?)', [restaurantName, plan || 'Basico', email]);
+        const restaurantId = restResult.lastID;
+        await dbRun('INSERT INTO users (restaurant_id, username, password, email, full_name, role) VALUES (?, ?, ?, ?, ?, ?)',
+            [restaurantId, email.split('@')[0], password, email, fullName, 'admin']);
+        res.json({ success: true, restaurantId });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Perfil y Sucursales
+apiRouter.get('/profile', async (req, res) => {
+    try {
+        const userId = req.query.userId;
+        const user = await dbGet('SELECT id, username, email, full_name, role FROM users WHERE id = ?', [userId]);
+        const restaurant = await dbGet('SELECT * FROM restaurants WHERE id = ?', [req.restaurantId]);
+        let branches = [];
+        if (restaurant && restaurant.owner_email) {
+            branches = await dbQuery('SELECT id, name, plan FROM restaurants WHERE owner_email = ?', [restaurant.owner_email]);
+        }
+        res.json({ user, restaurant, branches });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+apiRouter.post('/restaurants/branch', async (req, res) => {
+    const { name } = req.body;
+    try {
+        const currentRest = await dbGet('SELECT plan, owner_email FROM restaurants WHERE id = ?', [req.restaurantId]);
+        if (!currentRest || currentRest.plan.toLowerCase() !== 'pro') return res.status(403).json({ error: 'Plan Pro requerido' });
+
+        // Crear restaurante con el mismo owner_email
+        const result = await dbRun('INSERT INTO restaurants (name, plan, owner_email) VALUES (?, ?, ?)', [name, 'Pro', currentRest.owner_email]);
+        const newRestId = result.lastID;
+
+        // NO creamos usuario admin espejo porque el username/email son UNIQUE globales.
+        // El sistema de perfiles ya permite al dueño cambiar de sucursal basándose en el owner_email.
+
+        res.json({ success: true, restaurantId: newRestId });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Usuarios
+apiRouter.get('/users', async (req, res) => {
+    try {
+        const rows = await dbQuery('SELECT id, username, role FROM users WHERE restaurant_id = ?', [req.restaurantId]);
         res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/products', async (req, res) => {
-    const { name, price, img } = req.body;
-    if (!name || !price) return res.status(400).json({ error: 'Nombre y precio requeridos' });
+apiRouter.post('/users', async (req, res) => {
+    const { username, password, role } = req.body;
     try {
-        const result = await dbRun('INSERT INTO products (name, price, img) VALUES (?, ?, ?)', [name, price, img || '🍔']);
-        const newProduct = { id: result.lastID, name, price, img: img || '🍔' };
-        io.emit('productAdded', newProduct);
-        res.json(newProduct);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+        const result = await dbRun('INSERT INTO users (restaurant_id, username, password, role) VALUES (?, ?, ?, ?)', [req.restaurantId, username, password, role]);
+        res.json({ id: result.lastID, username, role });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.delete('/api/products/:id', async (req, res) => {
+// Productos y Categorías
+apiRouter.get('/products', async (req, res) => {
     try {
-        const result = await dbRun('DELETE FROM products WHERE id = ?', [req.params.id]);
-        io.emit('productDeleted', { id: req.params.id });
-        res.json({ changes: result.changes });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+        const rows = await dbQuery('SELECT * FROM products WHERE restaurant_id = ?', [req.restaurantId]);
+        const products = rows.map(r => ({ ...r, modifiers: r.modifiers ? JSON.parse(r.modifiers) : [] }));
+        res.json(products);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// API Pedidos
-app.get('/api/orders', async (req, res) => {
+apiRouter.post('/products', async (req, res) => {
+    const { name, price, img, modifiers } = req.body;
     try {
-        const rows = await dbQuery('SELECT * FROM orders ORDER BY created_at DESC');
-        const orders = rows.map(row => ({ ...row, items: JSON.parse(row.items) }));
-        res.json(orders);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+        const result = await dbRun('INSERT INTO products (restaurant_id, name, price, img, modifiers) VALUES (?, ?, ?, ?, ?)',
+            [req.restaurantId, name, price, img || '🍔', JSON.stringify(modifiers || [])]);
+        res.json({ id: result.lastID, name });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/orders', async (req, res) => {
+// Órdenes
+apiRouter.get('/orders', async (req, res) => {
+    try {
+        const rows = await dbQuery('SELECT * FROM orders WHERE restaurant_id = ? ORDER BY created_at DESC', [req.restaurantId]);
+        res.json(rows.map(r => ({ ...r, items: JSON.parse(r.items) })));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+apiRouter.post('/orders', async (req, res) => {
     const { employee, items, total, status } = req.body;
-    if (!employee || !items || !total) return res.status(400).json({ error: 'Datos incompletos' });
     try {
-        const result = await dbRun('INSERT INTO orders (employee, items, total, status) VALUES (?, ?, ?, ?)', 
-            [employee, JSON.stringify(items), total, status || 'Pendiente']);
-        const newOrder = { id: result.lastID, employee, items, total, status: status || 'Pendiente', created_at: new Date().toISOString() };
-        io.emit('newOrder', newOrder);
-        res.json(newOrder);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+        const result = await dbRun('INSERT INTO orders (restaurant_id, employee, items, total, status) VALUES (?, ?, ?, ?, ?)',
+            [req.restaurantId, employee, JSON.stringify(items), total, status || 'pendiente']);
+        io.to(`restaurant_${req.restaurantId}`).emit('newOrder', { id: result.lastID, employee, items, total, status });
+        res.json({ id: result.lastID });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.put('/api/orders/:id', async (req, res) => {
-    const { status } = req.body;
-    if (!status) return res.status(400).json({ error: 'Estado requerido' });
+apiRouter.put('/orders/:id', async (req, res) => {
     try {
-        const result = await dbRun('UPDATE orders SET status = ? WHERE id = ?', [status, req.params.id]);
-        io.emit('orderUpdated', { id: parseInt(req.params.id), status });
-        res.json({ changes: result.changes, id: req.params.id, status });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+        await dbRun('UPDATE orders SET status = ? WHERE id = ? AND restaurant_id = ?', [req.body.status, req.params.id, req.restaurantId]);
+        io.to(`restaurant_${req.restaurantId}`).emit('orderUpdated', { id: req.params.id, status: req.body.status });
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.delete('/api/orders/:id', async (req, res) => {
+// Tickets
+apiRouter.get('/tickets', async (req, res) => {
     try {
-        const result = await dbRun('DELETE FROM orders WHERE id = ?', [req.params.id]);
-        io.emit('orderDeleted', { id: req.params.id });
-        res.json({ changes: result.changes });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+        const rows = await dbQuery('SELECT * FROM tickets WHERE restaurant_id = ? ORDER BY printed_at DESC', [req.restaurantId]);
+        res.json(rows.map(r => ({ ...r, items: JSON.parse(r.items) })));
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// API Tickets
-app.get('/api/tickets', async (req, res) => {
-    try {
-        const rows = await dbQuery('SELECT * FROM tickets ORDER BY id DESC');
-        const tickets = rows.map(row => ({ ...row, items: JSON.parse(row.items) }));
-        res.json(tickets);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.post('/api/tickets', async (req, res) => {
+apiRouter.post('/tickets', async (req, res) => {
     const { order_id, employee, items, total, amount_received, change_given, payment_method } = req.body;
-    if (!order_id || !employee || !items || total === undefined) {
-        return res.status(400).json({ error: 'Datos incompletos' });
-    }
     try {
-        const result = await dbRun(
-            'INSERT INTO tickets (order_id, employee, items, total, amount_received, change_given, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?)', 
-            [order_id, employee, JSON.stringify(items), total, amount_received || 0, change_given || 0, payment_method || 'Efectivo']
-        );
-        const newTicket = { id: result.lastID, order_id, employee, items, total, amount_received: amount_received || 0, change_given: change_given || 0, payment_method: payment_method || 'Efectivo', printed_at: new Date().toISOString() };
-        io.emit('ticketPrinted', newTicket);
-        res.json(newTicket);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+        const result = await dbRun('INSERT INTO tickets (restaurant_id, order_id, employee, items, total, amount_received, change_given, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [req.restaurantId, order_id, employee, JSON.stringify(items), total, amount_received, change_given, payment_method]);
+        res.json({ id: result.lastID });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Otras rutas de app
+app.get('*', (req, res) => {
+    // Si no es una ruta de API ni un archivo estático, servir la app principal
+    res.sendFile(path.join(__dirname, 'foodweb-pro.html'));
+});
+
+// INICIO
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Servidor en puerto ${PORT} - Modo: ${isProduction ? 'PRODUCCIÓN' : 'DESARROLLO'}`);
-    console.log(`📱 Acceso desde celular: http://192.168.101.53:${PORT}`);
-    console.log(`💻 Acceso desde computadora: http://localhost:${PORT}`);
+    console.log(`🚀 SERVIDOR ACTIVO EN PUERTO ${PORT}`);
 });
