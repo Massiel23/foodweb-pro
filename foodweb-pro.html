@@ -409,6 +409,9 @@
                         <button onclick="showProfileTab('sucursales')" class="profile-tab-btn"
                             style="text-align: left; padding: 0.8rem 1rem; border-radius: 8px; border: none; background: none; font-weight: 600; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;">
                             🏢 Sucursales</button>
+                        <button onclick="showProfileTab('usuarios')" class="profile-tab-btn"
+                            style="text-align: left; padding: 0.8rem 1rem; border-radius: 8px; border: none; background: none; font-weight: 600; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;">
+                            👥 Usuarios</button>
                         <button onclick="showProfileTab('facturacion')" class="profile-tab-btn"
                             style="text-align: left; padding: 0.8rem 1rem; border-radius: 8px; border: none; background: none; font-weight: 600; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;">
                             📄 Facturación</button>
@@ -528,33 +531,70 @@
                         </div>
                     </div>
 
-                    <!-- Tab: Facturación -->
-                    <div id="tab-facturacion" class="profile-tab-content" style="display: none;">
-                        <h2 style="margin-top: 0;">📄 Facturación y Pagos</h2>
-                        <button onclick="generateInvoice()" class="btn-primary" style="width: auto;">Generar Factura
-                            Mensual</button>
-                        <div id="invoice"
-                            style="margin-top: 2rem; padding: 1.5rem; border: 1px solid #eee; display: none;">
-                            <div id="invoice-content"></div>
-                        </div>
-                    </div>
-
-                </main>
             </div>
-        </div>
 
-        <!-- Ticket de Compra (Para Caja) -->
-        <div id="receipt" style="display: none;">
-            <h3>FoodWeb Pro</h3>
-            <h3>Ticket de Compra</h3>
-            <div id="receipt-content"></div>
-            <button onclick="printReceipt()">Imprimir</button>
-            <button onclick="cancelReceipt()">Cancelar</button>
-        </div>
+            <!-- Tab: Usuarios -->
+            <div id="tab-usuarios" class="profile-tab-content" style="display: none;">
+                <h2 style="margin-top: 0;">👥 Gestión de Usuarios</h2>
+                <div class="card" style="padding: 1.5rem; margin-bottom: 2rem; max-width: 500px;">
+                    <h3>Agregar Nuevo Empleado</h3>
+                    <div style="display: grid; gap: 1rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem;">Usuario</label>
+                            <input type="text" id="new-emp-username" placeholder="Ej: cajero1"
+                                style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem;">Contraseña</label>
+                            <input type="password" id="new-emp-password" placeholder="••••••••"
+                                style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem;">Rol</label>
+                            <select id="new-emp-role"
+                                style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                                <option value="caja">Cajero (Caja y Cobros)</option>
+                                <option value="empleado">Mesero / Vendedor (Ventas)</option>
+                            </select>
+                        </div>
+                        <button onclick="addEmployee()" class="btn-primary">Crear Usuario</button>
+                        <p id="emp-msg" style="font-size: 0.9rem; text-align: center; margin: 0;"></p>
+                    </div>
+                </div>
 
-        <footer>
-            <p>&copy; 2026 FoodWeb Pro. ¡Los mejores productos!</p>
-        </footer>
+                <h3>Lista de Usuarios</h3>
+                <div id="employee-list"
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
+                    <!-- Cargando... -->
+                </div>
+            </div>
+
+            <!-- Tab: Facturación -->
+            <div id="tab-facturacion" class="profile-tab-content" style="display: none;">
+                <h2 style="margin-top: 0;">📄 Facturación y Pagos</h2>
+                <button onclick="generateInvoice()" class="btn-primary" style="width: auto;">Generar Factura
+                    Mensual</button>
+                <div id="invoice" style="margin-top: 2rem; padding: 1.5rem; border: 1px solid #eee; display: none;">
+                    <div id="invoice-content"></div>
+                </div>
+            </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Ticket de Compra (Para Caja) -->
+    <div id="receipt" style="display: none;">
+        <h3>FoodWeb Pro</h3>
+        <h3>Ticket de Compra</h3>
+        <div id="receipt-content"></div>
+        <button onclick="printReceipt()">Imprimir</button>
+        <button onclick="cancelReceipt()">Cancelar</button>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 FoodWeb Pro. ¡Los mejores productos!</p>
+    </footer>
     </div>
 
     <script src="api.js?v=1.1"></script>

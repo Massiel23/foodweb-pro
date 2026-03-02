@@ -619,6 +619,10 @@ function showProfileTab(tabName) {
         if (tabName === 'sucursales') {
             renderBranches();
         }
+        // Si es usuarios, cargar empleados
+        if (tabName === 'usuarios') {
+            renderEmployees();
+        }
     }
 }
 
@@ -1679,10 +1683,17 @@ async function renderEmployees() {
 
         users.forEach((user) => {
             const div = document.createElement('div');
-            div.className = 'employee-item';
+            div.className = 'card employee-item';
+            div.style.padding = '1rem';
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
             div.innerHTML = `
-                <h4>${user.username}</h4>
-                <p>Rol: ${user.role}</p>
+                <div>
+                    <h4 style="margin:0; color: var(--text-primary);">${user.username}</h4>
+                    <p style="margin:0; font-size: 0.85rem; color: var(--text-secondary);">Rol: ${user.role.toUpperCase()}</p>
+                </div>
+                <span style="font-size: 0.75rem; background: var(--bg-primary); padding: 4px 8px; border-radius: 4px; color: var(--primary-color); font-weight: bold;">Activo</span>
             `;
             employeeList.appendChild(div);
         });
