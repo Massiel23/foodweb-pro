@@ -826,11 +826,12 @@ function renderProducts() {
         if (ventaList) {
             const card = document.createElement('div');
             card.className = 'product-card-v2';
-            card.onclick = () => openCustomizationModal(product.id, product.name, product.price);
+            card.onclick = () => showCustomizationModal(product.id, product.name, product.price);
             card.innerHTML = `
                 <span class="icon">${product.img || '🍔'}</span>
                 <h4>${product.name}</h4>
                 <p class="price">$${parseFloat(product.price).toFixed(2)}</p>
+                <button class="add-btn-v2">Agregar +</button>
             `;
             ventaList.appendChild(card);
         }

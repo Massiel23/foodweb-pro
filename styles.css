@@ -1777,6 +1777,7 @@ body.dark-mode footer:not(.login-footer) {
     padding-bottom: 40px;
     /* Space for the fixed footer so it doesnt cover content */
 }
+
 #app {
     padding-bottom: 60px;
 }
@@ -1793,6 +1794,7 @@ body.dark-mode footer:not(.login-footer) {
     .sales-layout {
         grid-template-columns: 1fr;
     }
+
     .cart-sidebar {
         position: static !important;
         max-height: none !important;
@@ -1881,6 +1883,26 @@ body.dark-mode footer:not(.login-footer) {
     color: var(--primary-color);
     font-weight: 800;
     font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.add-btn-v2 {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    width: 100%;
+    margin-top: auto;
+}
+
+.add-btn-v2:hover {
+    background: var(--primary-dark);
+    transform: scale(1.05);
 }
 
 .cart-sidebar {
@@ -1963,10 +1985,22 @@ body.dark-mode footer:not(.login-footer) {
     border-left: 6px solid var(--border-color);
 }
 
-.order-card-compact.pending { border-left-color: var(--danger-color); }
-.order-card-compact.preparing { border-left-color: var(--info-color); }
-.order-card-compact.finalizado { border-left-color: var(--success-color); }
-.order-card-compact.cobrado { border-left-color: var(--success-dark); opacity: 0.8; }
+.order-card-compact.pending {
+    border-left-color: var(--danger-color);
+}
+
+.order-card-compact.preparing {
+    border-left-color: var(--info-color);
+}
+
+.order-card-compact.finalizado {
+    border-left-color: var(--success-color);
+}
+
+.order-card-compact.cobrado {
+    border-left-color: var(--success-dark);
+    opacity: 0.8;
+}
 
 .order-card-compact:hover {
     box-shadow: var(--shadow-md);
@@ -2007,11 +2041,11 @@ body.dark-mode footer:not(.login-footer) {
 
 .order-card-items li {
     padding: 4px 0;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 body.dark-mode .order-card-items li {
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .order-card-footer {
