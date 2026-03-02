@@ -1739,8 +1739,9 @@ body.dark-mode .filter-btn.active {
     color: white;
     border-color: var(--primary-color);
 }
+
 /* ========== FOOTER GLOBAL (CLARO Y OSCURO) ========== */
-footer {
+footer:not(.login-footer) {
     position: fixed;
     bottom: 0;
     width: 100%;
@@ -1748,12 +1749,13 @@ footer {
     background: transparent !important;
     color: var(--text-secondary) !important;
     z-index: 100;
-    pointer-events: none; /* Let clicks pass through if it overlaps */
+    pointer-events: none;
+    /* Let clicks pass through if it overlaps */
     padding: 10px 0;
     font-size: 0.85rem;
 }
 
 #app {
-    padding-bottom: 40px; /* Space for the fixed footer so it doesnt cover content */
+    padding-bottom: 40px;
+    /* Space for the fixed footer so it doesnt cover content */
 }
-
