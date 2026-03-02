@@ -425,11 +425,10 @@
 
         <!-- Mi Perfil (Contenedor Maestro para Reportes, Ajustes y Facturación) -->
         <div id="perfil" class="section">
-            <div class="card"
-                style="display: flex; gap: 2rem; align-items: flex-start; padding: 1.5rem; min-height: 600px;">
+            <div class="card profile-layout">
 
                 <!-- Sidebar de Perfil -->
-                <aside style="flex: 0 0 240px; border-right: 1px solid var(--border-color); padding-right: 1.5rem;">
+                <aside class="profile-sidebar">
                     <div style="text-align: center; margin-bottom: 2rem;">
                         <div style="width: 70px; height: 70px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 1rem; font-weight: bold;"
                             id="profile-initials">--</div>
@@ -583,10 +582,9 @@
                     <div id="tab-usuarios" class="profile-tab-content" style="display: none;">
                         <h2 style="margin-top: 0;">👥 Gestión de Usuarios</h2>
 
-                        <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: flex-start;">
+                        <div class="users-layout">
                             <!-- Columna: Formulario -->
-                            <div class="card"
-                                style="flex: 0 0 350px; padding: 1.5rem; margin: 0; background: var(--card-bg, #ffffff); border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                            <div class="card user-form-card">
                                 <h4 style="margin-top: 0; color: var(--primary-color); font-weight: 700;">+ Agregar
                                     Nuevo Empleado</h4>
                                 <div style="display: grid; gap: 1.2rem;">
@@ -623,14 +621,14 @@
                                         </p>
                                     </div>
                                 </div>
+                            </div>
 
-                                <!-- Columna: Lista -->
-                                <div style="flex: 1; min-width: 300px;">
-                                    <h4 style="margin-top: 0;">Usuarios Activos</h4>
-                                    <div id="employee-list"
-                                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
-                                        <!-- Cargando... -->
-                                    </div>
+                            <!-- Columna: Lista -->
+                            <div class="user-list-column">
+                                <h4 style="margin-top: 0; color: var(--text-primary);">Usuarios Activos</h4>
+                                <div id="employee-list"
+                                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                                    <!-- Cargando... -->
                                 </div>
                             </div>
                         </div>

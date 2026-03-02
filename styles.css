@@ -228,11 +228,10 @@ nav button:active {
     max-width: 1200px;
     margin: 2rem auto;
     padding: 0 1rem;
-    background-color: #FFFFFF;
-    border-radius: 16px;
-    box-shadow: var(--shadow-md);
+    background-color: transparent;
     animation: fadeIn 0.3s ease;
-    border: 1px solid var(--border-color);
+    border: none;
+    box-shadow: none;
 }
 
 .profile-tab-btn.active {
@@ -1123,6 +1122,94 @@ footer p {
         margin-top: 0.5rem;
         width: 100%;
     }
+
+    /* Optimizaciones VIP Móvil para Modal y Venta */
+    .modal-body {
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    .modal-header {
+        padding: 1rem;
+    }
+
+    .modal-footer {
+        padding: 1rem;
+    }
+
+    .products-grid-v2 {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 0.8rem;
+    }
+
+    .product-card-v2 {
+        padding: 0.8rem;
+    }
+
+    .cart-sidebar {
+        padding: 1rem;
+    }
+}
+
+/* ========== PROFILE & USERS RESPONSIVE LAYOUT ========== */
+.profile-layout {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+    padding: 1.5rem;
+    min-height: 600px;
+}
+
+.profile-sidebar {
+    flex: 0 0 240px;
+    border-right: 1px solid var(--border-color);
+    padding-right: 1.5rem;
+}
+
+.users-layout {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.user-form-card {
+    flex: 0 0 350px;
+    padding: 1.5rem;
+    margin: 0;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.user-list-column {
+    flex: 1;
+    min-width: 300px;
+}
+
+@media (max-width: 768px) {
+    .profile-layout {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .profile-sidebar {
+        flex: 1;
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding-right: 0;
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .user-form-card {
+        flex: 1 1 100%;
+    }
+
+    .user-list-column {
+        flex: 1 1 100%;
+        min-width: 100%;
+    }
 }
 
 /* ========== IMPRESIÓN ========== */
@@ -1371,7 +1458,7 @@ body.dark-mode {
 }
 
 body.dark-mode .section {
-    background-color: rgba(30, 30, 30, 0.9);
+    background-color: transparent;
     color: #e0e0e0;
 }
 
