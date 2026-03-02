@@ -408,12 +408,15 @@ async function applyUserPermissions(user) {
     document.getElementById('nav-admin').style.display = 'none';
     document.getElementById('nav-caja').style.display = 'none';
     document.getElementById('nav-empleado').style.display = 'none';
+    document.getElementById('nav-cocina').style.display = 'none';
 
     // Mostrar Nav según rol
     if (user.role === 'admin') {
         document.getElementById('nav-admin').style.display = 'block';
     } else if (user.role === 'caja') {
         document.getElementById('nav-caja').style.display = 'block';
+    } else if (user.role === 'cocinero') {
+        document.getElementById('nav-cocina').style.display = 'block';
     } else {
         document.getElementById('nav-empleado').style.display = 'block';
     }
@@ -423,6 +426,9 @@ async function applyUserPermissions(user) {
         showSection('pendientes-cobrar');
     } else if (user.role === 'empleado') {
         showSection('venta');
+    } else if (user.role === 'cocinero') {
+        showSection('cocina');
+        loadKitchenOrders();
     } else {
         showSection('venta');
     }
@@ -438,6 +444,7 @@ function logout() {
     document.getElementById('nav-admin').style.display = 'none';
     document.getElementById('nav-empleado').style.display = 'none';
     document.getElementById('nav-caja').style.display = 'none';
+    document.getElementById('nav-cocina').style.display = 'none';
 
     // Limpiar campos de login
     document.getElementById('username').value = '';
@@ -1145,6 +1152,7 @@ async function loadOrders() {
         renderPendingOrders();
         renderCashierPendingOrders();
         renderCashierPaidOrders();
+        renderKitchenOrders();
 
         // Si es empleado, actualizar sus vistas también
         if (currentUser && currentUser.role === 'empleado') {
@@ -1153,11 +1161,48 @@ async function loadOrders() {
             renderEmployeeOrderHistory(employeeHistoryFilter);
         }
 
+        updateKitchenStats();
         console.log('=== loadOrders completado ===');
     } catch (error) {
         console.error('Error cargando pedidos:', error);
         console.error('Stack trace:', error.stack);
     }
+}
+
+// ========== LÓGICA DE TIEMPOS DINÁMICOS ==========
+function calculateOrderTimes(orderId) {
+    const order = pendingOrders.find(o => o.id === orderId);
+    if (!order) return { startIn: 1, readyIn: 5 };
+
+    // Pedidos que están antes en la cola (Pendientes o En Preparación)
+    const activeOrders = pendingOrders.filter(o => o.status === 'Pendiente' || o.status === 'En Preparación');
+    const orderIndex = activeOrders.findIndex(o => o.id === orderId);
+
+    if (orderIndex === -1) return { startIn: 0, readyIn: 0 };
+
+    // Cálculo de tiempo para empezar
+    let startIn = 1; // Mínimo 1 minuto
+    if (orderIndex > 0) {
+        // Sumamos 2 min por cada platillo de los pedidos anteriores
+        const previousOrders = activeOrders.slice(0, orderIndex);
+        const totalPreviousItems = previousOrders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + (i.quantity || 1), 0), 0);
+        startIn = totalPreviousItems * 2;
+    }
+
+    // Cálculo de tiempo para estar listo (una vez empezado)
+    const currentItemsCount = order.items.reduce((s, i) => s + (i.quantity || 1), 0);
+    let readyIn = currentItemsCount * 3; // Estimamos 3 min por platillo
+
+    return { startIn, readyIn };
+}
+
+function updateKitchenStats() {
+    const statsDiv = document.getElementById('kitchen-stats');
+    if (!statsDiv) return;
+
+    const enEspera = pendingOrders.filter(o => o.status === 'Pendiente').length;
+    const preparando = pendingOrders.filter(o => o.status === 'En Preparación').length;
+    statsDiv.textContent = `⏳ ${enEspera} en espera | 🔥 ${preparando} preparando`;
 }
 
 function renderPendingOrders() {
@@ -1167,38 +1212,104 @@ function renderPendingOrders() {
     ordersDiv.innerHTML = '';
 
     pendingOrders.forEach((order) => {
+        if (order.status === 'Cobrado') return;
+
         let statusClass = '';
         if (order.status === 'Pendiente') statusClass = 'pending';
         else if (order.status === 'En Preparación') statusClass = 'preparing';
         else if (order.status === 'Finalizado') statusClass = 'finalizado';
 
+        const times = calculateOrderTimes(order.id);
+        const timeLabel = order.status === 'Pendiente'
+            ? `<p style="color: #FF6B35; font-weight: bold;">⏳ Empieza en: ${times.startIn} min</p>`
+            : (order.status === 'En Preparación' ? `<p style="color: #3498db; font-weight: bold;">🔥 Listo en: ${times.readyIn} min</p>` : '');
+
         const div = document.createElement('div');
         div.className = `order-item ${statusClass}`;
 
         const itemsList = order.items.map(item => {
-            const customText = item.customizations && item.customizations.length > 0
-                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>`
-                : '';
             const quantity = item.quantity || 1;
-            const displayText = quantity > 1
-                ? `${quantity}x ${item.name}${customText}`
-                : `${item.name}${customText}`;
-            return `<li>${displayText}</li>`;
+            return `<li>${quantity}x ${item.name}</li>`;
         }).join('');
 
         div.innerHTML = `
             <h4>Pedido #${order.id} - ${order.employee || 'Anónimo'}</h4>
             <p><strong>Estado:</strong> ${order.status}</p>
+            ${timeLabel}
             <ul>${itemsList}</ul>
             <p><strong>Total:</strong> $${parseFloat(order.total).toFixed(2)}</p>
-            <p><small>${new Date(order.created_at).toLocaleString()}</small></p>
             <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-                ${order.status === 'Pendiente' ? `<button onclick="updateOrderStatus(${order.id}, 'En Preparación')" style="background: #3498db;">Iniciar Preparación</button>` : ''}
-                ${order.status === 'En Preparación' ? `<button onclick="updateOrderStatus(${order.id}, 'Finalizado')" style="background: #2ecc71;">Marcar Finalizado</button>` : ''}
-                ${order.status === 'Finalizado' ? `<button onclick="updateOrderStatus(${order.id}, 'Cobrado')" style="background: #27ae60;">Marcar Cobrado</button>` : ''}
+                ${order.status === 'Pendiente' ? `<button onclick="updateOrderStatus(${order.id}, 'En Preparación')" style="background: #3498db; width: 100%;">🔥 Empezar</button>` : ''}
+                ${order.status === 'En Preparación' ? `<button onclick="updateOrderStatus(${order.id}, 'Finalizado')" style="background: #2ecc71; width: 100%;">✅ Listo</button>` : ''}
             </div>
         `;
         ordersDiv.appendChild(div);
+    });
+}
+
+async function loadKitchenOrders() {
+    await loadOrders();
+}
+
+function renderKitchenOrders() {
+    const kitchenOrdersDiv = document.getElementById('kitchen-orders');
+    const kitchenHistoryDiv = document.getElementById('kitchen-history');
+    if (!kitchenOrdersDiv) return;
+
+    kitchenOrdersDiv.innerHTML = '';
+    if (kitchenHistoryDiv) kitchenHistoryDiv.innerHTML = '';
+
+    const sortedOrders = [...pendingOrders].reverse();
+
+    sortedOrders.forEach(order => {
+        if (order.status === 'Cobrado') return;
+
+        const times = calculateOrderTimes(order.id);
+        const div = document.createElement('div');
+        div.className = `card order-card-kitchen ${order.status === 'En Preparación' ? 'preparing-glow' : ''}`;
+        div.style.borderLeft = order.status === 'En Preparación' ? '8px solid #3498db' : '8px solid #ff6b35';
+        div.style.padding = '1.5rem';
+
+        const itemsList = order.items.map(item => {
+            const quantity = item.quantity || 1;
+            const custom = item.customizations && item.customizations.length > 0 ? `<br><small style="color:red">(!) ${item.customizations.join(', ')}</small>` : '';
+            return `<li style="margin-bottom: 0.5rem; font-size: 1.1rem;"><strong>${quantity}x</strong> ${item.name}${custom}</li>`;
+        }).join('');
+
+        const isPreparing = order.status === 'En Preparación';
+        const timeBadge = isPreparing
+            ? `<span style="background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">🔥 PREPARANDO - Finalizar en ~${times.readyIn} min</span>`
+            : `<span style="background: #ff6b35; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">⏳ EN ESPERA - Cola: ~${times.startIn} min</span>`;
+
+        if (order.status === 'Finalizado') {
+            if (kitchenHistoryDiv) {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'card';
+                historyItem.style.padding = '1rem';
+                historyItem.style.opacity = '0.7';
+                historyItem.innerHTML = `<h4>Pedido #${order.id}</h4><p>ENTREGADO</p>`;
+                kitchenHistoryDiv.appendChild(historyItem);
+            }
+            return;
+        }
+
+        div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0; color: var(--text-primary);">Pedido #${order.id}</h3>
+                    <small style="color: var(--text-secondary);">${order.employee || 'Mesero'}</small>
+                </div>
+                ${timeBadge}
+            </div>
+            <ul style="list-style: none; padding: 0; margin-bottom: 1.5rem;">${itemsList}</ul>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                ${!isPreparing ?
+                `<button onclick="updateOrderStatus(${order.id}, 'En Preparación')" style="background: #3498db; color: white; border: none; padding: 1rem; border-radius: 8px; font-weight: bold; cursor: pointer; grid-column: span 2;">🔥 EMPEZAR AHORA</button>` :
+                `<button onclick="updateOrderStatus(${order.id}, 'Finalizado')" style="background: #2ecc71; color: white; border: none; padding: 1rem; border-radius: 8px; font-weight: bold; cursor: pointer; grid-column: span 2;">✅ MARCÁR COMO LISTO</button>`
+            }
+            </div>
+        `;
+        kitchenOrdersDiv.appendChild(div);
     });
 }
 
@@ -1227,26 +1338,23 @@ function renderCashierPendingOrders() {
     }
 
     finalizados.forEach((order) => {
+        const times = calculateOrderTimes(order.id);
         const div = document.createElement('div');
         div.className = 'order-item finalizado';
 
         const itemsList = order.items.map(item => {
-            const customText = item.customizations && item.customizations.length > 0
-                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>`
-                : '';
             const quantity = item.quantity || 1;
-            const displayText = quantity > 1
-                ? `${quantity}x ${item.name}${customText}`
-                : `${item.name}${customText}`;
-            return `<li>${displayText}</li>`;
+            return `<li>${quantity}x ${item.name}</li>`;
         }).join('');
 
         div.innerHTML = `
-            <h4>Pedido #${order.id} - ${order.employee || 'Anónimo'}</h4>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <h4>Pedido #${order.id} - ${order.employee || 'Anónimo'}</h4>
+                <span style="background: #2ecc71; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">Listo para cobrar</span>
+            </div>
             <ul>${itemsList}</ul>
             <p><strong>Total:</strong> $${parseFloat(order.total).toFixed(2)}</p>
-            <p><small>${new Date(order.created_at).toLocaleString()}</small></p>
-            <button onclick="showPaymentModal(${order.id}, ${order.total})" style="background: #27ae60; width: 100%; margin-top: 1rem;">💰 Cobrar Pedido</button>
+            <button onclick="showPaymentModal(${order.id}, ${order.total})" style="background: #27ae60; width: 100%; margin-top: 1rem; border-radius: 8px; padding: 0.8rem; font-weight: bold;">💰 Cobrar Pedido</button>
         `;
         ordersDiv.appendChild(div);
     });
@@ -1824,19 +1932,22 @@ function renderEmployeePendingOrders() {
     console.log('Renderizando', myOrders.length, 'pedidos del empleado');
 
     myOrders.forEach((order, index) => {
-        console.log(`Renderizando pedido ${index + 1}:`, order);
+        const times = calculateOrderTimes(order.id);
         let statusClass = '';
         let statusColor = '';
         let statusIcon = '';
+        let timeLabel = '';
 
         if (order.status === 'Pendiente') {
             statusClass = 'pending';
             statusColor = '#E74C3C';
             statusIcon = '🔴';
+            timeLabel = `<p style="color: #FF6B35; font-weight: bold; margin-bottom: 0.5rem;">⏳ Empieza en: ~${times.startIn} min</p>`;
         } else if (order.status === 'En Preparación') {
             statusClass = 'preparing';
             statusColor = '#3498DB';
             statusIcon = '🔵';
+            timeLabel = `<p style="color: #3498DB; font-weight: bold; margin-bottom: 0.5rem;">🔥 Listo en: ~${times.readyIn} min</p>`;
         } else if (order.status === 'Finalizado') {
             statusClass = 'finalizado';
             statusColor = '#2ECC71';
@@ -1847,14 +1958,8 @@ function renderEmployeePendingOrders() {
         div.className = `order-item ${statusClass}`;
 
         const itemsList = order.items.map(item => {
-            const customText = item.customizations && item.customizations.length > 0
-                ? ` <strong style="color: #FF6B35;">[${item.customizations.join(', ')}]</strong>`
-                : '';
             const quantity = item.quantity || 1;
-            const displayText = quantity > 1
-                ? `${quantity}x ${item.name}${customText}`
-                : `${item.name}${customText}`;
-            return `<li>${displayText}</li>`;
+            return `<li>${quantity}x ${item.name}</li>`;
         }).join('');
 
         div.innerHTML = `
@@ -1864,6 +1969,7 @@ function renderEmployeePendingOrders() {
                     ${statusIcon} ${order.status}
                 </span>
             </div>
+            ${timeLabel}
             <ul>${itemsList}</ul>
             <p><strong>Total:</strong> $${parseFloat(order.total).toFixed(2)}</p>
             <p><small>Creado: ${new Date(order.created_at).toLocaleString()}</small></p>
