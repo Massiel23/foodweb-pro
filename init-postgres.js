@@ -9,9 +9,12 @@ async function initDB() {
         process.exit(1);
     }
 
+    // Detectar si la URL no es localhost para habilitar SSL obligatoriamente (necesario para Render External URL)
+    const isLocalhost = process.env.DATABASE_URL.includes('localhost') || process.env.DATABASE_URL.includes('127.0.0.1');
+
     const pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
+        ssl: isLocalhost ? false : { rejectUnauthorized: false }
     });
 
     try {
