@@ -845,7 +845,8 @@ function renderBranches() {
 }
 
 async function switchBranch(id, name) {
-    if (!confirm(`¿Deseas cambiar a la sucursal "${name}"?`)) return;
+    const confirmed = await showConfirmModal('Cambiar de Sucursal', `¿Deseas cambiar a la sucursal <b>"${name}"</b>?`);
+    if (!confirmed) return;
 
     // Guardar el nuevo ID de restaurante
     localStorage.setItem('restaurantId', id);
@@ -865,8 +866,13 @@ async function switchBranch(id, name) {
     // Notificar al API del cambio antes de recargar
     posApi.restaurantId = id;
 
-    alert(`Cambiando a sucursal: ${name}`);
-    location.reload();
+    // Mostrar modal elegante de carga en lugar de un alert feo
+    showLoadingModal(`Cambiando a sucursal: ${name}`, 'Por favor espera un momento...');
+
+    // Recargar después de un breve delay para que la animación se vea
+    setTimeout(() => {
+        location.reload();
+    }, 800);
 }
 
 async function handleAddBranch() {
@@ -2298,7 +2304,143 @@ function showSuccessModal(username, password) {
     // Animaciones de entrada
     requestAnimationFrame(() => {
         modal.style.opacity = '1';
-        document.getElementById('success-employee-card').style.transform = 'translateY(0) scale(1)';
+        const card = document.getElementById('success-employee-card');
+        if (card) card.style.transform = 'translateY(0) scale(1)';
+    });
+}
+
+// ========== MODALES REUSABLES ELEGANTES ==========
+function showConfirmModal(title, message) {
+    return new Promise((resolve) => {
+        const existingModal = document.getElementById('custom-confirm-modal');
+        if (existingModal) existingModal.remove();
+
+        const isDark = document.body.classList.contains('dark-mode');
+        const modal = document.createElement('div');
+        modal.id = 'custom-confirm-modal';
+
+        modal.style.cssText = `
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 10005;
+            opacity: 0; transition: opacity 0.3s;
+        `;
+
+        const cardBg = isDark ? '#1e293b' : '#ffffff';
+        const textColor = isDark ? '#f8fafc' : '#1e293b';
+        const borderColor = isDark ? '#334155' : '#e2e8f0';
+
+        modal.innerHTML = `
+            <div style="
+                background: ${cardBg}; 
+                color: ${textColor};
+                padding: 2.5rem; 
+                border-radius: 16px; 
+                max-width: 400px; 
+                width: 90%; 
+                box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); 
+                border: 1px solid ${borderColor};
+                transform: translateY(20px) scale(0.95);
+                transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                text-align: center;
+            " id="custom-confirm-card">
+                
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🏢</div>
+                <h3 style="margin-top: 0; font-size: 1.5rem; color: var(--primary-color);">${title}</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1rem;">
+                    ${message}
+                </p>
+                
+                <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <button id="btn-confirm-cancel" style="flex: 1; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='var(--bg-secondary)';" onmouseout="this.style.background='transparent';">
+                        Cancelar
+                    </button>
+                    <button id="btn-confirm-accept" style="flex: 1; background: var(--primary-color); color: white; border: none; padding: 0.75rem; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: filter 0.2s;" onmouseover="this.style.filter='brightness(1.1)';" onmouseout="this.style.filter='none';">
+                        Aceptar
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeAndResolve = (result) => {
+            modal.style.opacity = '0';
+            const card = document.getElementById('custom-confirm-card');
+            if (card) card.style.transform = 'translateY(20px) scale(0.95)';
+            setTimeout(() => {
+                modal.remove();
+                resolve(result);
+            }, 300);
+        };
+
+        document.getElementById('btn-confirm-cancel').onclick = () => closeAndResolve(false);
+        document.getElementById('btn-confirm-accept').onclick = () => closeAndResolve(true);
+
+        requestAnimationFrame(() => {
+            modal.style.opacity = '1';
+            const card = document.getElementById('custom-confirm-card');
+            if (card) card.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+}
+
+function showLoadingModal(title, subtitle) {
+    const existingModal = document.getElementById('custom-loading-modal');
+    if (existingModal) existingModal.remove();
+
+    const isDark = document.body.classList.contains('dark-mode');
+    const modal = document.createElement('div');
+    modal.id = 'custom-loading-modal';
+
+    modal.style.cssText = `
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(4px);
+        display: flex; justify-content: center; align-items: center;
+        z-index: 10006;
+        opacity: 0; transition: opacity 0.3s;
+    `;
+
+    const cardBg = isDark ? '#1e293b' : '#ffffff';
+    const textColor = isDark ? '#f8fafc' : '#1e293b';
+    const borderColor = isDark ? '#334155' : '#e2e8f0';
+
+    modal.innerHTML = `
+        <div style="
+            background: ${cardBg}; 
+            color: ${textColor};
+            padding: 2.5rem; 
+            border-radius: 16px; 
+            max-width: 350px; 
+            width: 90%; 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); 
+            border: 1px solid ${borderColor};
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+        " id="custom-loading-card">
+            
+            <svg style="margin: 0 auto 1.5rem auto; display: block; animation: rotate 2s linear infinite;" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
+            <style>@keyframes rotate { 100% { transform: rotate(360deg); } }</style>
+            
+            <h3 style="margin-top: 0; font-size: 1.25rem; color: var(--primary-color);">${title}</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 0; font-size: 0.95rem;">
+                ${subtitle}
+            </p>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    requestAnimationFrame(() => {
+        modal.style.opacity = '1';
+        const card = document.getElementById('custom-loading-card');
+        if (card) card.style.transform = 'scale(1)';
     });
 }
 
