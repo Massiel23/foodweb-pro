@@ -165,7 +165,8 @@ apiRouter.post('/restaurants/branch', async (req, res) => {
 // Usuarios
 apiRouter.get('/users', async (req, res) => {
     try {
-        const rows = await dbQuery('SELECT id, username, role FROM users WHERE restaurant_id = ?', [req.restaurantId]);
+        // Se añade password a la consulta para mostrar en el frontend (solo admin puede verlo)
+        const rows = await dbQuery('SELECT id, username, role, password FROM users WHERE restaurant_id = ?', [req.restaurantId]);
         res.json(rows);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -175,6 +176,14 @@ apiRouter.post('/users', async (req, res) => {
     try {
         const result = await dbRun('INSERT INTO users (restaurant_id, username, password, role) VALUES (?, ?, ?, ?)', [req.restaurantId, username, password, role]);
         res.json({ id: result.lastID, username, role });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+apiRouter.delete('/users/:id', async (req, res) => {
+    try {
+        // Prevenir borrar al administrador principal de la sucursal por seguridad
+        await dbRun("DELETE FROM users WHERE id = ? AND restaurant_id = ? AND role != 'admin'", [req.params.id, req.restaurantId]);
+        res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

@@ -2041,23 +2041,72 @@ async function renderEmployees() {
             };
             const icon = roleIcons[user.role] || '👤';
 
+            const isNotAdmin = user.role !== 'admin';
+
             div.innerHTML = `
-                <div style="width: 40px; height: 40px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                <div style="width: 40px; height: 40px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
                     ${icon}
                 </div>
-                <div style="flex: 1;">
-                    <h4 style="margin:0; font-size: 1rem; color: var(--text-primary);">${user.username}</h4>
+                <div style="flex: 1; min-width: 0;">
+                    <h4 style="margin:0; font-size: 1rem; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${user.username}</h4>
                     <p style="margin:0; font-size: 0.8rem; color: var(--text-secondary);">${user.role.toUpperCase()}</p>
+                    ${user.password ? `
+                    <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                        <span id="pwd-text-${user.id}" style="font-family: monospace; font-size: 0.85rem; color: var(--text-secondary); background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; letter-spacing: 2px;">••••••••</span>
+                        <button onclick="togglePassword(${user.id}, '${user.password}')" title="Mostrar/Ocultar contraseña" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 2px; display: flex; align-items: center; justify-content: center;">
+                            <svg id="pwd-icon-${user.id}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>` : ''}
                 </div>
-                <div style="display: flex; align-items: center; gap: 4px; color: #2ecc71; font-size: 0.75rem; font-weight: bold;">
-                    <div style="width: 8px; height: 8px; background: #2ecc71; border-radius: 50%;"></div>
-                    ACTIVO
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 4px; color: #2ecc71; font-size: 0.75rem; font-weight: bold;">
+                        <div style="width: 8px; height: 8px; background: #2ecc71; border-radius: 50%;"></div>
+                        ACTIVO
+                    </div>
+                    ${isNotAdmin ? `
+                    <button onclick="deleteEmployee(${user.id}, '${user.username}')" title="Eliminar usuario" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 0.75rem; font-weight: bold; transition: all 0.2s; display: flex; align-items: center; gap: 4px;" onmouseover="this.style.background='#ef4444'; this.style.color='white';" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.color='#ef4444';">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        Eliminar
+                    </button>` : ''}
                 </div>
             `;
             employeeList.appendChild(div);
         });
     } catch (error) {
         console.error('Error cargando empleados:', error);
+    }
+}
+
+// Mostrar/Ocultar contraseña en lista de empleados
+function togglePassword(userId, password) {
+    const textSpan = document.getElementById(`pwd-text-${userId}`);
+    const iconSvg = document.getElementById(`pwd-icon-${userId}`);
+
+    if (textSpan.dataset.vis === 'true') {
+        textSpan.dataset.vis = 'false';
+        textSpan.textContent = '••••••••';
+        textSpan.style.letterSpacing = '2px';
+        iconSvg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+    } else {
+        textSpan.dataset.vis = 'true';
+        textSpan.textContent = password;
+        textSpan.style.letterSpacing = 'normal';
+        iconSvg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+    }
+}
+
+// Eliminar un empleado
+async function deleteEmployee(userId, username) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente al empleado "${username}"?`)) {
+        return;
+    }
+
+    try {
+        await posApi.deleteUser(userId);
+        showNotification(`Empleado "${username}" eliminado`);
+        renderEmployees(); // Recargar lista
+    } catch (error) {
+        alert('Error al eliminar empleado: ' + error.message);
     }
 }
 
@@ -2126,8 +2175,8 @@ async function addEmployee() {
         await posApi.addUser(prefixedUsername, password, role);
         document.getElementById('new-emp-username').value = '';
         document.getElementById('new-emp-password').value = '';
-        empMsg.innerHTML = `✅ Empleado agregado.<br>Su usuario para entrar es: <b>${prefixedUsername}</b>`;
-        empMsg.style.color = 'green';
+        empMsg.innerHTML = ''; // Limpiar cualquier mensaje de error anterior
+        empMsg.style.color = '';
 
         // Mostrar un modal moderno y elegante en lugar de alert nativo
         showSuccessModal(prefixedUsername, password);
