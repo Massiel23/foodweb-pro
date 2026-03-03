@@ -705,6 +705,28 @@ async function showProfile() {
         const initials = names.length > 1 ? (names[0][0] + (names[1] ? names[1][0] : '')) : names[0].substring(0, 2);
         document.getElementById('profile-initials').textContent = initials.toUpperCase();
 
+        // ========= RESTRICCIONES PLAN BÁSICO =========
+        // Si es plan Básico, ocultar las pestañas de Sucursales y Reportes
+        const tabSucursales = document.querySelector('.profile-tab-btn[onclick*="sucursales"]');
+        const tabReportes = document.querySelector('.profile-tab-btn[onclick*="reportes"]');
+
+        if (tabSucursales) {
+            if (isPro) {
+                tabSucursales.style.display = '';
+                tabSucursales.title = '';
+            } else {
+                tabSucursales.style.display = 'none'; // Ocultar para plan Básico
+            }
+        }
+        if (tabReportes) {
+            if (isPro) {
+                tabReportes.style.display = '';
+                tabReportes.title = '';
+            } else {
+                tabReportes.style.display = 'none'; // Ocultar para plan Básico
+            }
+        }
+
     } catch (e) {
         console.error('❌ Error en showProfile:', e);
         showNotification('Error al cargar datos del perfil');
@@ -2054,6 +2076,31 @@ async function addEmployee() {
     }
 
     try {
+        // ========= RESTRICCIONES PLAN BÁSICO =========
+        if (currentRestaurantPlan !== 'pro') {
+            // Obtener lista actual de usuarios para validar límites
+            const users = await posApi.getUsers();
+            // Excluir al admin de la cuenta (no cuenta para el límite)
+            const nonAdminUsers = users.filter(u => u.role !== 'admin');
+
+            // LÍMITE: máximo 2 usuarios en total (sin contar admin)
+            if (nonAdminUsers.length >= 2) {
+                empMsg.style.color = 'orange';
+                empMsg.innerHTML = '⚠️ <strong>Plan Básico:</strong> Límite de 2 empleados alcanzado. Actualiza al Plan Pro para usuarios ilimitados.';
+                return;
+            }
+
+            // LÍMITE: máximo 1 cajero
+            if (role === 'caja') {
+                const cajaUsers = users.filter(u => u.role === 'caja');
+                if (cajaUsers.length >= 1) {
+                    empMsg.style.color = 'orange';
+                    empMsg.innerHTML = '⚠️ <strong>Plan Básico:</strong> Solo se permite 1 cajero. Actualiza al Plan Pro para cajeros ilimitados.';
+                    return;
+                }
+            }
+        }
+
         await posApi.addUser(username, password, role);
         document.getElementById('new-emp-username').value = '';
         document.getElementById('new-emp-password').value = '';
