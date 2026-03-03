@@ -2455,3 +2455,68 @@ body.dark-mode .order-card-items li {
 body.dark-mode .modifier-option.selected {
     background: rgba(129, 140, 248, 0.1);
 }
+
+/* Widget de Suscripción (Panel Mis Datos) */
+.subscription-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #1f1f23;
+    /* Dark background matching image */
+    border: 1px solid #333338;
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem;
+    color: #ffffff;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 5px;
+}
+
+.subs-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.subs-label {
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.subs-badge {
+    background-color: #2d2d31;
+    color: #4ade80;
+    /* Texto verde brillante o azul dependiendo de JavaScript */
+    border: 1px solid #3f3f46;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.subs-renewal {
+    background-color: #2d2d31;
+    border: 1px solid #3f3f46;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #e4e4e7;
+    display: flex;
+    align-items: center;
+}
+
+.subs-manage-btn {
+    background: transparent;
+    border: none;
+    color: #a1a1aa;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+.subs-manage-btn:hover {
+    color: #ffffff;
+}

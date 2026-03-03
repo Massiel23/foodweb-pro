@@ -485,13 +485,22 @@
                                 <input type="text" id="profile-restaurant-name"
                                     style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1;">
                             </div>
-                            <div>
-                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Plan
-                                    Suscrito</label>
-                                <input type="text" id="profile-plan-name" readonly
-                                    style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc; font-weight: bold; color: var(--primary-color);">
+                            <div style="grid-column: 1 / -1; margin-top: 1rem;">
+                                <!-- Widget de Suscripción -->
+                                <div class="subscription-card">
+                                    <div class="subs-info">
+                                        <span class="subs-label">Plan actual</span>
+                                        <span class="subs-badge" id="profile-plan-badge-details">Cargando...</span>
+                                    </div>
+                                    <div class="subs-renewal">
+                                        <span id="profile-plan-renewal">Próxima renovación: --</span>
+                                    </div>
+                                    <button class="subs-manage-btn" onclick="showProfileTab('facturacion')">Gestionar
+                                        suscripción ></button>
+                                </div>
                             </div>
-                            <button onclick="updateUserProfile()" class="btn-primary">Guardar Cambios</button>
+                            <button onclick="updateUserProfile()" class="btn-primary"
+                                style="grid-column: 1 / -1; margin-top: 1rem;">Guardar Cambios</button>
                         </div>
                     </div>
 

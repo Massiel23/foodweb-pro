@@ -649,17 +649,34 @@ async function showProfile() {
         document.getElementById('profile-restaurant-name').value = restaurant.name || '';
         document.getElementById('profile-branch-display').textContent = restaurant.name || 'Sucursal';
 
-        // Mostrar Plan
+        // Mostrar Plan en Widget de Suscripción Interactivo
         const isPro = currentRestaurantPlan === 'pro';
 
-        const planInput = document.getElementById('profile-plan-name');
-        const planBadge = document.getElementById('profile-plan-badge');
+        const planBadgeDetails = document.getElementById('profile-plan-badge-details');
+        const planRenewal = document.getElementById('profile-plan-renewal');
+        const planBadgeSide = document.getElementById('profile-plan-badge');
 
-        if (planInput) planInput.value = isPro ? 'Plan Pro ($499 MXN/mes)' : 'Plan Básico ($260 MXN/mes)';
-        if (planBadge) {
-            planBadge.textContent = isPro ? 'PLAN PRO' : 'PLAN BÁSICO';
-            planBadge.style.background = isPro ? 'rgba(99, 102, 241, 0.1)' : 'rgba(100, 116, 139, 0.1)';
-            planBadge.style.color = isPro ? 'var(--primary-color)' : 'var(--text-secondary)';
+        if (planBadgeDetails) {
+            // Nombre y Color dentro de la tarjeta
+            planBadgeDetails.textContent = isPro ? 'Pro' : 'Starter';
+            planBadgeDetails.style.color = isPro ? '#38bdf8' : '#4ade80';
+        }
+
+        if (planRenewal) {
+            // Simular fecha de vencimiento a 30 días
+            const today = new Date();
+            today.setDate(today.getDate() + 30);
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            // Capitalizar la primera letra del mes
+            let dateStr = today.toLocaleDateString('es-ES', options);
+            dateStr = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+            planRenewal.textContent = isPro ? `Próxima renovación: ${dateStr}` : 'Suscripción Básica Permanente';
+        }
+
+        if (planBadgeSide) {
+            planBadgeSide.textContent = isPro ? 'PLAN PRO' : 'PLAN BÁSICO';
+            planBadgeSide.style.background = isPro ? 'rgba(99, 102, 241, 0.1)' : 'rgba(100, 116, 139, 0.1)';
+            planBadgeSide.style.color = isPro ? 'var(--primary-color)' : 'var(--text-secondary)';
         }
 
         // Iniciales
