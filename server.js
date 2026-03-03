@@ -205,6 +205,13 @@ apiRouter.post('/products', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+apiRouter.delete('/products/:id', async (req, res) => {
+    try {
+        await dbRun('DELETE FROM products WHERE id = ? AND restaurant_id = ?', [req.params.id, req.restaurantId]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // Órdenes
 apiRouter.get('/orders', async (req, res) => {
     try {
