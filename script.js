@@ -42,7 +42,7 @@ async function checkAutoLogin() {
 
             // Si hay un restaurantId en localStorage pero no coincide con el del usuario
             // (sucede al cambiar de sucursal), priorizamos el de localStorage
-            const savedResId = localStorage.getItem('restaurantId');
+            const savedResId = localStorage.getItem('activeBranchId') || localStorage.getItem('restaurantId');
             if (savedResId) {
                 const newId = parseInt(savedResId);
                 // Re-unirse al socket si el ID cambió o para asegurar persistencia
@@ -420,16 +420,27 @@ async function login() {
     }
 
     try {
+        // 🔒 CAPTURAR CACHÉ ANTES de llamar a posApi.login (ya que posApi.login sobreescribe 'restaurantId')
+        const savedBranchStr = localStorage.getItem('activeBranchId') || localStorage.getItem('restaurantId');
+        const previousUsername = localStorage.getItem('lastUsername');
+
         const response = await posApi.login(username, password);
 
-        // Priorizar la sucursal cacheada localmente si existe antes de guardar a currentUser
-        const savedResId = localStorage.getItem('restaurantId');
-        if (savedResId) {
-            response.user.restaurant_id = parseInt(savedResId);
-            posApi.restaurantId = parseInt(savedResId);
+        // Guardar el nombre de usuario actual para futuras comprobaciones de la misma sesión/franquicia
+        localStorage.setItem('lastUsername', username);
+
+        // Priorizar la sucursal cacheada localmente si existe y si es el mismo usuario
+        if (savedBranchStr && previousUsername === username) {
+            const savedResId = parseInt(savedBranchStr);
+            response.user.restaurant_id = savedResId;
+            posApi.restaurantId = savedResId;
+            // Restaurar las variables que posApi.login borró
+            localStorage.setItem('restaurantId', savedResId);
+            localStorage.setItem('activeBranchId', savedResId);
+
             // También se unen al nuevo id por si acaso
             if (socket) {
-                socket.emit('joinRestaurant', parseInt(savedResId));
+                socket.emit('joinRestaurant', savedResId);
             }
         }
 
