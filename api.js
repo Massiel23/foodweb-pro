@@ -203,10 +203,10 @@ class API {
         return this.request('/api/orders');
     }
 
-    async createOrder(employee, items, total, status = 'Pendiente') {
+    async createOrder(employee, items, total, status = 'Pendiente', table_name = null) {
         return this.request('/api/orders', {
             method: 'POST',
-            body: JSON.stringify({ employee, items, total, status })
+            body: JSON.stringify({ employee, items, total, status, table_name })
         });
     }
 
@@ -232,6 +232,31 @@ class API {
         return this.request('/api/tickets', {
             method: 'POST',
             body: JSON.stringify({ order_id, employee, items, total, amount_received, change_given, payment_method })
+        });
+    }
+
+    // ========== MESAS ==========
+    async getTables() {
+        return this.request('/api/tables');
+    }
+
+    async addTable(name, assigned_user_id = null) {
+        return this.request('/api/tables', {
+            method: 'POST',
+            body: JSON.stringify({ name, assigned_user_id })
+        });
+    }
+
+    async deleteTable(id) {
+        return this.request(`/api/tables/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async updateTable(id, assigned_user_id) {
+        return this.request(`/api/tables/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ assigned_user_id })
         });
     }
 }

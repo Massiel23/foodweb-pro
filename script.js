@@ -792,6 +792,10 @@ function showProfileTab(tabName) {
         if (tabName === 'usuarios') {
             renderEmployees();
         }
+        // Si es mesas, cargar mesas
+        if (tabName === 'mesas') {
+            renderTables();
+        }
     }
 }
 
@@ -1011,6 +1015,111 @@ async function addProduct() {
         await loadProducts();
     } catch (error) {
         alert('Error al agregar producto: ' + error.message);
+    }
+}
+
+// ========== GESTIÓN DE MESAS ==========
+async function renderTables() {
+    const list = document.getElementById('tables-list');
+    if (!list) return;
+
+    list.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 2rem;">Cargando mesas...</div>';
+
+    try {
+        const [tablesResponse, usersResponse] = await Promise.all([
+            posApi.getTables(),
+            posApi.getUsers()
+        ]);
+
+        let tables = tablesResponse || [];
+        // Compatibilidad si la API retorna en otra propiedad
+        if (tables.data) tables = tables.data;
+
+        let users = usersResponse || [];
+        if (users.data) users = users.data;
+
+        // Filtrar solo empleados (meseros)
+        const meseros = users.filter(u => u.role === 'empleado');
+
+        if (!tables || tables.length === 0) {
+            list.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 2rem; background: var(--bg-secondary); border-radius: 12px; border: 1px dashed var(--border-color);">No hay mesas creadas. Las mesas son opcionales.</div>';
+            return;
+        }
+
+        list.innerHTML = '';
+        tables.forEach(table => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.style.cssText = 'padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; position: relative;';
+
+            // Selector dropdown de asignación
+            let selectHtml = `<select onchange="assignTableToUser(${table.id}, this.value)" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 0.9rem; cursor: pointer;">
+                                <option value="">🌐 Libre (Sin asignar)</option>`;
+            meseros.forEach(m => {
+                const selected = (table.assigned_user_id == m.id) ? 'selected' : '';
+                selectHtml += `<option value="${m.id}" ${selected}>👤 Asignada a: ${m.username}</option>`;
+            });
+            selectHtml += `</select>`;
+
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h3 style="margin: 0 0 0.25rem 0; color: var(--primary-color); display: flex; align-items: center; gap: 8px;">🪑 ${table.name}</h3>
+                    </div>
+                    <button onclick="deleteTable(${table.id}, '${table.name}')" title="Eliminar Mesa" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; padding: 0;" onmouseover="this.style.background='#ef4444'; this.style.color='white';" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.color='#ef4444';">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Asignación Exclusiva:</label>
+                    ${selectHtml}
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    } catch (error) {
+        list.innerHTML = `<div style="grid-column: 1/-1; color: red;">Error al cargar mesas: ${error.message}</div>`;
+    }
+}
+
+async function addTable() {
+    const nameInput = document.getElementById('new-table-name');
+    const name = nameInput.value.trim();
+    if (!name) {
+        alert('Por favor, ingresa el nombre de la mesa (Ej: Mesa 1)');
+        return;
+    }
+
+    try {
+        await posApi.addTable(name, null);
+        nameInput.value = '';
+        renderTables();
+        showNotification(`Mesa "${name}" creada con éxito.`);
+    } catch (error) {
+        alert('Error al crear mesa: ' + error.message);
+    }
+}
+
+async function deleteTable(id, name) {
+    const confirmed = await showConfirmModal('Eliminar Mesa', `¿Estás seguro de que deseas eliminar la <b>Mesa "${name}"</b>?`);
+    if (!confirmed) return;
+
+    try {
+        await posApi.deleteTable(id);
+        renderTables();
+        showNotification(`Mesa "${name}" eliminada.`);
+    } catch (error) {
+        alert('Error al eliminar mesa: ' + error.message);
+    }
+}
+
+async function assignTableToUser(tableId, userId) {
+    try {
+        await posApi.updateTable(tableId, userId || null);
+        showNotification(userId ? 'Mesa reasignada a mesero' : 'Mesa liberada para todos los meseros');
+    } catch (error) {
+        alert('Error al reasignar mesa: ' + error.message);
+        renderTables(); // Revertir select en caso de error
     }
 }
 
@@ -1367,11 +1476,43 @@ async function sendOrder() {
     }
 
     try {
+        // Verificar si hay mesas activas y si toca seleccionarlas
+        const tablesResponse = await posApi.getTables();
+        let tables = tablesResponse || [];
+        if (tables.data) tables = tables.data;
+
+        // Si hay mesas creadas en el sistema, forzar la selección, filtrando a las disponibles
+        if (tables.length > 0) {
+            // Filtrar mesas: Libres (assigned_user_id nulo/0) o Asignadas a mí
+            const availableTables = tables.filter(t => !t.assigned_user_id || t.assigned_user_id == currentUser.id);
+
+            if (availableTables.length === 0) {
+                alert('No hay mesas disponibles para ti en este momento.');
+                return;
+            }
+
+            // Crear Modal Dinámico para Seleccionarla
+            const selectedTable = await showTableSelectionModal(availableTables);
+            if (!selectedTable) return; // Cancelado
+
+            await processFinalOrder(selectedTable);
+        } else {
+            // Sin mesas en el sistema (comportamiento normal viejo)
+            await processFinalOrder(null);
+        }
+    } catch (error) {
+        alert('Error verificando mesas: ' + error.message);
+    }
+}
+
+async function processFinalOrder(table_name) {
+    try {
         const order = await posApi.createOrder(
             currentUser.username,
             cart,
             total,
-            'Pendiente'
+            'Pendiente',
+            table_name
         );
 
         showNotification('Pedido enviado exitosamente');
@@ -1383,6 +1524,62 @@ async function sendOrder() {
     } catch (error) {
         alert('Error al enviar pedido: ' + error.message);
     }
+}
+
+function showTableSelectionModal(tables) {
+    return new Promise((resolve) => {
+        // Crear overlay oscuro
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center; z-index: 10000;
+        `;
+
+        // Crear card
+        const card = document.createElement('div');
+        card.style.cssText = `
+            background: var(--bg-primary); width: 90%; max-width: 400px;
+            border-radius: 12px; padding: 1.5rem; text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            color: var(--text-primary);
+        `;
+
+        let selectHtml = `<select id="modal-table-select" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 2px solid var(--primary-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; margin-bottom: 1.5rem; cursor: pointer;">
+                            <option value="" disabled selected>-- Elige una mesa --</option>`;
+        tables.forEach(t => {
+            selectHtml += `<option value="${t.name}">🪑 ${t.name}</option>`;
+        });
+        selectHtml += `</select>`;
+
+        card.innerHTML = `
+            <h3 style="margin-top: 0; color: var(--primary-color);">Selecciona tu Mesa</h3>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">Para enviar la orden, es necesario indicar la mesa.</p>
+            ${selectHtml}
+            <div style="display: flex; gap: 1rem;">
+                <button id="btn-cancel-table" style="flex: 1; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: transparent; color: var(--text-primary); cursor: pointer; font-weight: bold;">Cancelar</button>
+                <button id="btn-confirm-table" class="btn-primary" style="flex: 1; padding: 0.8rem; border-radius: 8px;">Enviar Orden</button>
+            </div>
+        `;
+
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+
+        const closeMenu = (result) => {
+            document.body.removeChild(overlay);
+            resolve(result);
+        };
+
+        document.getElementById('btn-cancel-table').onclick = () => closeMenu(null);
+        document.getElementById('btn-confirm-table').onclick = () => {
+            const val = document.getElementById('modal-table-select').value;
+            if (!val) {
+                alert('Debes seleccionar una mesa');
+                return;
+            }
+            closeMenu(val);
+        };
+    });
 }
 
 // ========== PEDIDOS ==========
@@ -1478,23 +1675,23 @@ function renderPendingOrders() {
         if (order.status === 'Cobrado') return;
 
         const div = document.createElement('div');
-        div.className = `order-card-compact ${order.status.toLowerCase().replace(' ', '-')}`;
+        div.className = `order - card - compact ${order.status.toLowerCase().replace(' ', '-')} `;
 
         const times = calculateOrderTimes(order.id);
         const timeBadge = order.status === 'Pendiente'
-            ? `<div class="order-card-status" style="background:#fff3e0; color:#e65100;">⏳ ${formatCountdown(times.startInSeconds)}</div>`
-            : (order.status === 'En Preparación' ? `<div class="order-card-status" style="background:#e3f2fd; color:#1565c0;">🔥 ${formatCountdown(times.readyInSeconds)}</div>` : `<div class="order-card-status" style="background:#e8f5e9; color:#2e7d32;">✅ LISTO</div>`);
+            ? `< div class="order-card-status" style = "background:#fff3e0; color:#e65100;" >⏳ ${formatCountdown(times.startInSeconds)}</div > `
+            : (order.status === 'En Preparación' ? `< div class="order-card-status" style = "background:#e3f2fd; color:#1565c0;" >🔥 ${formatCountdown(times.readyInSeconds)}</div > ` : ` < div class="order-card-status" style = "background:#e8f5e9; color:#2e7d32;" >✅ LISTO</div > `);
 
-        const itemsList = order.items.map(i => `<li>${i.quantity}x ${i.name}</li>`).join('');
+        const itemsList = order.items.map(i => `< li > ${i.quantity}x ${i.name}</li > `).join('');
 
         div.innerHTML = `
-            <div class="order-card-header">
+            < div class="order-card-header" >
                 <div>
                     <h4>Pedido #${order.id}</h4>
-                    <small style="color:var(--text-secondary)">${order.employee || 'Admin'}</small>
+                    <small style="color:var(--text-secondary)">${order.employee || 'Admin'}${order.table_name ? ` • <span style="color:var(--primary-color); font-weight:bold;">🪑 ${order.table_name}</span>` : ''}</small>
                 </div>
                 ${timeBadge}
-            </div>
+            </div >
             <ul class="order-card-items">${itemsList}</ul>
             <div class="order-card-footer">
                 <span class="order-card-total">$${parseFloat(order.total).toFixed(2)}</span>
@@ -1534,44 +1731,44 @@ function renderKitchenOrders() {
                 historyItem.style.opacity = '0.7';
                 historyItem.style.borderLeft = order.status === 'Cobrado' ? '5px solid #27ae60' : '5px solid #2ecc71';
 
-                const itemsStr = order.items.map(i => `${i.quantity}x ${i.name}`).join(', ');
+                const itemsStr = order.items.map(i => `${i.quantity}x ${i.name} `).join(', ');
 
                 historyItem.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+            < div style = "display: flex; justify-content: space-between; align-items: center;" >
                         <h4 style="margin:0;">Pedido #${order.id}</h4>
                         <span style="font-size: 0.7rem; font-weight: bold; color: ${order.status === 'Cobrado' ? '#27ae60' : '#2ecc71'};">${order.status.toUpperCase()}</span>
-                    </div>
-                    <small style="color: var(--text-secondary);">${itemsStr}</small>
-                `;
+                    </div >
+            <small style="color: var(--text-secondary);">${itemsStr}</small>
+        `;
                 kitchenHistoryDiv.appendChild(historyItem);
             }
             return;
         }
 
         const div = document.createElement('div');
-        div.className = `card order-card-kitchen ${order.status === 'En Preparación' ? 'preparing-glow' : ''}`;
+        div.className = `card order - card - kitchen ${order.status === 'En Preparación' ? 'preparing-glow' : ''} `;
         div.style.borderLeft = order.status === 'En Preparación' ? '8px solid #3498db' : '8px solid #ff6b35';
         div.style.padding = '1.5rem';
 
         const itemsList = order.items.map(item => {
             const quantity = item.quantity || 1;
-            const custom = item.customizations && item.customizations.length > 0 ? `<br><small style="color:red">(!) ${item.customizations.join(', ')}</small>` : '';
-            return `<li style="margin-bottom: 0.5rem; font-size: 1.1rem;"><strong>${quantity}x</strong> ${item.name}${custom}</li>`;
+            const custom = item.customizations && item.customizations.length > 0 ? `< br > <small style="color:red">(!) ${item.customizations.join(', ')}</small>` : '';
+            return `< li style = "margin-bottom: 0.5rem; font-size: 1.1rem;" > <strong>${quantity}x</strong> ${item.name}${custom}</li > `;
         }).join('');
 
         const isPreparing = order.status === 'En Preparación';
         const timeBadge = isPreparing
-            ? `<span class="countdown-badge" data-order-id="${order.id}" style="background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">🔥 PREPARANDO - ~${formatCountdown(times.readyInSeconds)}</span>`
-            : `<span class="countdown-badge" data-order-id="${order.id}" style="background: #ff6b35; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">⏳ EN ESPERA - ~${formatCountdown(times.startInSeconds)}</span>`;
+            ? `< span class="countdown-badge" data - order - id="${order.id}" style = "background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;" >🔥 PREPARANDO - ~${formatCountdown(times.readyInSeconds)}</span > `
+            : `< span class="countdown-badge" data - order - id="${order.id}" style = "background: #ff6b35; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;" >⏳ EN ESPERA - ~${formatCountdown(times.startInSeconds)}</span > `;
 
         div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+            < div style = "display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;" >
                 <div>
                     <h3 style="margin: 0; color: var(--text-primary);">Pedido #${order.id}</h3>
-                    <small style="color: var(--text-secondary);">${order.employee || 'Mesero'}</small>
+                    <small style="color: var(--text-secondary);">${order.employee || 'Mesero'}${order.table_name ? ` • <strong style="color:var(--primary-color); font-size:1rem;">🪑 ${order.table_name}</strong>` : ''}</small>
                 </div>
                 ${timeBadge}
-            </div>
+            </div >
             <ul style="list-style: none; padding: 0; margin-bottom: 1.5rem;">${itemsList}</ul>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 ${!isPreparing ?
@@ -1587,7 +1784,7 @@ function renderKitchenOrders() {
 async function updateOrderStatus(orderId, newStatus) {
     try {
         await posApi.updateOrderStatus(orderId, newStatus);
-        showNotification(`Pedido #${orderId} actualizado a: ${newStatus}`);
+        showNotification(`Pedido #${orderId} actualizado a: ${newStatus} `);
         await loadOrders();
     } catch (error) {
         alert('Error al actualizar pedido: ' + error.message);
@@ -1612,16 +1809,16 @@ function renderCashierPendingOrders() {
         const div = document.createElement('div');
         div.className = 'order-card-compact finalizado';
 
-        const itemsList = order.items.map(i => `<li>${i.quantity}x ${i.name}</li>`).join('');
+        const itemsList = order.items.map(i => `< li > ${i.quantity}x ${i.name}</li > `).join('');
 
         div.innerHTML = `
-            <div class="order-card-header">
+            < div class="order-card-header" >
                 <div>
                     <h4>Pedido #${order.id}</h4>
-                    <small style="color:var(--text-secondary)">${order.employee || 'Anónimo'}</small>
+                    <small style="color:var(--text-secondary)">${order.employee || 'Anónimo'}${order.table_name ? ` • <span style="color:var(--primary-color); font-weight:bold;">🪑 ${order.table_name}</span>` : ''}</small>
                 </div>
                 <div class="order-card-status" style="background:#e8f5e9; color:#2e7d32;">✓ LISTO</div>
-            </div>
+            </div >
             <ul class="order-card-items">${itemsList}</ul>
             <div class="order-card-footer">
                 <span class="order-card-total">$${parseFloat(order.total).toFixed(2)}</span>
@@ -1640,18 +1837,18 @@ function showPaymentModal(orderId, total) {
         position: fixed;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
+        width: 100 %;
+        height: 100 %;
         background: rgba(0, 0, 0, 0.75);
         display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-        backdrop-filter: blur(5px);
-    `;
+        justify - content: center;
+        align - items: center;
+        z - index: 10000;
+        backdrop - filter: blur(5px);
+        `;
 
     modal.innerHTML = `
-        <div style="background: white; padding: 2.5rem; border-radius: 16px; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
+            < div style = "background: white; padding: 2.5rem; border-radius: 16px; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);" >
             <h3 style="color: #FF6B35; margin-bottom: 1.5rem; text-align: center;">💰 Cobrar Pedido #${orderId}</h3>
             
             <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
@@ -1688,8 +1885,8 @@ function showPaymentModal(orderId, total) {
                 <button onclick="closePaymentModal()" style="background: #6c757d; color: white; border: none; padding: 0.875rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;">Cancelar</button>
                 <button id="confirm-payment-btn" onclick="confirmPayment(${orderId}, ${total})" disabled style="background: #ccc; color: white; border: none; padding: 0.875rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: not-allowed;">✓ Confirmar Pago</button>
             </div>
-        </div>
-    `;
+        </div >
+            `;
 
     document.body.appendChild(modal);
 
@@ -1855,8 +2052,8 @@ async function confirmPayment(orderId, total) {
         console.log('Ticket mostrado');
 
         // Mostrar notificación según el método de pago
-        const changeMsg = change > 0 ? ` Cambio: $${change.toFixed(2)}` : '';
-        showNotification(`Pedido #${orderId} cobrado con ${paymentMethod}.${changeMsg}`);
+        const changeMsg = change > 0 ? ` Cambio: $${change.toFixed(2)} ` : '';
+        showNotification(`Pedido #${orderId} cobrado con ${paymentMethod}.${changeMsg} `);
 
         // Actualizar listas DESPUÉS de mostrar el ticket
         console.log('Actualizando listas...');
@@ -1889,16 +2086,16 @@ function renderCashierPaidOrders() {
         const div = document.createElement('div');
         div.className = 'order-card-compact cobrado';
 
-        const itemsList = order.items.map(i => `<li>${i.quantity}x ${i.name}</li>`).join('');
+        const itemsList = order.items.map(i => `< li > ${i.quantity}x ${i.name}</li > `).join('');
 
         div.innerHTML = `
-            <div class="order-card-header">
+            < div class="order-card-header" >
                 <div>
                     <h4>Pedido #${order.id}</h4>
-                    <small style="color:var(--text-secondary)">${order.employee || 'Anónimo'}</small>
+                    <small style="color:var(--text-secondary)">${order.employee || 'Anónimo'}${order.table_name ? ` • <span style="color:var(--primary-color); font-weight:bold;">🪑 ${order.table_name}</span>` : ''}</small>
                 </div>
                 <div class="order-card-status" style="background:var(--bg-primary); color:var(--text-secondary);">FINALIZADO</div>
-            </div>
+            </div >
             <ul class="order-card-items">${itemsList}</ul>
             <div class="order-card-footer">
                 <span class="order-card-total" style="color:var(--text-secondary)">$${parseFloat(order.total).toFixed(2)}</span>
@@ -1949,7 +2146,7 @@ function renderTickets() {
         const div = document.createElement('div');
         div.className = 'ticket-item';
         div.innerHTML = `
-            <h4>Ticket #${ticket.id} - Pedido #${ticket.order_id}</h4>
+            < h4 > Ticket #${ticket.id} - Pedido #${ticket.order_id}</h4 >
             <p><strong>Método:</strong> ${paymentIcon} ${ticket.payment_method || 'Efectivo'}</p>
             <p><strong>Total:</strong> $${parseFloat(ticket.total).toFixed(2)}</p>
             <p><strong>Recibido:</strong> $${parseFloat(ticket.amount_received).toFixed(2)}</p>
@@ -2001,9 +2198,9 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
         const quantity = item.quantity || 1;
         const unitPrice = item.unitPrice || item.price;
         const displayText = quantity > 1
-            ? `${quantity}x ${item.name}${customText} @ $${unitPrice.toFixed(2)} = $${item.price.toFixed(2)}`
-            : `${item.name}${customText} - $${item.price.toFixed(2)}`;
-        return `<li>${displayText}</li>`;
+            ? `${quantity}x ${item.name}${customText} @$${unitPrice.toFixed(2)} = $${item.price.toFixed(2)} `
+            : `${item.name}${customText} - $${item.price.toFixed(2)} `;
+        return `< li > ${displayText}</li > `;
     }).join('');
 
     // Determinar el icono del método de pago
@@ -2012,8 +2209,9 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
     else if (paymentMethod === 'Transferencia') paymentIcon = '📱';
 
     contentDiv.innerHTML = `
-        <p><strong>Pedido #${order.id}</strong></p>
+            < p > <strong>Pedido #${order.id}</strong></p >
         <p>Atendido por: ${order.username}</p>
+        ${order.table_name ? `<p style="font-size: 1.1rem; border: 1px solid #000; padding: 4px; text-align: center;"><strong>🪑 MESA: ${order.table_name}</strong></p>` : ''}
         <p>${new Date(order.created_at).toLocaleString()}</p>
         <hr>
         <ul style="list-style: none; padding: 0;">${itemsList}</ul>
@@ -2536,7 +2734,10 @@ function renderEmployeePendingOrders() {
 
         div.innerHTML = `
             <div class="order-card-header">
-                <h4>Pedido #${order.id}</h4>
+                <div>
+                    <h4>Pedido #${order.id}</h4>
+                    ${order.table_name ? `<small style="color:var(--primary-color); font-weight:bold;">🪑 ${order.table_name}</small>` : ''}
+                </div>
                 ${timeBadge}
             </div>
             <p style="font-size:0.75rem; color:var(--text-secondary); margin:0;">Estado: <strong>${order.status}</strong></p>
@@ -2600,7 +2801,10 @@ function renderEmployeeOrderHistory(filter = 'all') {
 
         div.innerHTML = `
             <div class="order-card-header">
-                <h4>Pedido #${order.id}</h4>
+                <div>
+                    <h4>Pedido #${order.id}</h4>
+                    ${order.table_name ? `<small style="color:var(--primary-color); font-weight:bold;">🪑 ${order.table_name}</small>` : ''}
+                </div>
                 <div class="order-card-status" style="font-size:0.6rem; background:var(--bg-primary);">${order.status}</div>
             </div>
             <ul class="order-card-items" style="max-height:60px;">${itemsList}</ul>

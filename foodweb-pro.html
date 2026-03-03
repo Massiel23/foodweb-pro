@@ -482,6 +482,9 @@
                         <button onclick="showProfileTab('usuarios')" class="profile-tab-btn"
                             style="text-align: left; padding: 0.8rem 1rem; border-radius: 8px; border: none; background: none; font-weight: 600; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;">
                             👥 Usuarios</button>
+                        <button onclick="showProfileTab('mesas')" class="profile-tab-btn"
+                            style="text-align: left; padding: 0.8rem 1rem; border-radius: 8px; border: none; background: none; font-weight: 600; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;">
+                            🪑 Mesas</button>
                         <button onclick="showProfileTab('facturacion')" class="profile-tab-btn"
                             style="text-align: left; padding: 0.8rem 1rem; border-radius: 8px; border: none; background: none; font-weight: 600; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;">
                             📄 Facturación</button>
@@ -677,6 +680,30 @@
                                     style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
                                     <!-- Cargando... -->
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Mesas -->
+                        <div id="tab-mesas" class="profile-tab-content" style="display: none;">
+                            <h2 style="margin-top: 0;">🪑 Gestión de Mesas</h2>
+
+                            <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+                                <h4 style="margin-top: 0; color: var(--primary-color);">+ Crear Nueva Mesa</h4>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="text" id="new-table-name" placeholder="Ej: Mesa 1, Terraza 2"
+                                        style="flex: 1; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                                    <button onclick="addTable()" class="btn-primary"
+                                        style="width: auto; padding: 0.8rem 1.5rem;">Crear Mesa</button>
+                                </div>
+                                <p
+                                    style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 10px; margin-bottom: 0;">
+                                    Nota: Las mesas son opcionales. Puedes asignarlas a meseros específicos una vez
+                                    creadas.</p>
+                            </div>
+
+                            <div id="tables-list"
+                                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
+                                <!-- Listado de mesas se inyecta aquí -->
                             </div>
                         </div>
 

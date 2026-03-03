@@ -81,6 +81,40 @@ const dbGet = (sql, params = []) => new Promise((resolve, reject) => {
     }
 });
 
+// Migración Automática de Tablas Extra
+(async () => {
+    try {
+        if (isProduction) {
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS tables (
+                    id SERIAL PRIMARY KEY,
+                    restaurant_id INTEGER NOT NULL,
+                    name TEXT NOT NULL,
+                    assigned_user_id INTEGER
+                )
+            `);
+            await db.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS table_name TEXT;`).catch(() => null);
+        } else {
+            db.run(`
+                CREATE TABLE IF NOT EXISTS tables (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    restaurant_id INTEGER NOT NULL,
+                    name TEXT NOT NULL,
+                    assigned_user_id INTEGER
+                )
+            `);
+            db.run(`ALTER TABLE orders ADD COLUMN table_name TEXT;`, (err) => {
+                if (err && !err.message.includes("duplicate column name")) {
+                    console.error("Aviso SQLite:", err.message);
+                }
+            });
+        }
+        console.log("✅ Tablas extra sincronizadas (Mesas y Opciones de Carrito)");
+    } catch (e) {
+        console.error("Error sincronizando DB:", e.message);
+    }
+})();
+
 // 4. SOCKET.IO
 io.on('connection', (socket) => {
     socket.on('joinRestaurant', (restaurantId) => {
@@ -212,6 +246,37 @@ apiRouter.delete('/products/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Mesas
+apiRouter.get('/tables', async (req, res) => {
+    try {
+        const rows = await dbQuery('SELECT * FROM tables WHERE restaurant_id = ?', [req.restaurantId]);
+        res.json(rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+apiRouter.post('/tables', async (req, res) => {
+    const { name, assigned_user_id } = req.body;
+    try {
+        const result = await dbRun('INSERT INTO tables (restaurant_id, name, assigned_user_id) VALUES (?, ?, ?)', [req.restaurantId, name, assigned_user_id || null]);
+        res.json({ id: result.lastID, name, assigned_user_id });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+apiRouter.delete('/tables/:id', async (req, res) => {
+    try {
+        await dbRun('DELETE FROM tables WHERE id = ? AND restaurant_id = ?', [req.params.id, req.restaurantId]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+apiRouter.put('/tables/:id', async (req, res) => {
+    const { assigned_user_id } = req.body;
+    try {
+        await dbRun('UPDATE tables SET assigned_user_id = ? WHERE id = ? AND restaurant_id = ?', [assigned_user_id || null, req.params.id, req.restaurantId]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // Órdenes
 apiRouter.get('/orders', async (req, res) => {
     try {
@@ -221,11 +286,11 @@ apiRouter.get('/orders', async (req, res) => {
 });
 
 apiRouter.post('/orders', async (req, res) => {
-    const { employee, items, total, status } = req.body;
+    const { employee, items, total, status, table_name } = req.body;
     try {
-        const result = await dbRun('INSERT INTO orders (restaurant_id, employee, items, total, status) VALUES (?, ?, ?, ?, ?)',
-            [req.restaurantId, employee, JSON.stringify(items), total, status || 'pendiente']);
-        io.to(`restaurant_${req.restaurantId}`).emit('newOrder', { id: result.lastID, employee, items, total, status });
+        const result = await dbRun('INSERT INTO orders (restaurant_id, employee, items, total, status, table_name) VALUES (?, ?, ?, ?, ?, ?)',
+            [req.restaurantId, employee, JSON.stringify(items), total, status || 'pendiente', table_name || null]);
+        io.to(`restaurant_${req.restaurantId}`).emit('newOrder', { id: result.lastID, employee, items, total, status, table_name });
         res.json({ id: result.lastID });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
