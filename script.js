@@ -51,6 +51,12 @@ async function checkAutoLogin() {
                 }
                 currentUser.restaurant_id = newId;
                 posApi.restaurantId = savedResId;
+
+                // Restaurar el nombre de la sucursal para la cabecera
+                const savedBranchName = localStorage.getItem('activeBranchName');
+                if (savedBranchName) {
+                    currentUser.restaurant_name = savedBranchName;
+                }
             }
 
             await applyUserPermissions(currentUser);
@@ -442,6 +448,12 @@ async function login() {
             if (socket) {
                 socket.emit('joinRestaurant', savedResId);
             }
+
+            // Restaurar el nombre de la sucursal para la cabecera
+            const savedBranchName = localStorage.getItem('activeBranchName');
+            if (savedBranchName) {
+                response.user.restaurant_name = savedBranchName;
+            }
         }
 
         currentUser = response.user;
@@ -778,6 +790,7 @@ async function switchBranch(id, name) {
     // Guardar el nuevo ID de restaurante
     localStorage.setItem('restaurantId', id);
     localStorage.setItem('activeBranchId', id); // Usar misma convención
+    localStorage.setItem('activeBranchName', name); // Guardar también el nombre para el header
 
     // Actualizar el objeto de usuario local para mantener la sesión activa
     if (currentUser) {
