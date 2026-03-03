@@ -684,14 +684,14 @@ async function showProfile() {
         }
 
         if (planRenewal) {
-            // Simular fecha de vencimiento a 30 días
+            // Simular fecha de vencimiento a 30 días para AMBOS planes
             const today = new Date();
             today.setDate(today.getDate() + 30);
             const options = { month: 'short', day: 'numeric', year: 'numeric' };
             // Capitalizar la primera letra del mes
             let dateStr = today.toLocaleDateString('es-ES', options);
             dateStr = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-            planRenewal.textContent = isPro ? `Próxima renovación: ${dateStr}` : 'Suscripción Básica Permanente';
+            planRenewal.textContent = `Próxima renovación: ${dateStr}`;
         }
 
         if (planBadgeSide) {
