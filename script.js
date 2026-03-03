@@ -2083,7 +2083,7 @@ async function renderEmployees() {
                             ${icon}
                         </div>
                         <div style="flex: 1; min-width: 0;">
-                            <h4 style="margin:0; font-size: 1.1rem; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${user.username}">${user.username}</h4>
+                            <h4 style="margin:0; font-size: 1.1rem; color: var(--text-primary); word-break: break-word; line-height: 1.2;" title="${user.username}">${user.username}</h4>
                             <p style="margin:2px 0 0 0; font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">${user.role.toUpperCase()}</p>
                         </div>
                     </div>
