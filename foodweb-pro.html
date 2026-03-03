@@ -465,42 +465,56 @@
 
                     <!-- Tab: Datos -->
                     <div id="tab-datos" class="profile-tab-content">
-                        <h2 style="margin-top: 0;">Mis Datos</h2>
-                        <div style="display: grid; gap: 1.5rem; max-width: 500px;">
-                            <div>
-                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Nombre
-                                    Completo</label>
-                                <input type="text" id="profile-fullname"
-                                    style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1;">
+                        <h2 class="tab-section-title">👤 Mis Datos</h2>
+
+                        <!-- Bloque: Información Personal -->
+                        <div class="profile-data-card">
+                            <div class="profile-data-card-header">
+                                <h3>Información Personal</h3>
+                                <p class="profile-data-card-subtitle">Actualiza tu nombre, correo y nombre del
+                                    restaurante.</p>
                             </div>
-                            <div>
-                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Correo
-                                    Electrónico</label>
-                                <input type="email" id="profile-email"
-                                    style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1;">
-                            </div>
-                            <div>
-                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Nombre del
-                                    Restaurante</label>
-                                <input type="text" id="profile-restaurant-name"
-                                    style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1;">
-                            </div>
-                            <div style="grid-column: 1 / -1; margin-top: 1rem;">
-                                <!-- Widget de Suscripción -->
-                                <div class="subscription-card">
-                                    <div class="subs-info">
-                                        <span class="subs-label">Plan actual</span>
-                                        <span class="subs-badge" id="profile-plan-badge-details">Cargando...</span>
-                                    </div>
-                                    <div class="subs-renewal">
-                                        <span id="profile-plan-renewal">Próxima renovación: --</span>
-                                    </div>
-                                    <button class="subs-manage-btn" onclick="showProfileTab('facturacion')">Gestionar
-                                        suscripción ></button>
+                            <div class="profile-form-grid">
+                                <div class="profile-field">
+                                    <label class="profile-field-label">Nombre Completo</label>
+                                    <input type="text" id="profile-fullname" class="profile-field-input"
+                                        placeholder="Ej: Juan Pérez">
+                                </div>
+                                <div class="profile-field">
+                                    <label class="profile-field-label">Correo Electrónico</label>
+                                    <input type="email" id="profile-email" class="profile-field-input"
+                                        placeholder="Ej: juan@mirestaurante.com">
+                                </div>
+                                <div class="profile-field profile-field-full">
+                                    <label class="profile-field-label">Nombre del Restaurante</label>
+                                    <input type="text" id="profile-restaurant-name" class="profile-field-input"
+                                        placeholder="Ej: Tacos El Paisa">
                                 </div>
                             </div>
-                            <button onclick="updateUserProfile()" class="btn-primary"
-                                style="grid-column: 1 / -1; margin-top: 1rem;">Guardar Cambios</button>
+                            <div class="profile-data-card-footer">
+                                <button onclick="updateUserProfile()" class="btn-primary"
+                                    style="width: auto; padding: 0.75rem 2rem;">Guardar Cambios</button>
+                            </div>
+                        </div>
+
+                        <!-- Bloque: Suscripción Activa -->
+                        <div class="profile-data-card" style="margin-top: 1.5rem;">
+                            <div class="profile-data-card-header">
+                                <h3>Suscripción Activa</h3>
+                                <p class="profile-data-card-subtitle">Detalles del plan contratado y próxima renovación.
+                                </p>
+                            </div>
+                            <div class="subscription-card">
+                                <div class="subs-info">
+                                    <span class="subs-label">Plan actual</span>
+                                    <span class="subs-badge" id="profile-plan-badge-details">Cargando...</span>
+                                </div>
+                                <div class="subs-renewal">
+                                    <span id="profile-plan-renewal">Próxima renovación: --</span>
+                                </div>
+                                <button class="subs-manage-btn" onclick="showProfileTab('facturacion')">Gestionar
+                                    suscripción ›</button>
+                            </div>
                         </div>
                     </div>
 
