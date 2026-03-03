@@ -995,7 +995,8 @@ async function addProduct() {
     }
 
     try {
-        await posApi.addProduct(name, price, '🍔', newProductModifiers);
+        const smartIcon = getSmartIconForProduct(name);
+        await posApi.addProduct(name, price, smartIcon, newProductModifiers);
         document.getElementById('new-product-name').value = '';
         document.getElementById('new-product-price').value = '';
         newProductModifiers = [];
@@ -1005,6 +1006,39 @@ async function addProduct() {
     } catch (error) {
         alert('Error al agregar producto: ' + error.message);
     }
+}
+
+// ========== LOGICA DE ICONOS INTELIGENTES ==========
+function getSmartIconForProduct(name) {
+    const text = name.toLowerCase();
+
+    // Mapeo de Emojis a palabras clave
+    const iconMap = [
+        { icon: '🌭', keywords: ['hot', 'dog', 'dogos', 'dogo', 'perro', 'salchipo', 'salchicha'] },
+        { icon: '🍔', keywords: ['burger', 'hamburguesa', 'sirloin', 'cheeseburger', 'whopper'] },
+        { icon: '🌮', keywords: ['taco', 'burrito', 'quesadilla', 'nacho', 'chilaquil', 'fajitas', 'pastor'] },
+        { icon: '🍕', keywords: ['pizza', 'slice', 'rebanada', 'peperoni', 'margarita'] },
+        { icon: '🥤', keywords: ['coca', 'refresco', 'soda', 'agua', 'jugo', 'limonada', 'sprite', 'fanta', 'pepsi'] },
+        { icon: '🍺', keywords: ['cerveza', 'beer', 'michelada', 'vino', 'caguama', 'corona', 'tecate', 'modelo'] },
+        { icon: '☕', keywords: ['cafe', 'café', 'capuccino', 'americano', 'frapp', 'te', 'té', 'infusion'] },
+        { icon: '🍣', keywords: ['sushi', 'rollo', 'maki', 'ramen', 'teriyaki', 'california'] },
+        { icon: '🥗', keywords: ['ensalada', 'salad', 'bowl', 'vegetariano', 'vegano'] },
+        { icon: '🍟', keywords: ['papa', 'papas', 'frita', 'aros', 'boneless', 'alitas', 'wings', 'snack'] },
+        { icon: '🍰', keywords: ['pastel', 'crepe', 'crepa', 'helado', 'postre', 'pay', 'brownie', 'flan', 'churro'] },
+        { icon: '🍗', keywords: ['pollo', 'asado', 'rostizado', 'kfc'] },
+        { icon: '🥪', keywords: ['sandwich', 'sándwich', 'torta', 'lonche', 'baguette', 'panini', 'sub'] },
+        { icon: '🍦', keywords: ['helado', 'nieve', 'cono', 'paleta'] }
+    ];
+
+    // Buscar si alguna palabra en el nombre incluye nuestras palabras clave
+    for (const category of iconMap) {
+        if (category.keywords.some(kw => text.includes(kw))) {
+            return category.icon;
+        }
+    }
+
+    // Icono por defecto elegante si no hace match
+    return '🍽️';
 }
 
 // ========== LOGICA DE MODIFICADORES DINAMICOS ==========
