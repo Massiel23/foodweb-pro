@@ -2076,10 +2076,31 @@ async function addEmployee() {
     }
 
     try {
+        // En Producción (PostgreSQL), la columna 'username' es UNIQUE a nivel global.
+        // Para evitar que diferentes restaurantes no puedan crear un "mesero1", 
+        // usaremos un prefijo interno: r[IdRestaurante]_[username] 
+        // Si el usuario es el admin, no modificamos su nombre (ya se creó en el registro)
+        const restId = posApi.restaurantId || currentUser.restaurant_id || currentUser.id;
+        const prefixedUsername = `r${restId}_${username.toLowerCase().replace(/\s+/g, '')}`;
+
+        // Obtener lista actual de usuarios DE ESTA SUCURSAL para validaciones
+        const users = await posApi.getUsers();
+
+        // 1. Validar que el nombre de usuario NO exista ya EN ESTE RESTAURANTE
+        // Comparamos usando el prefijado para mayor seguridad
+        const usernameExists = users.some(u =>
+            u.username.toLowerCase() === prefixedUsername ||
+            u.username.toLowerCase() === username.toLowerCase() // por si hubiera antiguos sin prefijo
+        );
+
+        if (usernameExists) {
+            empMsg.style.color = 'orange';
+            empMsg.innerHTML = '⚠️ Este nombre de usuario <b>ya está en uso en tu sucursal</b>. Por favor, elige otro.';
+            return;
+        }
+
         // ========= RESTRICCIONES PLAN BÁSICO =========
         if (currentRestaurantPlan !== 'pro') {
-            // Obtener lista actual de usuarios para validar límites
-            const users = await posApi.getUsers();
             // Excluir al admin de la cuenta (no cuenta para el límite)
             const nonAdminUsers = users.filter(u => u.role !== 'admin');
 
@@ -2101,15 +2122,26 @@ async function addEmployee() {
             }
         }
 
-        await posApi.addUser(username, password, role);
+        // Crear usando el nombre prefijado para asegurar que sea único globalmente
+        await posApi.addUser(prefixedUsername, password, role);
         document.getElementById('new-emp-username').value = '';
         document.getElementById('new-emp-password').value = '';
-        empMsg.textContent = 'Empleado agregado exitosamente';
+        empMsg.innerHTML = `✅ Empleado agregado.<br>Su usuario para entrar es: <b>${prefixedUsername}</b>`;
         empMsg.style.color = 'green';
+
+        // Modal nativo opcional para que quede más claro
+        alert(`¡Empleado creado con éxito!\n\nPara iniciar sesión, deberá usar:\nUsuario: ${prefixedUsername}\nContraseña: la que asignaste.`);
+
         renderEmployees();
     } catch (error) {
-        empMsg.textContent = 'Error: ' + error.message;
-        empMsg.style.color = 'red';
+        // Mejorar los errores crudos de PostgreSQL
+        if (error.message && error.message.toLowerCase().includes('duplicate key')) {
+            empMsg.style.color = 'orange';
+            empMsg.innerHTML = '⚠️ Error interno de base de datos (nombre duplicado). Intenta añadir números o letras a este nombre.';
+        } else {
+            empMsg.textContent = 'Error: ' + error.message;
+            empMsg.style.color = 'red';
+        }
     }
 }
 
