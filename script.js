@@ -337,31 +337,25 @@ async function handleRegister() {
         loginMsg.textContent = 'Por favor completa todos los campos.';
         return;
     }
-
+    if (pass.length < 8) {
+        loginMsg.textContent = 'La contraseña debe tener al menos 8 caracteres.';
+        return;
+    }
     if (!selectedPlan) {
         loginMsg.textContent = 'Por favor selecciona un plan primero.';
         return;
     }
 
-    try {
-        // Registrar en backend pre-pago
-        const response = await posApi.registerRestaurant(name, email, fullName, pass, selectedPlan);
+    // ✅ CORRECTO: Solo guardar datos en memoria, NO crear cuenta todavía
+    pendingRegistration = { name, fullName, email, password: pass, plan: selectedPlan };
 
-        // Guardar temporalmente para auto-login tras el pago
-        // El backend genera un username automático, lo guardamos para el login final
-        pendingRegistration = { username: response.username, password: pass };
+    // Mostrar contenedor de pago
+    document.getElementById('register-form-container').style.display = 'none';
+    document.getElementById('pay-rest-name').textContent = name;
+    document.getElementById('payment-container').style.display = 'block';
 
-        // Mostrar contenedor de pago
-        document.getElementById('register-form-container').style.display = 'none';
-        document.getElementById('pay-rest-name').textContent = name;
-        document.getElementById('payment-container').style.display = 'block';
-
-        // Renderizar botones de PayPal reales
-        renderPayPalButtons();
-
-    } catch (error) {
-        loginMsg.textContent = error.message || 'Error al crear el restaurante.';
-    }
+    // Renderizar botones de PayPal reales
+    renderPayPalButtons();
 }
 
 function renderPayPalButtons() {
@@ -384,13 +378,17 @@ function renderPayPalButtons() {
                 'plan_id': planId
             });
         },
-        onApprove: function (data, actions) {
-            console.log('Suscripción aprobada:', data.subscriptionID);
-            handlePaymentSuccess(data.subscriptionID);
+        onApprove: async function (data, actions) {
+            // ✅ PAGO CONFIRMADO POR PAYPAL: crear la cuenta ahora
+            console.log('Suscripción aprobada por PayPal:', data.subscriptionID);
+            await handlePaymentSuccess(data.subscriptionID);
+        },
+        onCancel: function () {
+            document.getElementById('login-msg').textContent = 'Cancelaste el pago. Tu cuenta aún no ha sido creada.';
         },
         onError: function (err) {
             console.error('Error en PayPal:', err);
-            document.getElementById('login-msg').textContent = 'Hubo un error al procesar el pago con PayPal.';
+            document.getElementById('login-msg').textContent = 'Hubo un error al procesar el pago con PayPal. Intenta de nuevo.';
         }
     }).render('#paypal-button-container');
 }
@@ -398,19 +396,42 @@ function renderPayPalButtons() {
 async function handlePaymentSuccess(subscriptionID) {
     if (!pendingRegistration) return;
 
-    showNotification(`¡Suscripción activa! ID: ${subscriptionID}`);
+    const loginMsg = document.getElementById('login-msg');
+    loginMsg.style.color = 'var(--primary-color)';
+    loginMsg.textContent = '✅ Pago confirmado. Creando tu cuenta...';
 
-    // Proceder con login automático
-    document.getElementById('username').value = pendingRegistration.username;
-    document.getElementById('password').value = pendingRegistration.password;
+    try {
+        // ✅ CREAR LA CUENTA AHORA (solo cuando el pago fue aprobado)
+        const { name, fullName, email, password, plan } = pendingRegistration;
+        const response = await posApi.registerRestaurant(name, email, fullName, password, plan);
 
-    pendingRegistration = null;
-    selectedPlan = null;
+        showNotification(`¡Bienvenido a FoodWeb Pro! ID de suscripción: ${subscriptionID}`);
 
-    document.getElementById('payment-container').style.display = 'none';
-    document.getElementById('login-form-container').style.display = 'block';
+        // Auto-login con el usuario generado por el backend
+        document.getElementById('username').value = response.username;
+        document.getElementById('password').value = password;
 
-    await login();
+        pendingRegistration = null;
+        selectedPlan = null;
+
+        document.getElementById('payment-container').style.display = 'none';
+        document.getElementById('login-form-container').style.display = 'block';
+        loginMsg.textContent = '';
+
+        await login();
+
+    } catch (error) {
+        // Si ya existe el usuario (segundo intento tras pago exitoso previo), intentar login directo
+        if (error.message && error.message.toLowerCase().includes('duplicate')) {
+            loginMsg.textContent = '⚠️ Tu cuenta ya existe. Por favor inicia sesión con tus credenciales.';
+            loginMsg.style.color = 'orange';
+            document.getElementById('payment-container').style.display = 'none';
+            document.getElementById('login-form-container').style.display = 'block';
+        } else {
+            loginMsg.style.color = 'red';
+            loginMsg.textContent = 'Pago recibido, pero hubo un error al crear tu cuenta. Contacta soporte con tu ID: ' + subscriptionID;
+        }
+    }
 }
 
 async function login() {
