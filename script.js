@@ -2087,9 +2087,8 @@ async function renderEmployees() {
                             <p style="margin:2px 0 0 0; font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">${user.role.toUpperCase()}</p>
                         </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 4px; color: #2ecc71; font-size: 0.75rem; font-weight: bold; flex-shrink: 0; background: rgba(46, 204, 113, 0.1); padding: 4px 8px; border-radius: 12px;">
-                        <div style="width: 6px; height: 6px; background: #2ecc71; border-radius: 50%;"></div>
-                        ACTIVO
+                    <div title="Usuario Activo" style="display: flex; align-items: center; justify-content: center; color: #2ecc71; background: rgba(46, 204, 113, 0.1); width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     </div>
                 </div>
                 ${isNotAdmin ? `
