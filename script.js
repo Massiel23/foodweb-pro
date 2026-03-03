@@ -1483,8 +1483,17 @@ async function sendOrder() {
 
         // Si hay mesas creadas en el sistema, forzar la selección, filtrando a las disponibles
         if (tables.length > 0) {
-            // Filtrar mesas: Libres (assigned_user_id nulo/0) o Asignadas a mí
-            const availableTables = tables.filter(t => !t.assigned_user_id || t.assigned_user_id == currentUser.id);
+            // Regla de Negocio: Obtener las mesas asignadas específicamente a este empleado
+            const myAssignedTables = tables.filter(t => t.assigned_user_id == currentUser.id);
+            let availableTables = [];
+
+            if (myAssignedTables.length > 0) {
+                // Si el dueño me asignó mesas, SOLO veo las mías (las demás se me ocultan)
+                availableTables = myAssignedTables;
+            } else {
+                // Si no me han asignado mesas específicas, entonces puedo ver y atender en las mesas "generales" (que no tienen asignación)
+                availableTables = tables.filter(t => !t.assigned_user_id);
+            }
 
             if (availableTables.length === 0) {
                 // Si el restaurante tiene mesas pero NINGUNA está libre ni asignada a este usuario, entonces no le pedimos mesa.
