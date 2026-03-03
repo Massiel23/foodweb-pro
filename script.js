@@ -3114,3 +3114,100 @@ function closeInfoModal() {
         modal.style.display = 'none';
     }
 }
+
+// ========== MESAS ==========
+
+async function renderTables() {
+    const list = document.getElementById('tables-list');
+    if (!list) return;
+
+    list.innerHTML = '<p>Cargando mesas...</p>';
+
+    try {
+        const tables = await posApi.getTables();
+        const users = await posApi.getUsers();
+
+        // Filtrar usuarios operativos (meseros)
+        const waiters = users.filter(u => u.role === 'empleado');
+
+        if (tables.length === 0) {
+            list.innerHTML = '<p style="color: var(--text-secondary);">No hay mesas creadas. Agrega una arriba.</p>';
+            return;
+        }
+
+        list.innerHTML = '';
+        tables.forEach(table => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.style.cssText = 'padding: 1rem; border-left: 4px solid var(--primary-color); display: flex; flex-direction: column; gap: 0.5rem;';
+
+            let assignedText = '<span style="color:var(--text-secondary); font-size:0.85rem;">No asignada</span>';
+            if (table.assigned_user_id) {
+                const assignedUser = users.find(u => u.id === table.assigned_user_id);
+                if (assignedUser) {
+                    assignedText = `<span style="color:var(--success-color); font-weight:bold; font-size:0.85rem;">Asignada a: ${assignedUser.username}</span>`;
+                }
+            }
+
+            let selectHtml = `<select onchange="assignTableToUser(${table.id}, this.value)" style="padding: 0.4rem; border-radius: 4px; border: 1px solid var(--border-color); width: 100%; background: var(--bg-primary); color: var(--text-primary); font-size: 0.85rem;">
+                <option value="">-- Sin Asignar --</option>
+                ${waiters.map(w => `<option value="${w.id}" ${table.assigned_user_id === w.id ? 'selected' : ''}>${w.username}</option>`).join('')}
+            </select>`;
+
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <h4 style="margin: 0; font-size: 1.1rem;">🪑 ${table.name}</h4>
+                    <button onclick="deleteTable(${table.id}, '${table.name}')" title="Eliminar Mesa" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </div>
+                <div>${assignedText}</div>
+                <div style="margin-top: 0.5rem;">${selectHtml}</div>
+            `;
+            list.appendChild(div);
+        });
+    } catch (e) {
+        list.innerHTML = `<p style="color: red;">Error: ${e.message}</p>`;
+    }
+}
+
+async function addTable() {
+    const nameInput = document.getElementById('new-table-name');
+    const name = nameInput.value.trim();
+
+    if (!name) {
+        alert('Por favor ingresa un nombre para la mesa.');
+        return;
+    }
+
+    try {
+        await posApi.addTable(name);
+        nameInput.value = '';
+        showNotification(`Mesa "${name}" agregada`);
+        renderTables();
+    } catch (e) {
+        alert('Error al agregar mesa: ' + e.message);
+    }
+}
+
+async function deleteTable(id, name) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente la mesa "${name}"?`)) return;
+
+    try {
+        await posApi.deleteTable(id);
+        showNotification(`Mesa "${name}" eliminada`);
+        renderTables();
+    } catch (e) {
+        alert('Error al eliminar mesa: ' + e.message);
+    }
+}
+
+async function assignTableToUser(tableId, userId) {
+    try {
+        await posApi.updateTable(tableId, userId || null);
+        showNotification('Asignación de mesa actualizada');
+        renderTables(); // Refrescar para mostrar el nuevo texto de asignación
+    } catch (e) {
+        alert('Error al asignar mesa: ' + e.message);
+    }
+}
