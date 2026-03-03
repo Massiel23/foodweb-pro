@@ -2129,8 +2129,8 @@ async function addEmployee() {
         empMsg.innerHTML = `✅ Empleado agregado.<br>Su usuario para entrar es: <b>${prefixedUsername}</b>`;
         empMsg.style.color = 'green';
 
-        // Modal nativo opcional para que quede más claro
-        alert(`¡Empleado creado con éxito!\n\nPara iniciar sesión, deberá usar:\nUsuario: ${prefixedUsername}\nContraseña: la que asignaste.`);
+        // Mostrar un modal moderno y elegante en lugar de alert nativo
+        showSuccessModal(prefixedUsername, password);
 
         renderEmployees();
     } catch (error) {
@@ -2145,7 +2145,80 @@ async function addEmployee() {
     }
 }
 
-// ========== AJUSTES ==========
+// ========== MODAL ÉXITO CREAR EMPLEADO ==========
+function showSuccessModal(username, password) {
+    // Si ya existe un modal anterior, eliminarlo para no duplicar
+    const existingModal = document.getElementById('success-employee-modal');
+    if (existingModal) existingModal.remove();
+
+    const isDark = document.body.classList.contains('dark-mode');
+    const modal = document.createElement('div');
+    modal.id = 'success-employee-modal';
+
+    // Contenedor principal del modal (overlay)
+    modal.style.cssText = `
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(4px);
+        display: flex; justify-content: center; align-items: center;
+        z-index: 10005;
+        opacity: 0; transition: opacity 0.3s;
+    `;
+
+    // Tarjeta del modal
+    const cardBg = isDark ? '#1e293b' : '#ffffff';
+    const textColor = isDark ? '#f8fafc' : '#1e293b';
+    const borderColor = isDark ? '#334155' : '#e2e8f0';
+
+    modal.innerHTML = `
+        <div style="
+            background: ${cardBg}; 
+            color: ${textColor};
+            padding: 2.5rem; 
+            border-radius: 16px; 
+            max-width: 400px; 
+            width: 90%; 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); 
+            border: 1px solid ${borderColor};
+            transform: translateY(20px) scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+        " id="success-employee-card">
+            
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+            <h3 style="margin-top: 0; font-size: 1.5rem; color: var(--primary-color);">¡Empleado Creado!</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+                Tu empleado ha sido agregado exitosamente. Para evitar colisiones en la plataforma, 
+                comparte las siguientes credenciales exactas:
+            </p>
+            
+            <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid var(--primary-color); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; text-align: left;">
+                <p style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: var(--text-secondary);">Usuario de Acceso:</p>
+                <p style="font-family: monospace; font-size: 1.2rem; font-weight: bold; margin: 0 0 1rem 0; color: var(--primary-color); user-select: all; cursor: pointer;" title="Doble clic para seleccionar">${username}</p>
+                
+                <p style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: var(--text-secondary);">Contraseña:</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: ${isDark ? '#0f172a' : '#f1f5f9'}; padding: 0.5rem 0.75rem; border-radius: 4px;">
+                    <p style="font-family: monospace; font-size: 1rem; margin: 0; user-select: all;">${password.replace(/./g, '•')}</p>
+                </div>
+            </div>
+
+            <button onclick="document.getElementById('success-employee-modal').remove()" 
+                    style="width: 100%; background: var(--primary-color); color: white; border: none; padding: 1rem; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: filter 0.2s;">
+                Entendido
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Animaciones de entrada
+    requestAnimationFrame(() => {
+        modal.style.opacity = '1';
+        document.getElementById('success-employee-card').style.transform = 'translateY(0) scale(1)';
+    });
+}
+
 function saveSettings() {
     const newTaxRate = parseFloat(document.getElementById('tax-rate').value);
     if (isNaN(newTaxRate) || newTaxRate < 0) {
