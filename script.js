@@ -1677,23 +1677,23 @@ function renderPendingOrders() {
         if (order.status === 'Cobrado') return;
 
         const div = document.createElement('div');
-        div.className = `order - card - compact ${order.status.toLowerCase().replace(' ', '-')} `;
+        div.className = `order-card-compact ${order.status.toLowerCase().replace(' ', '-')}`;
 
         const times = calculateOrderTimes(order.id);
         const timeBadge = order.status === 'Pendiente'
-            ? `< div class="order-card-status" style = "background:#fff3e0; color:#e65100;" >⏳ ${formatCountdown(times.startInSeconds)}</div > `
-            : (order.status === 'En Preparación' ? `< div class="order-card-status" style = "background:#e3f2fd; color:#1565c0;" >🔥 ${formatCountdown(times.readyInSeconds)}</div > ` : ` < div class="order-card-status" style = "background:#e8f5e9; color:#2e7d32;" >✅ LISTO</div > `);
+            ? `<div class="order-card-status" style="background:#fff3e0; color:#e65100;">⏳ ${formatCountdown(times.startInSeconds)}</div>`
+            : (order.status === 'En Preparación' ? `<div class="order-card-status" style="background:#e3f2fd; color:#1565c0;">🔥 ${formatCountdown(times.readyInSeconds)}</div>` : `<div class="order-card-status" style="background:#e8f5e9; color:#2e7d32;">✅ LISTO</div>`);
 
-        const itemsList = order.items.map(i => `< li > ${i.quantity}x ${i.name}</li > `).join('');
+        const itemsList = order.items.map(i => `<li>${i.quantity}x ${i.name}</li>`).join('');
 
         div.innerHTML = `
-            < div class="order-card-header" >
+            <div class="order-card-header">
                 <div>
                     <h4>Pedido #${order.id}</h4>
                     <small style="color:var(--text-secondary)">${order.employee || 'Admin'}${order.table_name ? ` • <span style="color:var(--primary-color); font-weight:bold;">🪑 ${order.table_name}</span>` : ''}</small>
                 </div>
                 ${timeBadge}
-            </div >
+            </div>
             <ul class="order-card-items">${itemsList}</ul>
             <div class="order-card-footer">
                 <span class="order-card-total">$${parseFloat(order.total).toFixed(2)}</span>
@@ -1736,10 +1736,10 @@ function renderKitchenOrders() {
                 const itemsStr = order.items.map(i => `${i.quantity}x ${i.name} `).join(', ');
 
                 historyItem.innerHTML = `
-            < div style = "display: flex; justify-content: space-between; align-items: center;" >
+            <div style="display: flex; justify-content: space-between; align-items: center;">
                         <h4 style="margin:0;">Pedido #${order.id}</h4>
                         <span style="font-size: 0.7rem; font-weight: bold; color: ${order.status === 'Cobrado' ? '#27ae60' : '#2ecc71'};">${order.status.toUpperCase()}</span>
-                    </div >
+                    </div>
             <small style="color: var(--text-secondary);">${itemsStr}</small>
         `;
                 kitchenHistoryDiv.appendChild(historyItem);
@@ -1754,23 +1754,23 @@ function renderKitchenOrders() {
 
         const itemsList = order.items.map(item => {
             const quantity = item.quantity || 1;
-            const custom = item.customizations && item.customizations.length > 0 ? `< br > <small style="color:red">(!) ${item.customizations.join(', ')}</small>` : '';
-            return `< li style = "margin-bottom: 0.5rem; font-size: 1.1rem;" > <strong>${quantity}x</strong> ${item.name}${custom}</li > `;
+            const custom = item.customizations && item.customizations.length > 0 ? `<br><small style="color:red">(!) ${item.customizations.join(', ')}</small>` : '';
+            return `<li style="margin-bottom: 0.5rem; font-size: 1.1rem;"><strong>${quantity}x</strong> ${item.name}${custom}</li>`;
         }).join('');
 
         const isPreparing = order.status === 'En Preparación';
         const timeBadge = isPreparing
-            ? `< span class="countdown-badge" data - order - id="${order.id}" style = "background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;" >🔥 PREPARANDO - ~${formatCountdown(times.readyInSeconds)}</span > `
-            : `< span class="countdown-badge" data - order - id="${order.id}" style = "background: #ff6b35; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;" >⏳ EN ESPERA - ~${formatCountdown(times.startInSeconds)}</span > `;
+            ? `<span class="countdown-badge" data-order-id="${order.id}" style="background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">🔥 PREPARANDO - ~${formatCountdown(times.readyInSeconds)}</span>`
+            : `<span class="countdown-badge" data-order-id="${order.id}" style="background: #ff6b35; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">⏳ EN ESPERA - ~${formatCountdown(times.startInSeconds)}</span>`;
 
         div.innerHTML = `
-            < div style = "display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;" >
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                 <div>
                     <h3 style="margin: 0; color: var(--text-primary);">Pedido #${order.id}</h3>
                     <small style="color: var(--text-secondary);">${order.employee || 'Mesero'}${order.table_name ? ` • <strong style="color:var(--primary-color); font-size:1rem;">🪑 ${order.table_name}</strong>` : ''}</small>
                 </div>
                 ${timeBadge}
-            </div >
+            </div>
             <ul style="list-style: none; padding: 0; margin-bottom: 1.5rem;">${itemsList}</ul>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 ${!isPreparing ?
@@ -1811,16 +1811,16 @@ function renderCashierPendingOrders() {
         const div = document.createElement('div');
         div.className = 'order-card-compact finalizado';
 
-        const itemsList = order.items.map(i => `< li > ${i.quantity}x ${i.name}</li > `).join('');
+        const itemsList = order.items.map(i => `<li>${i.quantity}x ${i.name}</li>`).join('');
 
         div.innerHTML = `
-            < div class="order-card-header" >
+            <div class="order-card-header">
                 <div>
                     <h4>Pedido #${order.id}</h4>
                     <small style="color:var(--text-secondary)">${order.employee || 'Anónimo'}${order.table_name ? ` • <span style="color:var(--primary-color); font-weight:bold;">🪑 ${order.table_name}</span>` : ''}</small>
                 </div>
                 <div class="order-card-status" style="background:#e8f5e9; color:#2e7d32;">✓ LISTO</div>
-            </div >
+            </div>
             <ul class="order-card-items">${itemsList}</ul>
             <div class="order-card-footer">
                 <span class="order-card-total">$${parseFloat(order.total).toFixed(2)}</span>
@@ -1850,7 +1850,7 @@ function showPaymentModal(orderId, total) {
         `;
 
     modal.innerHTML = `
-            < div style = "background: white; padding: 2.5rem; border-radius: 16px; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);" >
+            <div style="background: white; padding: 2.5rem; border-radius: 16px; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
             <h3 style="color: #FF6B35; margin-bottom: 1.5rem; text-align: center;">💰 Cobrar Pedido #${orderId}</h3>
             
             <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
@@ -2088,16 +2088,16 @@ function renderCashierPaidOrders() {
         const div = document.createElement('div');
         div.className = 'order-card-compact cobrado';
 
-        const itemsList = order.items.map(i => `< li > ${i.quantity}x ${i.name}</li > `).join('');
+        const itemsList = order.items.map(i => `<li>${i.quantity}x ${i.name}</li>`).join('');
 
         div.innerHTML = `
-            < div class="order-card-header" >
+            <div class="order-card-header">
                 <div>
                     <h4>Pedido #${order.id}</h4>
                     <small style="color:var(--text-secondary)">${order.employee || 'Anónimo'}${order.table_name ? ` • <span style="color:var(--primary-color); font-weight:bold;">🪑 ${order.table_name}</span>` : ''}</small>
                 </div>
                 <div class="order-card-status" style="background:var(--bg-primary); color:var(--text-secondary);">FINALIZADO</div>
-            </div >
+            </div>
             <ul class="order-card-items">${itemsList}</ul>
             <div class="order-card-footer">
                 <span class="order-card-total" style="color:var(--text-secondary)">$${parseFloat(order.total).toFixed(2)}</span>
