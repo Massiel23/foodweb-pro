@@ -1487,7 +1487,9 @@ async function sendOrder() {
             const availableTables = tables.filter(t => !t.assigned_user_id || t.assigned_user_id == currentUser.id);
 
             if (availableTables.length === 0) {
-                alert('No hay mesas disponibles para ti en este momento.');
+                // Si el restaurante tiene mesas pero NINGUNA está libre ni asignada a este usuario, entonces no le pedimos mesa.
+                // Lo enviamos directo como un pedido "en mostrador" o "para llevar".
+                await processFinalOrder(null);
                 return;
             }
 
