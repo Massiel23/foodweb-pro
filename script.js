@@ -2461,3 +2461,37 @@ async function generateCashReport() {
         reportDiv.innerHTML = `<p style="color: red;">Error: ${e.message}</p>`;
     }
 }
+
+// ========== MODAL INFORMATIVO EN FOOTER ==========
+function showInfoModal(titulo) {
+    const modal = document.getElementById('info-modal');
+    const titleEl = document.getElementById('info-modal-title');
+    const bodyEl = document.getElementById('info-modal-body');
+
+    // Mapeo de contenidos genéricos para el SaaS
+    const contenidos = {
+        'Funcionalidades': 'FoodWeb Pro incluye gestión de múltiples sucursales, toma de pedidos en tiempo real para meseros, panel de cocina (KDS), facturación automática y reportes de cortes de caja detallados.',
+        'Planes y Precios': 'Ofrecemos el Plan Starter (Gratis para 1 sucursal limitada) y el Plan Pro ($20/mes) que desbloquea usuarios ilimitados, todas tus sucursales centralizadas y reportes avanzados exportables.',
+        'Historias de éxito': 'Más de 50 restaurantes en toda la república han modernizado su atención al cliente con FoodWeb, reduciendo sus tiempos de espera en un 35% y erradicando el robo hormiga.',
+        'Cultura': 'Creemos en la tecnología accesible para todos. Trabajamos día a día para que las pymes gastronómicas tengan herramientas de primer mundo sin costos de instalación astronómicos.',
+        'Trabajá con nosotros': 'Actualmente estamos buscando Desarrolladores Frontend y Especialistas en Soporte Técnico. Envía tu currículum a talento@foodweb.pro',
+        'Preguntas frecuentes': '¿Qué necesito para empezar? Solo una tablet o computadora con internet.\n\n¿Tengo plazos forzosos? Ninguno, puedes cancelar el Plan Pro en cualquier momento.\n\n¿Mis datos están seguros? Utilizamos encriptación bancaria y respaldos diarios en la nube.',
+        'Refiere un restaurante': '¡Gana 1 mes de Plan Pro gratis por cada colega que refieras y contrate FoodWeb Pro! Pídeles que ingresen tu correo al momento de registrarse.',
+        'Programa de partners': 'Ideal para agencias de marketing y consultores gastronómicos. Únete a nuestro programa de partners y recibe un % de comisión recurrente por las ventas que facilites.',
+        'Blog': 'Visita nuestro blog en medium.com/foodweb para artículos sobre administración de restaurantes, marketing gastronómico y las últimas tendencias del sector.',
+        'Centro de ayuda': 'Contamos con soporte 24/7. Si experimentas un fallo técnico o dudas sobre una función, pulsa el botón flotante de WhatsApp o escribe a soporte@foodweb.pro.',
+        'Tutoriales': 'Aprende a sacarle el máximo provecho a la plataforma en nuestro canal de YouTube "FoodWeb Pro Tutoriales". Subimos videos explicativos semanales de cada herramienta.'
+    };
+
+    titleEl.textContent = titulo;
+    bodyEl.innerText = contenidos[titulo] || 'Información no disponible por el momento. Regresa pronto.';
+
+    modal.style.display = 'flex';
+}
+
+function closeInfoModal() {
+    const modal = document.getElementById('info-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}

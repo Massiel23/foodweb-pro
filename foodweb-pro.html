@@ -188,23 +188,24 @@
                 <div class="footer-col">
                     <h4>Sobre FoodWeb</h4>
                     <ul>
-                        <li><a href="#">Funcionalidades</a></li>
-                        <li><a href="#">Planes y Precios</a></li>
-                        <li><a href="#">Historias de éxito</a></li>
-                        <li><a href="#">Cultura</a></li>
-                        <li><a href="#">Trabajá con nosotros</a></li>
+                        <li><a href="#" onclick="showInfoModal('Funcionalidades')">Funcionalidades</a></li>
+                        <li><a href="#" onclick="showInfoModal('Planes y Precios')">Planes y Precios</a></li>
+                        <li><a href="#" onclick="showInfoModal('Historias de éxito')">Historias de éxito</a></li>
+                        <li><a href="#" onclick="showInfoModal('Cultura')">Cultura</a></li>
+                        <li><a href="#" onclick="showInfoModal('Trabajá con nosotros')">Trabajá con nosotros</a></li>
                     </ul>
                 </div>
 
                 <div class="footer-col">
                     <h4>Recursos</h4>
                     <ul>
-                        <li><a href="#">Preguntas frecuentes</a></li>
-                        <li><a href="#">Refiere un restaurante</a></li>
-                        <li><a href="#">Programa de partners</a></li>
-                        <li><a href="#">Blog</a></li>
-                        <li><a href="#">Centro de ayuda</a></li>
-                        <li><a href="#">Tutoriales</a></li>
+                        <li><a href="#" onclick="showInfoModal('Preguntas frecuentes')">Preguntas frecuentes</a></li>
+                        <li><a href="#" onclick="showInfoModal('Refiere un restaurante')">Refiere un restaurante</a>
+                        </li>
+                        <li><a href="#" onclick="showInfoModal('Programa de partners')">Programa de partners</a></li>
+                        <li><a href="#" onclick="showInfoModal('Blog')">Blog</a></li>
+                        <li><a href="#" onclick="showInfoModal('Centro de ayuda')">Centro de ayuda</a></li>
+                        <li><a href="#" onclick="showInfoModal('Tutoriales')">Tutoriales</a></li>
                     </ul>
                 </div>
 
@@ -658,6 +659,20 @@
         <footer>
             <p>&copy; 2026 FoodWeb Pro. ¡Los mejores productos!</p>
         </footer>
+    </div>
+
+    <!-- INFO MODAL (Para Links de Footer) -->
+    <div id="info-modal" class="modal">
+        <div class="modal-content info-modal-content">
+            <span class="close-btn" onclick="closeInfoModal()">&times;</span>
+            <h2 id="info-modal-title" style="color: var(--primary-color);">Título Informativo</h2>
+            <div id="info-modal-body" class="info-body-text"
+                style="color: var(--text-secondary); margin-top: 15px; line-height: 1.6;">
+                Contenido dinámico...
+            </div>
+            <button class="primary-btn" style="margin-top: 25px; width: 100%; border-radius: 8px; padding: 12px;"
+                onclick="closeInfoModal()">Entendido</button>
+        </div>
     </div>
 
     <script src="api.js?v=1.1"></script>

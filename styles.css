@@ -2206,6 +2206,16 @@ body.dark-mode .order-card-items li {
     flex-direction: column;
 }
 
+.info-modal-content {
+    padding: 2.5rem;
+    text-align: center;
+}
+
+.info-body-text {
+    font-size: 1.05rem;
+    white-space: pre-line;
+}
+
 .modal-header {
     padding: 1.5rem 2rem;
     text-align: center;
