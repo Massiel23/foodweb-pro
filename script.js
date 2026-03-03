@@ -2471,7 +2471,7 @@ function showInfoModal(titulo) {
     // Mapeo de contenidos genéricos para el SaaS
     const contenidos = {
         'Funcionalidades': 'FoodWeb Pro incluye gestión de múltiples sucursales, toma de pedidos en tiempo real para meseros, panel de cocina (KDS), facturación automática y reportes de cortes de caja detallados.',
-        'Planes y Precios': 'Ofrecemos el Plan Starter (Gratis para 1 sucursal limitada) y el Plan Pro ($20/mes) que desbloquea usuarios ilimitados, todas tus sucursales centralizadas y reportes avanzados exportables.',
+        'Planes y Precios': 'Plan Básico: 1 Sucursal, 2 Empleados, ventas ilimitadas y caja por solo $260 MXN.\nPlan Pro: Todo ilimitado y reportes gráficos por solo $499 MXN.',
         'Historias de éxito': 'Más de 50 restaurantes en toda la república han modernizado su atención al cliente con FoodWeb, reduciendo sus tiempos de espera en un 35% y erradicando el robo hormiga.',
         'Cultura': 'Creemos en la tecnología accesible para todos. Trabajamos día a día para que las pymes gastronómicas tengan herramientas de primer mundo sin costos de instalación astronómicos.',
         'Trabajá con nosotros': 'Actualmente estamos buscando Desarrolladores Frontend y Especialistas en Soporte Técnico. Envía tu currículum a talento@foodweb.pro',
