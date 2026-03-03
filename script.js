@@ -2058,12 +2058,11 @@ async function renderEmployees() {
             div.className = 'employee-row';
             div.style.cssText = `
                 display: flex;
-                align-items: center;
-                gap: 1rem;
-                padding: 0.75rem 1rem;
+                flex-direction: column;
+                padding: 1rem;
                 background: var(--bg-primary);
-                border-bottom: 1px solid var(--border-color);
-                border-radius: 8px;
+                border: 1px solid var(--border-color);
+                border-radius: 12px;
                 margin-bottom: 0.5rem;
             `;
 
@@ -2078,30 +2077,35 @@ async function renderEmployees() {
             const isNotAdmin = user.role !== 'admin';
 
             div.innerHTML = `
-                <div style="width: 40px; height: 40px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
-                    ${icon}
-                </div>
-                <div style="flex: 1; min-width: 0; padding-right: 0.5rem;">
-                    <h4 style="margin:0; font-size: 1rem; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${user.username}</h4>
-                    <p style="margin:0; font-size: 0.8rem; color: var(--text-secondary);">${user.role.toUpperCase()}</p>
-                    ${(user.password && isNotAdmin) ? `
-                    <div style="margin-top: 6px; display: flex; align-items: center; gap: 6px;">
-                        <span id="pwd-text-${user.id}" style="font-family: monospace; font-size: 0.85rem; color: var(--text-secondary); background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; letter-spacing: 2px;">••••••••</span>
-                        <button onclick="togglePassword(${user.id}, '${user.password}')" title="Mostrar/Ocultar contraseña" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                            <svg id="pwd-icon-${user.id}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                        </button>
-                    </div>` : ''}
-                </div>
-                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; justify-content: center;">
-                    <div style="display: flex; align-items: center; gap: 4px; color: #2ecc71; font-size: 0.75rem; font-weight: bold;">
-                        <div style="width: 8px; height: 8px; background: #2ecc71; border-radius: 50%;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+                        <div style="width: 42px; height: 42px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
+                            ${icon}
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <h4 style="margin:0; font-size: 1.1rem; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${user.username}">${user.username}</h4>
+                            <p style="margin:2px 0 0 0; font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">${user.role.toUpperCase()}</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px; color: #2ecc71; font-size: 0.75rem; font-weight: bold; flex-shrink: 0; background: rgba(46, 204, 113, 0.1); padding: 4px 8px; border-radius: 12px;">
+                        <div style="width: 6px; height: 6px; background: #2ecc71; border-radius: 50%;"></div>
                         ACTIVO
                     </div>
-                    ${isNotAdmin ? `
-                    <button onclick="deleteEmployee(${user.id}, '${user.username}')" title="Eliminar usuario" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; padding: 0;" onmouseover="this.style.background='#ef4444'; this.style.color='white';" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.color='#ef4444';">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                    </button>` : ''}
                 </div>
+                ${isNotAdmin ? `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+                    ${user.password ? `
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span id="pwd-text-${user.id}" style="font-family: monospace; font-size: 0.9rem; color: var(--text-secondary); background: rgba(0,0,0,0.1); padding: 4px 8px; border-radius: 6px; letter-spacing: 2px;">••••••••</span>
+                        <button onclick="togglePassword(${user.id}, '${user.password}')" title="Mostrar/Ocultar contraseña" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; color: var(--text-secondary); padding: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='var(--primary-color)'; this.style.color='white'; this.style.borderColor='var(--primary-color)';" onmouseout="this.style.background='var(--bg-secondary)'; this.style.color='var(--text-secondary)'; this.style.borderColor='var(--border-color)';">
+                            <svg id="pwd-icon-${user.id}" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>` : `<div></div>`}
+                    
+                    <button onclick="deleteEmployee(${user.id}, '${user.username}')" title="Eliminar usuario" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; width: 34px; height: 34px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; padding: 0;" onmouseover="this.style.background='#ef4444'; this.style.color='white';" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.color='#ef4444';">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </div>` : ''}
             `;
             employeeList.appendChild(div);
         });
