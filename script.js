@@ -189,6 +189,21 @@ function updateCountdownLabels() {
             }
         }
     });
+
+    // Actualizar también las tarjetas del mesero
+    const employeeLabels = document.querySelectorAll('.employee-countdown-badge');
+    employeeLabels.forEach(label => {
+        const orderId = parseInt(label.getAttribute('data-order-id'));
+        const order = pendingOrders.find(o => o.id === orderId);
+        if (order) {
+            const times = calculateOrderTimes(orderId);
+            if (order.status === 'Pendiente') {
+                label.innerHTML = `⏳ ${formatCountdown(times.startInSeconds)}`;
+            } else if (order.status === 'En Preparación') {
+                label.innerHTML = `🔥 ${formatCountdown(times.readyInSeconds)}`;
+            }
+        }
+    });
 }
 
 // ========== NOTIFICACIONES ==========
@@ -406,8 +421,19 @@ async function login() {
 
     try {
         const response = await posApi.login(username, password);
-        currentUser = response.user;
 
+        // Priorizar la sucursal cacheada localmente si existe antes de guardar a currentUser
+        const savedResId = localStorage.getItem('restaurantId');
+        if (savedResId) {
+            response.user.restaurant_id = parseInt(savedResId);
+            posApi.restaurantId = parseInt(savedResId);
+            // También se unen al nuevo id por si acaso
+            if (socket) {
+                socket.emit('joinRestaurant', parseInt(savedResId));
+            }
+        }
+
+        currentUser = response.user;
         localStorage.setItem('currentUser', JSON.stringify(response.user));
 
         await applyUserPermissions(response.user);
@@ -488,8 +514,22 @@ function logout() {
     updateCart();
 }
 
-// ========== NAVEGACIÓN ==========
-async function showSection(sectionId) {
+// ========== NAVEGACIÓN Y HISTORY API ==========
+window.addEventListener('popstate', (event) => {
+    // Si hay un estado guardado en el historial, navegamos a él sin volver a empujar al historial
+    if (event.state && event.state.sectionId) {
+        showSection(event.state.sectionId, false);
+    } else {
+        // Fallback al inicio según el rol si no hay estado previo
+        if (currentUser) {
+            if (currentUser.role === 'caja') showSection('pendientes-cobrar', false);
+            else if (currentUser.role === 'cocinero') showSection('cocina', false);
+            else showSection('venta', false);
+        }
+    }
+});
+
+async function showSection(sectionId, pushState = true) {
     const adminSections = ['productos', 'empleados', 'pedidos', 'ajustes', 'facturacion', 'reportes'];
     const cajaSections = ['pendientes-cobrar', 'cobrados', 'tickets'];
 
@@ -521,6 +561,15 @@ async function showSection(sectionId) {
         // Buscar botón de navegación y activarlo
         const btn = Array.from(document.querySelectorAll('nav button')).find(b => b.getAttribute('onclick')?.includes(`'${sectionId}'`));
         if (btn) btn.classList.add('active-nav');
+    }
+
+    // Push State para el botón "Atrás" del navegador/móvil
+    if (pushState) {
+        // Solo empujar si es diferente al estado actual para no llenar de duplicados el historial
+        const currentState = history.state;
+        if (!currentState || currentState.sectionId !== sectionId) {
+            history.pushState({ sectionId: sectionId }, '', `#${sectionId}`);
+        }
     }
 
     if (sectionId === 'venta' || sectionId === 'productos') {
@@ -717,6 +766,7 @@ async function switchBranch(id, name) {
 
     // Guardar el nuevo ID de restaurante
     localStorage.setItem('restaurantId', id);
+    localStorage.setItem('activeBranchId', id); // Usar misma convención
 
     // Actualizar el objeto de usuario local para mantener la sesión activa
     if (currentUser) {
@@ -2033,9 +2083,9 @@ function renderEmployeePendingOrders() {
         let timeBadge = '';
 
         if (order.status === 'Pendiente') {
-            timeBadge = `<div class="order-card-status" style="background:#fff3e0; color:#e65100;">⏳ ${formatCountdown(times.startInSeconds)}</div>`;
+            timeBadge = `<div class="order-card-status employee-countdown-badge" style="background:#fff3e0; color:#e65100;" data-order-id="${order.id}">⏳ ${formatCountdown(times.startInSeconds)}</div>`;
         } else if (order.status === 'En Preparación') {
-            timeBadge = `<div class="order-card-status" style="background:#e3f2fd; color:#1565c0;">🔥 ${formatCountdown(times.readyInSeconds)}</div>`;
+            timeBadge = `<div class="order-card-status employee-countdown-badge" style="background:#e3f2fd; color:#1565c0;" data-order-id="${order.id}">🔥 ${formatCountdown(times.readyInSeconds)}</div>`;
         } else if (order.status === 'Finalizado') {
             timeBadge = `<div class="order-card-status" style="background:#e8f5e9; color:#2e7d32;">✅ LISTO</div>`;
         }
