@@ -4,7 +4,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS -FoodWeb Pro</title>
+    <title>FoodWeb Pro — POS para Restaurantes</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="description"
+        content="Sistema POS para restaurantes, bares y cafés. Gestión de pedidos, cocina y caja en tiempo real.">
+    <meta name="theme-color" content="#0f0f1a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FoodWeb Pro">
+
+    <!-- PWA Icons (iOS) -->
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
     <!-- PayPal SDK for Subscriptions -->
     <script
         src="https://www.paypal.com/sdk/js?client-id=AfbxzwIJXzw7WYOANGp0htcN3c3bXY9T4j6-ph2dJZJ2Ph_ZqmJq0wD2aoiix3rSvCy8zPG0rYHq9Pcf&vault=true&intent=subscription"
@@ -17,6 +34,17 @@
     </style>
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Registrar Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(reg => console.log('[PWA] Service Worker registrado:', reg.scope))
+                    .catch(err => console.warn('[PWA] Error registrando SW:', err));
+            });
+        }
+    </script>
 </head>
 
 <body>
