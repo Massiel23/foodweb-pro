@@ -2184,22 +2184,20 @@ async function addEmployee() {
 
         // ========= RESTRICCIONES PLAN BÁSICO =========
         if (currentRestaurantPlan !== 'pro') {
-            // Excluir al admin de la cuenta (no cuenta para el límite)
-            const nonAdminUsers = users.filter(u => u.role !== 'admin');
-
-            // LÍMITE: máximo 2 usuarios en total (sin contar admin)
-            if (nonAdminUsers.length >= 2) {
-                empMsg.style.color = 'orange';
-                empMsg.innerHTML = '⚠️ <strong>Plan Básico:</strong> Límite de 2 empleados alcanzado. Actualiza al Plan Pro para usuarios ilimitados.';
-                return;
-            }
-
-            // LÍMITE: máximo 1 cajero
             if (role === 'caja') {
+                // LÍMITE: máximo 1 cajero
                 const cajaUsers = users.filter(u => u.role === 'caja');
                 if (cajaUsers.length >= 1) {
                     empMsg.style.color = 'orange';
-                    empMsg.innerHTML = '⚠️ <strong>Plan Básico:</strong> Solo se permite 1 cajero. Actualiza al Plan Pro para cajeros ilimitados.';
+                    empMsg.innerHTML = '⚠️ <strong>Plan Básico:</strong> Solo se permite 1 cajero. Actualiza al Plan Pro para más.';
+                    return;
+                }
+            } else if (role === 'empleado' || role === 'cocinero') {
+                // LÍMITE: máximo 2 empleados operativos (meseros / cocineros independientemente de la caja)
+                const operativos = users.filter(u => u.role === 'empleado' || u.role === 'cocinero');
+                if (operativos.length >= 2) {
+                    empMsg.style.color = 'orange';
+                    empMsg.innerHTML = '⚠️ <strong>Plan Básico:</strong> Límite de 2 empleados (Mesero/Cocinero) alcanzado. Actualiza al Plan Pro para más.';
                     return;
                 }
             }
