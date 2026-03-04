@@ -145,13 +145,16 @@ header::before {
 
 /* Botón de logout en header */
 .logout-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
     background: rgba(255, 255, 255, 0.2);
     border: 2px solid rgba(255, 255, 255, 0.3);
     backdrop-filter: blur(10px);
     z-index: 11;
+    position: relative;
+    padding: 10px 15px;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .logout-btn:hover {
@@ -161,21 +164,21 @@ header::before {
 
 /* Botón de modo oscuro */
 .dark-mode-toggle {
-    position: absolute;
-    top: 20px;
-    right: 180px;
     background: rgba(255, 255, 255, 0.2);
     border: 2px solid rgba(255, 255, 255, 0.3);
     backdrop-filter: blur(10px);
     z-index: 11;
     font-size: 1.5rem;
-    width: 50px;
-    height: 50px;
+    width: 45px;
+    height: 45px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
 }
 
 .dark-mode-toggle:hover {
@@ -2636,6 +2639,11 @@ body.dark-mode .modifier-option.selected {
 
 /* ========== HEADER RESPONSIVE (AVATAR Y LOGOUT) ========== */
 @media (max-width: 650px) {
+    header {
+        padding: 0.8rem 1rem;
+        gap: 15px;
+    }
+
     .logout-btn .logout-text {
         display: none;
     }
@@ -2653,6 +2661,17 @@ body.dark-mode .modifier-option.selected {
     }
 
     .user-info-text-mobile {
-        display: none;
+        display: block !important;
+    }
+
+    .dark-mode-toggle {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    #header-user-avatar {
+        width: 40px !important;
+        height: 40px !important;
     }
 }
