@@ -49,7 +49,7 @@ async function checkAutoLogin() {
                 if (socket) {
                     socket.emit('joinRestaurant', newId);
                 }
-                currentUser.restaurant_id = newId;
+                currentUser.restaurant_id=newId;
                 posApi.restaurantId = savedResId;
 
                 // Restaurar el nombre de la sucursal para la cabecera
@@ -129,7 +129,7 @@ function initializeSocket() {
         // Notificar al empleado si su pedido está listo
         if (currentUser && currentUser.role === 'empleado' && data.status === 'Finalizado') {
             // Verificar si el pedido es del empleado actual
-            const order = pendingOrders.find(o => o.id === data.id);
+            const order = pendingOrders.find(o => o.id=== data.id);
             if (order && order.username === currentUser.username) {
                 showNotification(`🎉 ¡Tu pedido #${data.id} está LISTO para entregar!`);
                 // Reproducir sonido de notificación (opcional)
@@ -185,7 +185,7 @@ function updateCountdownLabels() {
     const labels = document.querySelectorAll('.countdown-badge');
     labels.forEach(label => {
         const orderId = parseInt(label.getAttribute('data-order-id'));
-        const order = pendingOrders.find(o => o.id === orderId);
+        const order = pendingOrders.find(o => o.id=== orderId);
         if (order) {
             const times = calculateOrderTimes(orderId);
             if (order.status === 'Pendiente') {
@@ -200,7 +200,7 @@ function updateCountdownLabels() {
     const employeeLabels = document.querySelectorAll('.employee-countdown-badge');
     employeeLabels.forEach(label => {
         const orderId = parseInt(label.getAttribute('data-order-id'));
-        const order = pendingOrders.find(o => o.id === orderId);
+        const order = pendingOrders.find(o => o.id=== orderId);
         if (order) {
             const times = calculateOrderTimes(orderId);
             if (order.status === 'Pendiente') {
@@ -459,7 +459,7 @@ async function login() {
         // Priorizar la sucursal cacheada localmente si existe y si es el mismo usuario
         if (savedBranchStr && previousUsername === username) {
             const savedResId = parseInt(savedBranchStr);
-            response.user.restaurant_id = savedResId;
+            response.user.restaurant_id=savedResId;
             posApi.restaurantId = savedResId;
             // Restaurar las variables que posApi.login borró
             localStorage.setItem('restaurantId', savedResId);
@@ -552,7 +552,7 @@ function updateHeaderProfile(user) {
     // Intentar cargar la foto de perfil
     const savedPic = localStorage.getItem('userAvatar_' + user.id);
     if (savedPic && imgElement) {
-        imgElement.src = savedPic;
+        imgElement.src=savedPic;
         imgElement.style.display = 'block';
         if (initialSpan) initialSpan.style.display = 'none';
     } else {
@@ -573,7 +573,7 @@ function openAvatarModal() {
     const initial = (currentUser.name || currentUser.username || 'U').charAt(0).toUpperCase();
 
     const modal = document.createElement('div');
-    modal.id = 'avatar-modal';
+    modal.id='avatar-modal';
     modal.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
@@ -617,7 +617,7 @@ function handleProfilePhotoUpload(event) {
             const preview = document.getElementById('modal-avatar-preview');
             const initialSpan = document.getElementById('modal-avatar-initial');
             if (preview) {
-                preview.src = base64Str;
+                preview.src=base64Str;
                 preview.style.display = 'block';
                 if (initialSpan) initialSpan.style.display = 'none';
             }
@@ -636,7 +636,7 @@ function removeProfilePhoto() {
         const initialSpan = document.getElementById('modal-avatar-initial');
         if (preview) {
             preview.style.display = 'none';
-            preview.src = '';
+            preview.src='';
             if (initialSpan) initialSpan.style.display = 'block';
         }
     }
@@ -810,7 +810,7 @@ async function showProfile() {
 
         // Iniciales
         const names = (user.full_name || user.username).split(' ');
-        const initials = names.length > 1 ? (names[0][0] + (names[1] ? names[1][0] : '')) : names[0].substring(0, 2);
+        const initials = names.length> 1 ? (names[0][0] + (names[1] ? names[1][0] : '')) : names[0].substring(0, 2);
         document.getElementById('profile-initials').textContent = initials.toUpperCase();
 
         // ========= RESTRICCIONES PLAN BÁSICO =========
@@ -932,7 +932,7 @@ function renderBranches() {
     }
 
     window.myBranches.forEach(branch => {
-        const isCurrent = branch.id === parseInt(localStorage.getItem('restaurantId'));
+        const isCurrent = branch.id=== parseInt(localStorage.getItem('restaurantId'));
         const div = document.createElement('div');
         div.style.cssText = `
     display: flex;
@@ -946,10 +946,10 @@ function renderBranches() {
     `;
 
         div.innerHTML = `
-        < div >
+        <div>
                 <h4 style="margin: 0; color: var(--text-primary);">${branch.name} ${isCurrent ? '<span style="font-size: 0.7rem; background: var(--primary-color); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">ACTIVA</span>' : ''}</h4>
                 <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">${branch.plan} Plan</p>
-            </div >
+            </div>
         ${!isCurrent ? `<button onclick="switchBranch(${branch.id}, '${branch.name}')" class="btn-primary" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">Cambiar a esta</button>` : ''}
     `;
         list.appendChild(div);
@@ -957,7 +957,7 @@ function renderBranches() {
 }
 
 async function switchBranch(id, name) {
-    const confirmed = await showConfirmModal('Cambiar de Sucursal', `¿Deseas cambiar a la sucursal < b > "${name}"</b >? `);
+    const confirmed = await showConfirmModal('Cambiar de Sucursal', `¿Deseas cambiar a la sucursal <b> "${name}"</b>? `);
     if (!confirmed) return;
 
     // Guardar el nuevo ID de restaurante
@@ -967,7 +967,7 @@ async function switchBranch(id, name) {
 
     // Actualizar el objeto de usuario local para mantener la sesión activa
     if (currentUser) {
-        currentUser.restaurant_id = id;
+        currentUser.restaurant_id=id;
         currentUser.restaurant_name = name;
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
@@ -1048,8 +1048,8 @@ function renderCategories() {
     const uniqueCategories = ['all', ...new Set(products.map(p => p.category || 'General'))];
 
     filters.innerHTML = uniqueCategories.map(cat => `
-        < span class="category-chip ${selectedCategory === cat ? 'active' : ''}"
-    onclick = "filterByCategory('${cat}')" > ${cat === 'all' ? 'Todos' : cat}</span >
+        <span class="category-chip ${selectedCategory === cat ? 'active' : ''}"
+    onclick="filterByCategory('${cat}')"> ${cat === 'all' ? 'Todos' : cat}</span>
         `).join('');
 }
 
@@ -1078,9 +1078,9 @@ function renderProducts() {
         if (ventaList) {
             const card = document.createElement('div');
             card.className = 'product-card-v2';
-            card.onclick = () => showCustomizationModal(product.id, product.name, product.price);
+            card.onclick=() => showCustomizationModal(product.id, product.name, product.price);
             card.innerHTML = `
-        < span class="icon" > ${product.img || '🍔'}</span >
+        <span class="icon"> ${product.img || '🍔'}</span>
                 <h4>${product.name}</h4>
                 <p class="price">$${parseFloat(product.price).toFixed(2)}</p>
                 <button class="add-btn-v2">Agregar +</button>
@@ -1093,7 +1093,7 @@ function renderProducts() {
             const adminItem = document.createElement('div');
             adminItem.className = 'product-item';
             adminItem.innerHTML = `
-        < div style = "font-size: 2em;" > ${product.img}</div >
+        <div style="font-size: 2em;"> ${product.img}</div>
                 <h4>${product.name}</h4>
                 <p>$${parseFloat(product.price).toFixed(2)}</p>
                 <button onclick="removeProduct(${product.id})" style="background-color: var(--danger-color); color: white; border: none; padding: 0.5rem; border-radius: 4px; pointer-events: auto;">Eliminar</button>
@@ -1161,23 +1161,23 @@ async function renderTables() {
             div.style.cssText = 'padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; position: relative;';
 
             // Selector dropdown de asignación
-            let selectHtml = `< select onchange = "assignTableToUser(${table.id}, this.value)" style = "width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 0.9rem; cursor: pointer;" >
+            let selectHtml = `<select onchange="assignTableToUser(${table.id}, this.value)" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 0.9rem; cursor: pointer;">
         <option value="">🌐 Libre (Sin asignar)</option>`;
             meseros.forEach(m => {
-                const selected = (table.assigned_user_id == m.id) ? 'selected' : '';
-                selectHtml += `< option value = "${m.id}" ${selected}>👤 Asignada a: ${m.username}</option > `;
+                const selected = (table.assigned_user_id== m.id) ? 'selected' : '';
+                selectHtml += `<option value = "${m.id}" ${selected}>👤 Asignada a: ${m.username}</option> `;
             });
-            selectHtml += `</select > `;
+            selectHtml += `</select> `;
 
             div.innerHTML = `
-        < div style = "display: flex; justify-content: space-between; align-items: flex-start;" >
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
                         <h3 style="margin: 0 0 0.25rem 0; color: var(--primary-color); display: flex; align-items: center; gap: 8px;">🪑 ${table.name}</h3>
                     </div>
                     <button onclick="deleteTable(${table.id}, '${table.name}')" title="Eliminar Mesa" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; padding: 0;" onmouseover="this.style.background='#ef4444'; this.style.color='white';" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.color='#ef4444';">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                     </button>
-                </div >
+                </div>
         <div>
             <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Asignación Exclusiva:</label>
             ${selectHtml}
@@ -1186,7 +1186,7 @@ async function renderTables() {
             list.appendChild(div);
         });
     } catch (error) {
-        list.innerHTML = `< div style = "grid-column: 1/-1; color: red;" > Error al cargar mesas: ${error.message}</div > `;
+        list.innerHTML = `<div style="grid-column: 1/-1; color: red;"> Error al cargar mesas: ${error.message}</div> `;
     }
 }
 
@@ -1209,7 +1209,7 @@ async function addTable() {
 }
 
 async function deleteTable(id, name) {
-    const confirmed = await showConfirmModal('Eliminar Mesa', `¿Estás seguro de que deseas eliminar la < b > Mesa "${name}"</b >? `);
+    const confirmed = await showConfirmModal('Eliminar Mesa', `¿Estás seguro de que deseas eliminar la <b> Mesa "${name}"</b>? `);
     if (!confirmed) return;
 
     try {
@@ -1339,18 +1339,18 @@ function addToCart(id, name, price) {
 function showCustomizationModal(id, name, price) {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
-    modal.id = 'customization-modal';
+    modal.id='customization-modal';
 
-    const product = products.find(p => p.id === id);
+    const product = products.find(p => p.id=== id);
     let modifiersArray = [];
     if (product && product.modifiers) {
         modifiersArray = typeof product.modifiers === 'string' ? JSON.parse(product.modifiers) : product.modifiers;
     }
 
     let modifierOptions = '';
-    if (modifiersArray && modifiersArray.length > 0) {
+    if (modifiersArray && modifiersArray.length> 0) {
         modifierOptions = modifiersArray.map(mod => `
-        < label class="modifier-option" >
+        <label class="modifier-option">
             <input type="checkbox" value="${mod}" class="customization-checkbox"
                 onchange="this.parentElement.classList.toggle('selected', this.checked); updateQuantityDisplay(${price})">
                 <span class="modifier-label">${mod}</span>
@@ -1361,7 +1361,7 @@ function showCustomizationModal(id, name, price) {
     }
 
     modal.innerHTML = `
-        < div class="modal-content" >
+        <div class="modal-content">
             <div class="modal-header">
                 <h3>🌭 Personalizar</h3>
                 <div class="product-info">${name} — $${parseFloat(price).toFixed(2)} c/u</div>
@@ -1395,12 +1395,12 @@ function showCustomizationModal(id, name, price) {
                     <button class="btn-modal btn-confirm" onclick="confirmCustomization(${id}, '${name}', ${price}, event)">✓ Agregar al Carrito</button>
                 </div>
             </div>
-        </div >
+        </div>
         `;
 
     document.body.appendChild(modal);
 
-    modal.onclick = (e) => {
+    modal.onclick=(e) => {
         if (e.target === modal) closeCustomizationModal();
     };
 }
@@ -1418,7 +1418,7 @@ function increaseQuantity() {
 function decreaseQuantity() {
     const input = document.getElementById('quantity-input');
     let quantity = parseInt(input.value) || 1;
-    if (quantity > 1) {
+    if (quantity> 1) {
         input.value = quantity - 1;
         input.dispatchEvent(new Event('input'));
     }
@@ -1432,7 +1432,7 @@ function updateQuantityDisplay(unitPrice) {
         quantity = 1;
         input.value = 1;
     }
-    if (quantity > 99) {
+    if (quantity> 99) {
         quantity = 99;
         input.value = 99;
     }
@@ -1497,8 +1497,8 @@ function confirmCustomization(id, name, price, event) {
     updateCart();
     closeCustomizationModal();
 
-    const customText = customizations.length > 0 ? ` (${customizations.join(', ')})` : '';
-    const quantityText = quantity > 1 ? `${quantity} x ` : '';
+    const customText = customizations.length> 0 ? ` (${customizations.join(', ')})` : '';
+    const quantityText = quantity> 1 ? `${quantity} x ` : '';
     showNotification(`${quantityText}${name}${customText} agregado al carrito`);
 }
 
@@ -1512,16 +1512,16 @@ function updateCart() {
         const div = document.createElement('div');
         div.className = 'cart-item';
 
-        const customizations = item.customizations && item.customizations.length > 0
-            ? `< br > <small style="color: var(--primary-color);">✨ ${item.customizations.join(', ')}</small>`
+        const customizations = item.customizations && item.customizations.length> 0
+            ? `<br> <small style="color: var(--primary-color);">✨ ${item.customizations.join(', ')}</small>`
             : '';
 
         div.innerHTML = `
-        < div class="cart-item-info" >
+        <div class="cart-item-info">
                 <span>${item.quantity}x ${item.name}</span>
                 <small>$${(item.unitPrice || item.price).toFixed(2)} c/u</small>
                 ${customizations}
-            </div >
+            </div>
         <div class="cart-item-controls">
             <button class="cart-item-btn" onclick="removeFromCart(${index})" style="background:var(--danger-color); color:white; border:none;">×</button>
         </div>
@@ -1560,7 +1560,7 @@ function increaseCartQuantity(index) {
 
 function decreaseCartQuantity(index) {
     const item = cart[index];
-    if (item.quantity > 1) {
+    if (item.quantity> 1) {
         const unitPrice = item.unitPrice || item.price;
         item.quantity--;
         const oldPrice = item.price;
@@ -1590,12 +1590,12 @@ async function sendOrder() {
         if (tables.data) tables = tables.data;
 
         // Si hay mesas creadas en el sistema, forzar la selección, filtrando a las disponibles
-        if (tables.length > 0) {
+        if (tables.length> 0) {
             // Regla de Negocio: Obtener las mesas asignadas específicamente a este empleado
-            const myAssignedTables = tables.filter(t => t.assigned_user_id == currentUser.id);
+            const myAssignedTables = tables.filter(t => t.assigned_user_id== currentUser.id);
             let availableTables = [];
 
-            if (myAssignedTables.length > 0) {
+            if (myAssignedTables.length> 0) {
                 // Si el dueño me asignó mesas, SOLO veo las mías (las demás se me ocultan)
                 availableTables = myAssignedTables;
             } else {
@@ -1664,15 +1664,15 @@ function showTableSelectionModal(tables) {
     color: var(--text - primary);
     `;
 
-        let selectHtml = `< select id = "modal-table-select" style = "width: 100%; padding: 0.8rem; border-radius: 8px; border: 2px solid var(--primary-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; margin-bottom: 1.5rem; cursor: pointer;" >
+        let selectHtml = `<select id="modal-table-select" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 2px solid var(--primary-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; margin-bottom: 1.5rem; cursor: pointer;">
         <option value="" disabled selected>-- Elige una mesa --</option>`;
         tables.forEach(t => {
-            selectHtml += `< option value = "${t.name}" >🪑 ${t.name}</option > `;
+            selectHtml += `<option value = "${t.name}">🪑 ${t.name}</option> `;
         });
-        selectHtml += `</select > `;
+        selectHtml += `</select> `;
 
         card.innerHTML = `
-        < h3 style = "margin-top: 0; color: var(--primary-color);" > Selecciona tu Mesa</h3 >
+        <h3 style="margin-top: 0; color: var(--primary-color);"> Selecciona tu Mesa</h3>
             <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">Para enviar la orden, es necesario indicar la mesa.</p>
             ${selectHtml}
     <div style="display: flex; gap: 1rem;">
@@ -1689,8 +1689,8 @@ function showTableSelectionModal(tables) {
             resolve(result);
         };
 
-        document.getElementById('btn-cancel-table').onclick = () => closeMenu(null);
-        document.getElementById('btn-confirm-table').onclick = () => {
+        document.getElementById('btn-cancel-table').onclick=() => closeMenu(null);
+        document.getElementById('btn-confirm-table').onclick=() => {
             const val = document.getElementById('modal-table-select').value;
             if (!val) {
                 alert('Debes seleccionar una mesa');
@@ -1732,7 +1732,7 @@ async function loadOrders() {
 
 // ========== LÓGICA DE TIEMPOS DINÁMICOS CON CUENTA REGRESIVA REAL ==========
 function calculateOrderTimes(orderId) {
-    const order = pendingOrders.find(o => o.id === orderId);
+    const order = pendingOrders.find(o => o.id=== orderId);
     if (!order) return { startInSeconds: 60, readyInSeconds: 300 };
 
     // Calcular SEGUNDOS transcurridos desde que se creó el pedido
@@ -1747,13 +1747,13 @@ function calculateOrderTimes(orderId) {
         .filter(o => o.status === 'Pendiente' || o.status === 'En Preparación')
         .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // ASC: Viejo primero
 
-    const orderIndex = activeOrders.findIndex(o => o.id === orderId);
+    const orderIndex = activeOrders.findIndex(o => o.id=== orderId);
 
     if (orderIndex === -1) return { startInSeconds: 0, readyInSeconds: 0 };
 
     // Cálculo base de tiempo para empezar (en segundos)
     let startInSeconds = 60; // Base 1 min
-    if (orderIndex > 0) {
+    if (orderIndex> 0) {
         // Sumamos 2 min por cada platillo de los pedidos anteriores en la cola
         const previousOrders = activeOrders.slice(0, orderIndex);
         const totalPreviousItems = previousOrders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + (i.quantity || 1), 0), 0);
@@ -1798,19 +1798,19 @@ function renderPendingOrders() {
 
         const times = calculateOrderTimes(order.id);
         const timeBadge = order.status === 'Pendiente'
-            ? `< div class="order-card-status" style = "background:#fff3e0; color:#e65100;" >⏳ ${formatCountdown(times.startInSeconds)}</div > `
-            : (order.status === 'En Preparación' ? `< div class="order-card-status" style = "background:#e3f2fd; color:#1565c0;" >🔥 ${formatCountdown(times.readyInSeconds)}</div > ` : ` < div class="order-card-status" style = "background:#e8f5e9; color:#2e7d32;" >✅ LISTO</div > `);
+            ? `<div class="order-card-status" style="background:#fff3e0; color:#e65100;">⏳ ${formatCountdown(times.startInSeconds)}</div> `
+            : (order.status === 'En Preparación' ? `<div class="order-card-status" style="background:#e3f2fd; color:#1565c0;">🔥 ${formatCountdown(times.readyInSeconds)}</div> ` : ` <div class="order-card-status" style="background:#e8f5e9; color:#2e7d32;">✅ LISTO</div> `);
 
-        const itemsList = order.items.map(i => `< li > ${i.quantity}x ${i.name}</li > `).join('');
+        const itemsList = order.items.map(i => `<li> ${i.quantity}x ${i.name}</li> `).join('');
 
         div.innerHTML = `
-        < div class="order-card-header" >
+        <div class="order-card-header">
             <div>
                 <h4>Pedido #${order.id}</h4>
                 <small style="color:var(--text-secondary)">${order.employee || 'Admin'}${order.table_name ? ` • <span style="color:var(--primary-color); font-weight:bold;">🪑 ${order.table_name}</span>` : ''}</small>
             </div>
                 ${timeBadge}
-            </div >
+            </div>
             <ul class="order-card-items">${itemsList}</ul>
             <div class="order-card-footer">
                 <span class="order-card-total">$${parseFloat(order.total).toFixed(2)}</span>
@@ -1853,10 +1853,10 @@ function renderKitchenOrders() {
                 const itemsStr = order.items.map(i => `${i.quantity}x ${i.name} `).join(', ');
 
                 historyItem.innerHTML = `
-        < div style = "display: flex; justify-content: space-between; align-items: center;" >
+        <div style="display: flex; justify-content: space-between; align-items: center;">
                         <h4 style="margin:0;">Pedido #${order.id}</h4>
                         <span style="font-size: 0.7rem; font-weight: bold; color: ${order.status === 'Cobrado' ? '#27ae60' : '#2ecc71'};">${order.status.toUpperCase()}</span>
-                    </div >
+                    </div>
         <small style="color: var(--text-secondary);">${itemsStr}</small>
     `;
                 kitchenHistoryDiv.appendChild(historyItem);
@@ -1871,23 +1871,23 @@ function renderKitchenOrders() {
 
         const itemsList = order.items.map(item => {
             const quantity = item.quantity || 1;
-            const custom = item.customizations && item.customizations.length > 0 ? `< br > <small style="color:red">(!) ${item.customizations.join(', ')}</small>` : '';
-            return `< li style = "margin-bottom: 0.5rem; font-size: 1.1rem;" > <strong>${quantity}x</strong> ${item.name}${custom}</li > `;
+            const custom = item.customizations && item.customizations.length> 0 ? `<br> <small style="color:red">(!) ${item.customizations.join(', ')}</small>` : '';
+            return `<li style="margin-bottom: 0.5rem; font-size: 1.1rem;"> <strong>${quantity}x</strong> ${item.name}${custom}</li> `;
         }).join('');
 
         const isPreparing = order.status === 'En Preparación';
         const timeBadge = isPreparing
-            ? `< span class="countdown-badge" data - order - id="${order.id}" style = "background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;" >🔥 PREPARANDO - ~${formatCountdown(times.readyInSeconds)}</span > `
-            : `< span class="countdown-badge" data - order - id="${order.id}" style = "background: #ff6b35; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;" >⏳ EN ESPERA - ~${formatCountdown(times.startInSeconds)}</span > `;
+            ? `<span class="countdown-badge" data-order-id="${order.id}" style="background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">🔥 PREPARANDO - ~${formatCountdown(times.readyInSeconds)}</span> `
+            : `<span class="countdown-badge" data-order-id="${order.id}" style="background: #ff6b35; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">⏳ EN ESPERA - ~${formatCountdown(times.startInSeconds)}</span> `;
 
         div.innerHTML = `
-        < div style = "display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;" >
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
             <div>
                 <h3 style="margin: 0; color: var(--text-primary);">Pedido #${order.id}</h3>
                 <small style="color: var(--text-secondary);">${order.employee || 'Mesero'}${order.table_name ? ` • <strong style="color:var(--primary-color); font-size:1rem;">🪑 ${order.table_name}</strong>` : ''}</small>
             </div>
                 ${timeBadge}
-            </div >
+            </div>
             <ul style="list-style: none; padding: 0; margin-bottom: 1.5rem;">${itemsList}</ul>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 ${!isPreparing ?
@@ -1928,16 +1928,16 @@ function renderCashierPendingOrders() {
         const div = document.createElement('div');
         div.className = 'order-card-compact finalizado';
 
-        const itemsList = order.items.map(i => `< li > ${i.quantity}x ${i.name}</li > `).join('');
+        const itemsList = order.items.map(i => `<li> ${i.quantity}x ${i.name}</li> `).join('');
 
         div.innerHTML = `
-        < div class="order-card-header" >
+        <div class="order-card-header">
                 <div>
                     <h4>Pedido #${order.id}</h4>
                     <small style="color:var(--text-secondary)">${order.employee || 'Anónimo'}${order.table_name ? ` • <span style="color:var(--primary-color); font-weight:bold;">🪑 ${order.table_name}</span>` : ''}</small>
                 </div>
                 <div class="order-card-status" style="background:#e8f5e9; color:#2e7d32;">✓ LISTO</div>
-            </div >
+            </div>
             <ul class="order-card-items">${itemsList}</ul>
             <div class="order-card-footer">
                 <span class="order-card-total">$${parseFloat(order.total).toFixed(2)}</span>
@@ -1951,7 +1951,7 @@ function renderCashierPendingOrders() {
 // ========== MODAL DE PAGO ==========
 function showPaymentModal(orderId, total) {
     const modal = document.createElement('div');
-    modal.id = 'payment-modal';
+    modal.id='payment-modal';
     modal.style.cssText = `
     position: fixed;
     top: 0;
@@ -1967,7 +1967,7 @@ function showPaymentModal(orderId, total) {
     `;
 
     modal.innerHTML = `
-        < div style = "background: var(--bg-primary); padding: 2.5rem; border-radius: 16px; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);" >
+        <div style="background: var(--bg-primary); padding: 2.5rem; border-radius: 16px; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
             <h3 style="color: #FF6B35; margin-bottom: 1.5rem; text-align: center;">💰 Cobrar Pedido #${orderId}</h3>
             
             <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
@@ -2004,7 +2004,7 @@ function showPaymentModal(orderId, total) {
                 <button onclick="closePaymentModal()" style="background: #6c757d; color: white; border: none; padding: 0.875rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;">Cancelar</button>
                 <button id="confirm-payment-btn" onclick="confirmPayment(${orderId}, ${total})" disabled style="background: #ccc; color: white; border: none; padding: 0.875rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: not-allowed;">✓ Confirmar Pago</button>
             </div>
-        </div >
+        </div>
         `;
 
     document.body.appendChild(modal);
@@ -2065,14 +2065,14 @@ function calculateChange(total) {
     const insufficientDisplay = document.getElementById('insufficient-display');
     const confirmBtn = document.getElementById('confirm-payment-btn');
 
-    if (amount >= total && amount > 0) {
+    if (amount>= total && amount> 0) {
         changeDisplay.style.display = 'block';
         insufficientDisplay.style.display = 'none';
         document.getElementById('change-amount').textContent = change.toFixed(2);
         confirmBtn.disabled = false;
         confirmBtn.style.background = '#27ae60';
         confirmBtn.style.cursor = 'pointer';
-    } else if (amount > 0) {
+    } else if (amount> 0) {
         changeDisplay.style.display = 'none';
         insufficientDisplay.style.display = 'block';
         confirmBtn.disabled = true;
@@ -2101,7 +2101,7 @@ async function confirmPayment(orderId, total) {
     const amount = parseFloat(document.getElementById('payment-amount').value) || 0;
     console.log('amount:', amount);
 
-    if (amount < total) {
+    if (amount <total) {
         alert('El monto recibido es insuficiente');
         return;
     }
@@ -2109,7 +2109,7 @@ async function confirmPayment(orderId, total) {
     try {
         // Obtener el pedido antes de actualizar Y HACER UNA COPIA PROFUNDA
         console.log('Buscando pedido en pendingOrders...');
-        const order = pendingOrders.find(o => o.id === orderId);
+        const order = pendingOrders.find(o => o.id=== orderId);
         console.log('Pedido encontrado:', order);
 
         if (!order) {
@@ -2171,7 +2171,7 @@ async function confirmPayment(orderId, total) {
         console.log('Ticket mostrado');
 
         // Mostrar notificación según el método de pago
-        const changeMsg = change > 0 ? ` Cambio: $${change.toFixed(2)} ` : '';
+        const changeMsg = change> 0 ? ` Cambio: $${change.toFixed(2)} ` : '';
         showNotification(`Pedido #${orderId} cobrado con ${paymentMethod}.${changeMsg} `);
 
         // Actualizar listas DESPUÉS de mostrar el ticket
@@ -2205,16 +2205,16 @@ function renderCashierPaidOrders() {
         const div = document.createElement('div');
         div.className = 'order-card-compact cobrado';
 
-        const itemsList = order.items.map(i => `< li > ${i.quantity}x ${i.name}</li > `).join('');
+        const itemsList = order.items.map(i => `<li> ${i.quantity}x ${i.name}</li> `).join('');
 
         div.innerHTML = `
-        < div class="order-card-header" >
+        <div class="order-card-header">
                 <div>
                     <h4>Pedido #${order.id}</h4>
                     <small style="color:var(--text-secondary)">${order.employee || 'Anónimo'}${order.table_name ? ` • <span style="color:var(--primary-color); font-weight:bold;">🪑 ${order.table_name}</span>` : ''}</small>
                 </div>
                 <div class="order-card-status" style="background:var(--bg-primary); color:var(--text-secondary);">FINALIZADO</div>
-            </div >
+            </div>
             <ul class="order-card-items">${itemsList}</ul>
             <div class="order-card-footer">
                 <span class="order-card-total" style="color:var(--text-secondary)">$${parseFloat(order.total).toFixed(2)}</span>
@@ -2265,11 +2265,11 @@ function renderTickets() {
         const div = document.createElement('div');
         div.className = 'ticket-item';
         div.innerHTML = `
-        < h4 > Ticket #${ticket.id} - Pedido #${ticket.order_id}</h4 >
+        <h4> Ticket #${ticket.id} - Pedido #${ticket.order_id}</h4>
             <p><strong>Método:</strong> ${paymentIcon} ${ticket.payment_method || 'Efectivo'}</p>
             <p><strong>Total:</strong> $${parseFloat(ticket.total).toFixed(2)}</p>
             <p><strong>Recibido:</strong> $${parseFloat(ticket.amount_received).toFixed(2)}</p>
-            ${ticket.change_given > 0 ? `<p><strong>Cambio:</strong> $${parseFloat(ticket.change_given).toFixed(2)}</p>` : ''}
+            ${ticket.change_given> 0 ? `<p><strong>Cambio:</strong> $${parseFloat(ticket.change_given).toFixed(2)}</p>` : ''}
             <p><small>${new Date(ticket.printed_at).toLocaleString()}</small></p>
             <button onclick="reprintTicket(${ticket.order_id}, ${ticket.amount_received}, ${ticket.change_given}, '${ticket.payment_method || 'Efectivo'}')">Reimprimir</button>
     `;
@@ -2280,7 +2280,7 @@ function renderTickets() {
 
 async function reprintTicket(orderId, amount, change, paymentMethod = 'Efectivo') {
     try {
-        const order = pendingOrders.find(o => o.id === orderId);
+        const order = pendingOrders.find(o => o.id=== orderId);
         if (!order) {
             alert('Pedido no encontrado');
             return;
@@ -2311,15 +2311,15 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
     }
 
     const itemsList = order.items.map(item => {
-        const customText = item.customizations && item.customizations.length > 0
+        const customText = item.customizations && item.customizations.length> 0
             ? ` [${item.customizations.join(', ')}]`
             : '';
         const quantity = item.quantity || 1;
         const unitPrice = item.unitPrice || item.price;
-        const displayText = quantity > 1
+        const displayText = quantity> 1
             ? `${quantity}x ${item.name}${customText} @$${unitPrice.toFixed(2)} = $${item.price.toFixed(2)} `
             : `${item.name}${customText} - $${item.price.toFixed(2)} `;
-        return `< li style = "margin-bottom: 5px;" > ${displayText}</li > `;
+        return `<li style="margin-bottom: 5px;"> ${displayText}</li> `;
     }).join('');
 
     // Determinar el icono del método de pago
@@ -2329,7 +2329,7 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
 
     // Cargar textos personalizados si existen (o usar defaults enriquecidos guiados por el layout térmico clásico)
     const defaultHeader = `
-        < h3 style = "margin: 0; font-size: 1.2rem; text-transform: uppercase;" > NOMBRE DE TU NEGOCIO</h3 >
+        <h3 style="margin: 0; font-size: 1.2rem; text-transform: uppercase;"> NOMBRE DE TU NEGOCIO</h3>
         <p style="margin: 0; font-size: 0.8rem;">Calle Falsa 123, Colonia Centro</p>
         <p style="margin: 0; font-size: 0.8rem;">Ciudad, Estado, C.P. 12345</p>
         <p style="margin: 0; font-size: 0.8rem;">RFC: XXXX-000000-XXX</p>
@@ -2359,7 +2359,7 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
             <p style="margin: 5px 0; font-size: 1.1rem;"><strong>Total: $${parseFloat(order.total).toFixed(2)}</strong></p>
             <p style="margin: 5px 0;">Modo Pago: ${paymentIcon} ${paymentMethod}</p>
             <p style="margin: 5px 0;">Recibido: $${parseFloat(amountReceived).toFixed(2)}</p>
-            ${changeGiven > 0 ? `<p style="margin: 5px 0;"><strong>Cambio: $${parseFloat(changeGiven).toFixed(2)}</strong></p>` : ''}
+            ${changeGiven> 0 ? `<p style="margin: 5px 0;"><strong>Cambio: $${parseFloat(changeGiven).toFixed(2)}</strong></p>` : ''}
             
             <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
             
@@ -2416,7 +2416,7 @@ function openTicketConfigModal() {
     const savedFooter = localStorage.getItem('ticketFooter') || defaultFooter;
 
     modal = document.createElement('div');
-    modal.id = 'ticket-config-modal';
+    modal.id='ticket-config-modal';
     modal.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center;
@@ -2610,7 +2610,7 @@ async function addEmployee() {
             if (role === 'caja') {
                 // LÍMITE: máximo 1 cajero
                 const cajaUsers = users.filter(u => u.role === 'caja');
-                if (cajaUsers.length >= 1) {
+                if (cajaUsers.length>= 1) {
                     empMsg.style.color = 'orange';
                     empMsg.innerHTML = '⚠️ <strong>Plan Básico:</strong> Solo se permite 1 cajero. Actualiza al Plan Pro para más.';
                     return;
@@ -2618,7 +2618,7 @@ async function addEmployee() {
             } else if (role === 'empleado' || role === 'cocinero') {
                 // LÍMITE: máximo 2 empleados operativos (meseros / cocineros independientemente de la caja)
                 const operativos = users.filter(u => u.role === 'empleado' || u.role === 'cocinero');
-                if (operativos.length >= 2) {
+                if (operativos.length>= 2) {
                     empMsg.style.color = 'orange';
                     empMsg.innerHTML = '⚠️ <strong>Plan Básico:</strong> Límite de 2 empleados (Mesero/Cocinero) alcanzado. Actualiza al Plan Pro para más.';
                     return;
@@ -2657,7 +2657,7 @@ function showSuccessModal(username, password) {
 
     const isDark = document.body.classList.contains('dark-mode');
     const modal = document.createElement('div');
-    modal.id = 'success-employee-modal';
+    modal.id='success-employee-modal';
 
     // Contenedor principal del modal (overlay)
     modal.style.cssText = `
@@ -2732,7 +2732,7 @@ function showConfirmModal(title, message) {
 
         const isDark = document.body.classList.contains('dark-mode');
         const modal = document.createElement('div');
-        modal.id = 'custom-confirm-modal';
+        modal.id='custom-confirm-modal';
 
         modal.style.cssText = `
             position: fixed;
@@ -2792,8 +2792,8 @@ function showConfirmModal(title, message) {
             }, 300);
         };
 
-        document.getElementById('btn-confirm-cancel').onclick = () => closeAndResolve(false);
-        document.getElementById('btn-confirm-accept').onclick = () => closeAndResolve(true);
+        document.getElementById('btn-confirm-cancel').onclick=() => closeAndResolve(false);
+        document.getElementById('btn-confirm-accept').onclick=() => closeAndResolve(true);
 
         requestAnimationFrame(() => {
             modal.style.opacity = '1';
@@ -2809,7 +2809,7 @@ function showLoadingModal(title, subtitle) {
 
     const isDark = document.body.classList.contains('dark-mode');
     const modal = document.createElement('div');
-    modal.id = 'custom-loading-modal';
+    modal.id='custom-loading-modal';
 
     modal.style.cssText = `
         position: fixed;
@@ -3086,7 +3086,7 @@ async function generateReports(period = 'all') {
         // Estadísticas generales
         const totalOrders = allOrders.length;
         const totalSales = allOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
-        const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+        const avgOrderValue = totalOrders> 0 ? totalSales / totalOrders : 0;
 
         // Pedidos por estado
         const ordersByStatus = {
@@ -3360,7 +3360,7 @@ async function renderTables() {
 
             let assignedText = '<span style="color:var(--text-secondary); font-size:0.85rem;">No asignada</span>';
             if (table.assigned_user_id) {
-                const assignedUser = users.find(u => u.id === table.assigned_user_id);
+                const assignedUser = users.find(u => u.id=== table.assigned_user_id);
                 if (assignedUser) {
                     assignedText = `<span style="color:var(--success-color); font-weight:bold; font-size:0.85rem;">Asignada a: ${assignedUser.username}</span>`;
                 }
@@ -3368,7 +3368,7 @@ async function renderTables() {
 
             let selectHtml = `<select onchange="assignTableToUser(${table.id}, this.value)" style="padding: 0.4rem; border-radius: 4px; border: 1px solid var(--border-color); width: 100%; background: var(--bg-primary); color: var(--text-primary); font-size: 0.85rem;">
                 <option value="">-- Sin Asignar --</option>
-                ${waiters.map(w => `<option value="${w.id}" ${table.assigned_user_id === w.id ? 'selected' : ''}>${w.username}</option>`).join('')}
+                ${waiters.map(w => `<option value="${w.id}" ${table.assigned_user_id=== w.id ? 'selected' : ''}>${w.username}</option>`).join('')}
             </select>`;
 
             div.innerHTML = `
