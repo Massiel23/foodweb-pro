@@ -2230,11 +2230,9 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
         <p style="margin: 0; font-weight: bold; font-size: 1rem;">TICKET DE VENTA</p>
     `;
     const savedHeader = localStorage.getItem('ticketHeader') || defaultHeader;
-    const savedFooter = localStorage.getItem('ticketFooter') || `<p style="margin: 0;">¡Gracias por su preferencia!</p><p style="margin: 0;">🌭 Vuelva pronto 🌭</p>`;
-
     contentDiv.innerHTML = `
         <div style="font-family: 'Courier New', Courier, monospace; color: #000; text-align: left; font-size: 0.95rem; line-height: 1.4;">
-            <div id="editable-ticket-header" contenteditable="true" onblur="localStorage.setItem('ticketHeader', this.innerHTML)" style="text-align: center; border: 1px dashed #ccc; padding: 5px; margin-bottom: 10px; cursor: text;" title="Haz clic para editar el encabezado">
+            <div style="text-align: center; margin-bottom: 10px;">
                 ${savedHeader}
             </div>
             
@@ -2256,7 +2254,7 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
             
             <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
             
-            <div id="editable-ticket-footer" contenteditable="true" onblur="localStorage.setItem('ticketFooter', this.innerHTML)" style="text-align: center; border: 1px dashed #ccc; padding: 5px; margin-top: 10px; cursor: text;" title="Haz clic para editar el mensaje final">
+            <div style="text-align: center; margin-top: 10px;">
                 ${savedFooter}
             </div>
         </div>
@@ -2287,6 +2285,77 @@ function printReceipt() {
 
 function cancelReceipt() {
     document.getElementById('receipt').style.display = 'none';
+}
+
+// ========== CONFIGURACIÓN DE TICKET ==========
+function openTicketConfigModal() {
+    let modal = document.getElementById('ticket-config-modal');
+    if (modal) modal.remove();
+
+    const defaultHeader = `
+        <h3 style="margin: 0; font-size: 1.2rem; text-transform: uppercase;">NOMBRE DE TU NEGOCIO</h3>
+        <p style="margin: 0; font-size: 0.8rem;">Calle Falsa 123, Colonia Centro</p>
+        <p style="margin: 0; font-size: 0.8rem;">Ciudad, Estado, C.P. 12345</p>
+        <p style="margin: 0; font-size: 0.8rem;">RFC: XXXX-000000-XXX</p>
+        <p style="margin: 0; font-size: 0.8rem;">Tel: 55 1234 5678</p>
+        <br>
+        <p style="margin: 0; font-weight: bold; font-size: 1rem;">TICKET DE VENTA</p>
+    `;
+    const defaultFooter = `<p style="margin: 0;">¡Gracias por su preferencia!</p><p style="margin: 0;">🌭 Vuelva pronto 🌭</p>`;
+
+    const savedHeader = localStorage.getItem('ticketHeader') || defaultHeader;
+    const savedFooter = localStorage.getItem('ticketFooter') || defaultFooter;
+
+    modal = document.createElement('div');
+    modal.id = 'ticket-config-modal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center;
+        z-index: 10000; backdrop-filter: blur(5px);
+    `;
+
+    modal.innerHTML = `
+        <div style="background: white; padding: 2.5rem; border-radius: 16px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <h2 style="margin-top: 0; color: var(--primary-color);">⚙️ Configurar Ticket Térmico</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Edita el modelo base que aparecerá en la cabecera y el pie de página de todos los tickets generados.</p>
+            
+            <label style="font-weight: bold; display: block; margin-bottom: 5px;">Encabezado del Ticket:</label>
+            <div id="config-header-editor" contenteditable="true" style="border: 1px solid #ccc; border-radius: 8px; padding: 15px; min-height: 150px; margin-bottom: 20px; font-family: 'Courier New', monospace; font-size: 14px; background: #f9f9f9;">
+                ${savedHeader}
+            </div>
+            
+            <label style="font-weight: bold; display: block; margin-bottom: 5px;">Pie de Página del Ticket:</label>
+            <div id="config-footer-editor" contenteditable="true" style="border: 1px solid #ccc; border-radius: 8px; padding: 15px; min-height: 100px; margin-bottom: 20px; font-family: 'Courier New', monospace; font-size: 14px; background: #f9f9f9;">
+                ${savedFooter}
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap;">
+                <button onclick="document.getElementById('ticket-config-modal').remove()" style="padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; background: #e0e0e0; font-weight: bold; flex: 1; min-width: 100px;">Cancelar</button>
+                <button onclick="resetTicketConfig()" style="padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; background: #e74c3c; color: white; font-weight: bold; flex: 1; min-width: 130px;">Restaurar Default</button>
+                <button onclick="saveTicketConfig()" style="padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; background: var(--primary-color); color: white; font-weight: bold; flex: 1; min-width: 140px;">Guardar Cambios</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function saveTicketConfig() {
+    const headerHtml = document.getElementById('config-header-editor').innerHTML;
+    const footerHtml = document.getElementById('config-footer-editor').innerHTML;
+    localStorage.setItem('ticketHeader', headerHtml);
+    localStorage.setItem('ticketFooter', footerHtml);
+    document.getElementById('ticket-config-modal').remove();
+    showNotification('Diseño de Ticket guardado 🖨️');
+}
+
+function resetTicketConfig() {
+    if (confirm('¿Restaurar el diseño base? Perderás tus cambios actuales.')) {
+        localStorage.removeItem('ticketHeader');
+        localStorage.removeItem('ticketFooter');
+        document.getElementById('ticket-config-modal').remove();
+        openTicketConfigModal();
+        showNotification('Diseño restaurado');
+    }
 }
 
 // ========== EMPLEADOS ==========
