@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tutoriales — FoodWeb Pro</title>
     <meta name="description"
-        content="Guía completa de uso de FoodWeb Pro. Aprende a gestionar pedidos, cocina, caja, usuarios, mesas y reportes en tu restaurante.">
+        content="Guia completa de uso de FoodWeb Pro para restaurantes. Aprende a gestionar pedidos, cocina, caja, usuarios, mesas y reportes.">
     <link rel="stylesheet" href="styles.css">
     <style>
         * {
@@ -17,12 +17,12 @@
 
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: var(--bg-primary, #0f172a);
-            color: var(--text-primary, #e2e8f0);
+            background: #0f172a;
+            color: #e2e8f0;
             line-height: 1.7;
         }
 
-        /* ===== HEADER ===== */
+        /* HEADER */
         .tut-header {
             background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
             border-bottom: 1px solid rgba(99, 102, 241, 0.3);
@@ -32,29 +32,24 @@
             gap: 1rem;
         }
 
+        .tut-logo {
+            font-size: 1.3rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #a5b4fc;
+        }
+
         .tut-header a {
             color: #a5b4fc;
             text-decoration: none;
             font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
         }
 
         .tut-header a:hover {
             color: #fff;
         }
 
-        .tut-logo {
-            font-size: 1.3rem;
-            font-weight: 900;
-            letter-spacing: 1px;
-            background: linear-gradient(135deg, #a5b4fc, #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        /* ===== HERO ===== */
+        /* HERO */
         .tut-hero {
             background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 70%);
             text-align: center;
@@ -63,12 +58,10 @@
         }
 
         .tut-hero h1 {
-            font-size: clamp(2rem, 5vw, 3rem);
+            font-size: 2.5rem;
             font-weight: 900;
             margin-bottom: 1rem;
-            background: linear-gradient(135deg, #fff 40%, #a5b4fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #fff;
         }
 
         .tut-hero p {
@@ -78,13 +71,13 @@
             margin: 0 auto;
         }
 
-        /* ===== LAYOUT ===== */
+        /* LAYOUT */
         .tut-container {
             max-width: 1100px;
             margin: 0 auto;
             padding: 2rem 1.5rem;
             display: grid;
-            grid-template-columns: 260px 1fr;
+            grid-template-columns: 250px 1fr;
             gap: 2.5rem;
             align-items: start;
         }
@@ -97,13 +90,9 @@
             .tut-sidebar {
                 display: none;
             }
-
-            .tut-sidebar.open {
-                display: block;
-            }
         }
 
-        /* ===== SIDEBAR ===== */
+        /* SIDEBAR */
         .tut-sidebar {
             position: sticky;
             top: 1.5rem;
@@ -129,7 +118,7 @@
             border-radius: 8px;
             text-decoration: none;
             color: #94a3b8;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             transition: all 0.2s;
             margin-bottom: 2px;
         }
@@ -140,7 +129,7 @@
             color: #a5b4fc;
         }
 
-        /* ===== CONTENT ===== */
+        /* CONTENT */
         .tut-content section {
             margin-bottom: 3.5rem;
             scroll-margin-top: 1.5rem;
@@ -150,16 +139,13 @@
             font-size: 1.6rem;
             font-weight: 800;
             color: #fff;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
+            margin-bottom: 0.7rem;
             padding-bottom: 0.6rem;
             border-bottom: 2px solid rgba(99, 102, 241, 0.3);
         }
 
         .tut-content h3 {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             color: #a5b4fc;
             margin: 1.5rem 0 0.5rem;
         }
@@ -184,16 +170,17 @@
             color: #e2e8f0;
         }
 
-        /* Screen illustration cards */
+        /* SCREEN IMAGES */
         .screen-img {
             width: 100%;
             border-radius: 12px;
             border: 1px solid rgba(99, 102, 241, 0.3);
             margin: 1.2rem 0;
             box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            display: block;
         }
 
-        /* Steps */
+        /* STEPS */
         .steps {
             counter-reset: step;
             list-style: none;
@@ -224,7 +211,7 @@
             margin-top: 2px;
         }
 
-        /* Alerts */
+        /* ALERTS */
         .alert {
             border-radius: 10px;
             padding: 1rem 1.2rem;
@@ -258,7 +245,7 @@
             flex-shrink: 0;
         }
 
-        /* Tables */
+        /* TABLES */
         .tut-table {
             width: 100%;
             border-collapse: collapse;
@@ -284,11 +271,7 @@
             border-bottom: none;
         }
 
-        .tut-table tr:hover td {
-            background: rgba(99, 102, 241, 0.05);
-        }
-
-        /* Role badges */
+        /* ROLES */
         .role {
             display: inline-block;
             padding: 2px 8px;
@@ -325,7 +308,7 @@
             color: #64748b;
         }
 
-        /* Footer */
+        /* FOOTER */
         .tut-footer {
             text-align: center;
             padding: 2rem;
@@ -343,197 +326,158 @@
 
 <body>
 
-    <!-- Header -->
     <header class="tut-header">
-        <a href="/" class="tut-logo">FOODWEB PRO</a>
+        <span class="tut-logo">FOODWEB PRO</span>
         <span style="color:#334155">›</span>
-        <a href="javascript:history.back()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="m15 18-6-6 6-6" />
-            </svg>
-            Volver
-        </a>
-        <span style="color:#475569; margin-left:auto; font-size:0.85rem;">📖 Centro de Ayuda — Tutoriales</span>
+        <a href="javascript:history.back()">&#8592; Volver</a>
+        <span style="color:#475569; margin-left:auto; font-size:0.85rem;">Centro de Ayuda — Tutoriales</span>
     </header>
 
-    <!-- Hero -->
     <div class="tut-hero">
-        <h1>📖 Guía Completa de Uso</h1>
-        <p>Todo lo que necesitas saber para sacarle el máximo provecho a FoodWeb Pro en tu restaurante, bar o café.</p>
+        <h1>Guia Completa de Uso</h1>
+        <p>Todo lo que necesitas saber para sacarle el maximo provecho a FoodWeb Pro en tu restaurante.</p>
     </div>
 
     <div class="tut-container">
 
-        <!-- Sidebar -->
         <nav class="tut-sidebar">
             <h3>Contenido</h3>
-            <a href="#login">🔑 Inicio de Sesión</a>
+            <a href="#login">🔑 Inicio de Sesion</a>
             <a href="#ventas">🛒 Ventas y Pedidos</a>
             <a href="#cocina">👨‍🍳 Vista de Cocina</a>
             <a href="#caja">💰 Caja y Cobros</a>
-            <a href="#tickets">🖨️ Tickets e Impresión</a>
+            <a href="#tickets">🖨️ Tickets e Impresion</a>
             <a href="#admin">🛡️ Panel de Administrador</a>
-            <a href="#usuarios">👥 Gestión de Usuarios</a>
-            <a href="#mesas">🪑 Gestión de Mesas</a>
+            <a href="#usuarios">👥 Gestion de Usuarios</a>
+            <a href="#mesas">🪑 Gestion de Mesas</a>
             <a href="#reportes">📊 Reportes</a>
             <a href="#sucursales">🏢 Sucursales</a>
             <a href="#perfil">🖼️ Foto de Perfil</a>
             <a href="#ajustes">⚙️ Ajustes y Modo Oscuro</a>
             <a href="#productos">📦 Productos</a>
-            <a href="#pwa">📱 App Móvil (PWA)</a>
+            <a href="#pwa">📱 App Movil (PWA)</a>
             <a href="#roles">📋 Tabla de Roles</a>
         </nav>
 
-        <!-- Main Content -->
         <main class="tut-content">
 
-            <!-- 1. LOGIN -->
+            <!-- LOGIN -->
             <section id="login">
-                <h2>🔑 Inicio de Sesión</h2>
-                <p>Al ingresar a la URL de tu restaurante verás la pantalla de inicio de sesión de FoodWeb Pro.</p>
+                <h2>🔑 Inicio de Sesion</h2>
+                <img src="/guide_login.png" alt="Pantalla de inicio de sesion de FoodWeb Pro" class="screen-img">
+                <p>Al ingresar a la URL de tu restaurante veras la pantalla de inicio de sesion.</p>
                 <ol class="steps">
-                    <li>Escribe tu <strong>usuario</strong> (o correo electrónico)</li>
-                    <li>Escribe tu <strong>contraseña</strong></li>
-                    <li>Haz clic en el botón azul <strong>"Ingresar"</strong></li>
+                    <li>Escribe tu <strong>usuario</strong> o correo electronico</li>
+                    <li>Escribe tu <strong>contrasena</strong></li>
+                    <li>Haz clic en el boton <strong>"Ingresar"</strong></li>
                 </ol>
                 <div class="alert alert-tip">
                     <span class="alert-icon">💡</span>
-                    <span>¿Olvidaste tu contraseña? Haz clic en <strong>"¿Olvidaste tu contraseña?"</strong> y recibirás
-                        instrucciones por correo electrónico.</span>
+                    <span>Haz clic en <strong>"Olvidaste tu contrasena?"</strong> para recuperar acceso por correo
+                        electronico.</span>
                 </div>
-                <h3>¿No tienes cuenta?</h3>
-                <p>Haz clic en <strong>"Crea tu Restaurante gratis"</strong> en la parte inferior del formulario. Elige
-                    un plan (Básico o Pro) y completa tus datos de registro.</p>
                 <div class="alert alert-info">
                     <span class="alert-icon">ℹ️</span>
-                    <span>Cada empleado tiene sus propias credenciales. El dueño/admin tiene acceso a todo, mientras que
-                        Meseros, Cajeros y Cocineros solo ven sus secciones correspondientes.</span>
+                    <span>Cada empleado tiene sus propias credenciales. El Admin ve todo; Meseros, Cajeros y Cocineros
+                        ven solo sus secciones.</span>
                 </div>
             </section>
 
-            <!-- 2. VENTAS -->
+            <!-- VENTAS -->
             <section id="ventas">
                 <h2>🛒 Ventas y Pedidos</h2>
-                <p>La pantalla de <strong>Ventas</strong> es donde los meseros o vendedores toman los pedidos del
-                    cliente.</p>
-                <h3>Navegar el Menú</h3>
+                <img src="/guide_ventas.png" alt="Pantalla de ventas con carrito" class="screen-img">
+                <h3>Navegar el Menu</h3>
                 <ul>
-                    <li>Los productos aparecen en <strong>tarjetas</strong> con foto, nombre y precio</li>
-                    <li>Usa la <strong>barra de búsqueda</strong> para encontrar un producto rápidamente</li>
-                    <li>Filtra usando los botones de categorías: <em>Todos, General, Bebidas, etc.</em></li>
+                    <li>Productos en <strong>tarjetas</strong> con foto, nombre y precio</li>
+                    <li>Usa la <strong>barra de busqueda</strong> para encontrar productos rapido</li>
+                    <li>Filtra por <strong>categorias</strong>: Todos, General, Bebidas, etc.</li>
                 </ul>
                 <h3>Agregar al Carrito</h3>
                 <ol class="steps">
                     <li>Haz clic en <strong>"Agregar +"</strong> en la tarjeta del producto</li>
-                    <li>Si el producto tiene <strong>modificadores</strong> (picante, tamaño, extras), aparecerá un
-                        modal para personalizarlo</li>
-                    <li>El producto se añade al <strong>Carrito</strong> al lado derecho</li>
+                    <li>Si hay <strong>modificadores</strong> (picante, extras, tamano), aparece un modal para
+                        personalizarlo</li>
+                    <li>El producto se anade al <strong>Carrito</strong> del lado derecho</li>
                 </ol>
-                <h3>Gestión del Carrito</h3>
-                <table class="tut-table">
-                    <tr>
-                        <th>Acción</th>
-                        <th>Cómo hacerlo</th>
-                    </tr>
-                    <tr>
-                        <td>Quitar un item</td>
-                        <td>Clic en el ícono <strong>×</strong> junto al producto</td>
-                    </tr>
-                    <tr>
-                        <td>Vaciar todo</td>
-                        <td>Botón rojo <strong>VACIAR</strong> en el carrito</td>
-                    </tr>
-                    <tr>
-                        <td>Ver el total</td>
-                        <td>Se muestra en tiempo real en la parte inferior</td>
-                    </tr>
-                </table>
-                <h3>Enviar el Pedido a Cocina</h3>
+                <h3>Enviar a Cocina</h3>
                 <ol class="steps">
-                    <li>Cuando el carrito esté listo, haz clic en <strong>"ENVIAR A COCINA 🚀"</strong></li>
-                    <li>Si hay <strong>mesas configuradas</strong>, aparecerá un modal para seleccionar la mesa</li>
-                    <li>¡El pedido llega en tiempo real a la pantalla de Cocina!</li>
+                    <li>Cuando el carrito este listo, haz clic en <strong>"ENVIAR A COCINA 🚀"</strong></li>
+                    <li>Si hay <strong>mesas configuradas</strong>, selecciona a cual mesa pertenece el pedido</li>
+                    <li>El pedido llega en tiempo real a la pantalla de Cocina</li>
                 </ol>
                 <div class="alert alert-tip">
                     <span class="alert-icon">💡</span>
-                    <span>Sin mesas configuradas (venta de mostrador), el pedido se envía directamente sin seleccionar
+                    <span>Sin mesas configuradas (venta de mostrador), el pedido se envia directamente sin seleccionar
                         mesa.</span>
                 </div>
             </section>
 
-            <!-- 3. COCINA -->
+            <!-- COCINA -->
             <section id="cocina">
                 <h2>👨‍🍳 Vista de Cocina</h2>
-                <p>Solo accesible para el rol <span class="role role-cocinero">Cocinero</span>. Muestra en tiempo real
-                    todos los pedidos a preparar.</p>
-                <h3>Funcionamiento</h3>
-                <ul>
-                    <li>Cada pedido es una <strong>tarjeta</strong> con número, mesa, items y mesero</li>
-                    <li>Incluye un <strong>temporizador de cuenta regresiva</strong> para priorizar</li>
-                    <li>Los pedidos más antiguos aparecen primero (<strong>orden FIFO</strong>)</li>
-                </ul>
+                <img src="/guide_cocina.png" alt="Pantalla de cocina con pedidos en tiempo real" class="screen-img">
+                <p>Solo accesible para el rol <span class="role role-cocinero">Cocinero</span>. Muestra todos los
+                    pedidos en tiempo real.</p>
                 <h3>Estados del Pedido</h3>
                 <ol class="steps">
-                    <li><strong>Pendiente</strong> — Pedido recién llegado</li>
-                    <li>Clic en <strong>"Preparando 🔥"</strong> → Indica que está en proceso</li>
-                    <li>Clic en <strong>"Listo ✓"</strong> → Pasa a Caja para ser cobrado</li>
+                    <li><strong>Pendiente</strong> — Pedido recien llegado (aparece como tarjeta)</li>
+                    <li>Clic en <strong>"Preparando 🔥"</strong> — Indica que esta en proceso</li>
+                    <li>Clic en <strong>"Listo ✓"</strong> — Pasa a Caja para ser cobrado</li>
                 </ol>
-                <div class="alert alert-warn">
-                    <span class="alert-icon">⚠️</span>
-                    <span>El cocinero <strong>no puede cobrar ni tomar pedidos</strong>. Solo gestiona el estado de
-                        preparación de los pedidos.</span>
+                <div class="alert alert-info">
+                    <span class="alert-icon">ℹ️</span>
+                    <span>Los pedidos se ordenan por <strong>hora de llegada (FIFO)</strong>: el mas antiguo aparece
+                        primero para dar prioridad al primer cliente.</span>
                 </div>
             </section>
 
-            <!-- 4. CAJA -->
+            <!-- CAJA -->
             <section id="caja">
                 <h2>💰 Caja y Cobros</h2>
+                <img src="/guide_caja.png" alt="Pantalla de caja y cobro de pedidos" class="screen-img">
                 <p>El <span class="role role-cajero">Cajero</span> ve los pedidos marcados como "Listos" y los cobra.
                 </p>
                 <ol class="steps">
                     <li>Los pedidos listos aparecen en <strong>"Pedidos Pendientes de Cobrar"</strong></li>
                     <li>Revisa el detalle: mesa, items y total</li>
                     <li>Haz clic en <strong>"Cobrar"</strong></li>
-                    <li>Selecciona el método de pago: <strong>💵 Efectivo</strong> o <strong>💳 Tarjeta</strong></li>
+                    <li>Selecciona el metodo: <strong>Efectivo</strong> o <strong>Tarjeta</strong></li>
                     <li>Confirma con <strong>"Confirmar Pago"</strong></li>
                 </ol>
-                <div class="alert alert-tip">
-                    <span class="alert-icon">💡</span>
-                    <span>En <strong>"Pedidos Cobrados"</strong> puedes ver el historial completo del día con método de
-                        pago y hora.</span>
-                </div>
             </section>
 
-            <!-- 5. TICKETS -->
+            <!-- TICKETS -->
             <section id="tickets">
-                <h2>🖨️ Tickets e Impresión</h2>
-                <p>FoodWeb Pro genera tickets profesionales para impresoras térmicas de 80mm/58mm.</p>
+                <h2>🖨️ Tickets e Impresion</h2>
+                <img src="/guide_tickets.png" alt="Vista de impresion de ticket de restaurante" class="screen-img">
+                <p>FoodWeb Pro genera tickets para impresoras termicas de 80mm/58mm o impresoras normales.</p>
                 <h3>Imprimir un Ticket</h3>
                 <ol class="steps">
-                    <li>Ve a la sección <strong>"Tickets"</strong> en la navegación de Caja</li>
-                    <li>Busca el pedido y haz clic en <strong>"Ver Ticket / Imprimir"</strong></li>
-                    <li>Usa <strong>Ctrl + P</strong> o el botón <strong>"Imprimir"</strong> para enviarlo a la
-                        impresora</li>
+                    <li>Ve a la seccion <strong>"Tickets"</strong> en la navegacion de Caja</li>
+                    <li>Busca el pedido y haz clic en <strong>"Imprimir"</strong></li>
+                    <li>Usa <strong>Ctrl + P</strong> para enviarlo a la impresora</li>
                 </ol>
-                <h3>Personalizar el Ticket (Admin)</h3>
+                <h3>Personalizar el Ticket (solo Admin)</h3>
                 <ol class="steps">
-                    <li>En la sección Tickets, haz clic en <strong>"⚙️ Configurar Ticket"</strong></li>
-                    <li>Edita el <strong>encabezado</strong>: nombre del restaurante, dirección, teléfono</li>
-                    <li>Edita el <strong>pie de página</strong>: frase de agradecimiento, redes sociales</li>
-                    <li>Haz clic en <strong>"Guardar"</strong>. También puedes <strong>"Restaurar"</strong> los valores
-                        originales</li>
+                    <li>En la seccion Tickets, haz clic en <strong>"Configurar Ticket"</strong></li>
+                    <li>Edita el <strong>encabezado</strong>: nombre, direccion, telefono</li>
+                    <li>Edita el <strong>pie de pagina</strong>: frase de agradecimiento, redes sociales</li>
+                    <li>Haz clic en <strong>"Guardar"</strong>. Puedes <strong>"Restaurar"</strong> los valores
+                        originales en cualquier momento</li>
                 </ol>
             </section>
 
-            <!-- 6. ADMIN -->
+            <!-- ADMIN -->
             <section id="admin">
                 <h2>🛡️ Panel de Administrador</h2>
-                <p>Solo el <span class="role role-admin">Admin / Dueño</span> tiene acceso al panel completo. Se accede
-                    desde <strong>"👤 Mi Perfil / Admin"</strong> en la navegación.</p>
+                <img src="/guide_admin.png" alt="Panel de administracion de FoodWeb Pro" class="screen-img">
+                <p>Solo el <span class="role role-admin">Admin / Dueno</span> accede al panel completo. Ve a <strong>"Mi
+                        Perfil / Admin"</strong> en la navegacion.</p>
                 <table class="tut-table">
                     <tr>
-                        <th>Sección</th>
-                        <th>Para qué sirve</th>
+                        <th>Seccion</th>
+                        <th>Para que sirve</th>
                     </tr>
                     <tr>
                         <td>👤 Mis Datos</td>
@@ -541,11 +485,11 @@
                     </tr>
                     <tr>
                         <td>📊 Reportes</td>
-                        <td>Ver ventas, gráficas y estadísticas</td>
+                        <td>Ver ventas, graficas y estadisticas</td>
                     </tr>
                     <tr>
                         <td>⚙️ Ajustes</td>
-                        <td>Configurar impuesto de venta (%)</td>
+                        <td>Configurar impuesto de venta</td>
                     </tr>
                     <tr>
                         <td>🏢 Sucursales</td>
@@ -560,20 +504,21 @@
                         <td>Crear y asignar mesas a meseros</td>
                     </tr>
                     <tr>
-                        <td>📄 Facturación</td>
-                        <td>Gestionar suscripción y plan</td>
+                        <td>📄 Facturacion</td>
+                        <td>Gestionar suscripcion y plan</td>
                     </tr>
                 </table>
             </section>
 
-            <!-- 7. USUARIOS -->
+            <!-- USUARIOS -->
             <section id="usuarios">
-                <h2>👥 Gestión de Usuarios</h2>
+                <h2>👥 Gestion de Usuarios</h2>
+                <img src="/guide_usuarios.png" alt="Gestion de usuarios y mesas" class="screen-img">
                 <h3>Crear un Empleado</h3>
                 <ol class="steps">
                     <li>Ve a <strong>Perfil → Usuarios</strong></li>
-                    <li>Llena el formulario: <strong>Nombre de Usuario</strong>, <strong>Contraseña</strong> y
-                        <strong>Rol</strong></li>
+                    <li>Llena: <strong>Nombre de Usuario</strong>, <strong>Contrasena</strong> y <strong>Rol</strong>
+                    </li>
                     <li>Haz clic en <strong>"Crear Usuario"</strong></li>
                 </ol>
                 <h3>Roles disponibles</h3>
@@ -583,26 +528,26 @@
                         <th>Acceso</th>
                     </tr>
                     <tr>
-                        <td><span class="role role-cajero">💰 Cajero</span></td>
+                        <td><span class="role role-cajero">Cajero</span></td>
                         <td>Pedidos a cobrar, cobrados y tickets</td>
                     </tr>
                     <tr>
-                        <td><span class="role role-mesero">🏃 Mesero/Vendedor</span></td>
+                        <td><span class="role role-mesero">Mesero/Vendedor</span></td>
                         <td>Ventas, Mis Pedidos e Historial</td>
                     </tr>
                     <tr>
-                        <td><span class="role role-cocinero">👨‍🍳 Cocinero</span></td>
+                        <td><span class="role role-cocinero">Cocinero</span></td>
                         <td>Solo pantalla de Cocina</td>
                     </tr>
                 </table>
-                <h3>Límites por Plan</h3>
+                <h3>Limites por Plan</h3>
                 <table class="tut-table">
                     <tr>
                         <th>Plan</th>
                         <th>Empleados</th>
                     </tr>
                     <tr>
-                        <td>Básico</td>
+                        <td>Basico</td>
                         <td>1 Cajero + 2 operativos (Mesero o Cocinero)</td>
                     </tr>
                     <tr>
@@ -612,40 +557,39 @@
                 </table>
             </section>
 
-            <!-- 8. MESAS -->
+            <!-- MESAS -->
             <section id="mesas">
-                <h2>🪑 Gestión de Mesas</h2>
-                <p>Las mesas son <strong>opcionales</strong>. Si las configuras, cada pedido deberá indicar a qué mesa
+                <h2>🪑 Gestion de Mesas</h2>
+                <p>Las mesas son <strong>opcionales</strong>. Si las configuras, cada pedido indicara a que mesa
                     pertenece.</p>
-                <h3>Crear una Mesa</h3>
                 <ol class="steps">
                     <li>Ve a <strong>Perfil → Mesas</strong></li>
-                    <li>Escribe el nombre: <em>Mesa 1, Terraza 2, Barra</em></li>
+                    <li>Escribe el nombre: Mesa 1, Terraza 2, Barra</li>
                     <li>Haz clic en <strong>"Crear Mesa"</strong></li>
                 </ol>
-                <h3>Asignar Mesa a un Mesero</h3>
-                <p>En la lista de mesas, cada una tiene un <strong>dropdown</strong> para asignarla a un mesero
-                    específico. Si está asignada, ese mesero solo verá sus mesas al enviar pedidos.</p>
+                <p>En la lista de mesas puedes <strong>asignar cada mesa a un mesero</strong> especifico mediante un
+                    dropdown. Ese mesero solo vera sus mesas al enviar pedidos.</p>
                 <div class="alert alert-tip">
                     <span class="alert-icon">💡</span>
                     <span>Para ventas de mostrador sin mesas, simplemente <strong>no crees mesas</strong> y el sistema
-                        operará en modo directo.</span>
+                        operara en modo directo.</span>
                 </div>
             </section>
 
-            <!-- 9. REPORTES -->
+            <!-- REPORTES -->
             <section id="reportes">
-                <h2>📊 Reportes y Estadísticas</h2>
-                <p>Accede desde <strong>Perfil → Reportes</strong> (solo Admin).</p>
+                <h2>📊 Reportes y Estadisticas</h2>
+                <img src="/guide_reportes.png" alt="Reportes y estadisticas del sistema" class="screen-img">
+                <p>Ve a <strong>Perfil → Reportes</strong> (solo Admin) para ver el desempeno del negocio.</p>
                 <h3>Qué puedes ver</h3>
                 <ul>
-                    <li>💰 <strong>Total de ventas</strong> del período seleccionado</li>
-                    <li>🧾 <strong>Número de pedidos</strong> procesados</li>
-                    <li>📊 <strong>Gráfica de ventas por día</strong> (barras)</li>
-                    <li>🥇 <strong>Productos más vendidos</strong> (ranking con porcentajes)</li>
-                    <li>💳 <strong>Desglose por método de pago</strong> (Efectivo vs Tarjeta)</li>
+                    <li>💰 Total de ventas del periodo seleccionado</li>
+                    <li>🧾 Numero de pedidos procesados</li>
+                    <li>📊 Grafica de ventas por dia (barras)</li>
+                    <li>🥇 Productos mas vendidos con porcentajes</li>
+                    <li>💳 Desglose: Efectivo vs Tarjeta</li>
                 </ul>
-                <h3>Filtros de Período</h3>
+                <h3>Filtros de Periodo</h3>
                 <table class="tut-table">
                     <tr>
                         <th>Filtro</th>
@@ -653,11 +597,11 @@
                     </tr>
                     <tr>
                         <td>Hoy</td>
-                        <td>Solo ventas del día actual</td>
+                        <td>Solo ventas del dia actual</td>
                     </tr>
                     <tr>
                         <td>Esta Semana</td>
-                        <td>Últimos 7 días</td>
+                        <td>Ultimos 7 dias</td>
                     </tr>
                     <tr>
                         <td>Este Mes</td>
@@ -668,41 +612,39 @@
                         <td>Todo el historial</td>
                     </tr>
                 </table>
-                <h3>Corte de Caja</h3>
-                <p>El botón <strong>"Generar Corte"</strong> produce un resumen de ventas del día por método de pago,
-                    ideal para cuadrar la caja al cierre.</p>
+                <div class="alert alert-tip">
+                    <span class="alert-icon">💡</span>
+                    <span>El boton <strong>"Generar Corte"</strong> produce un resumen del dia por metodo de pago, ideal
+                        para cuadrar la caja al cierre.</span>
+                </div>
             </section>
 
-            <!-- 10. SUCURSALES -->
+            <!-- SUCURSALES -->
             <section id="sucursales">
-                <h2>🏢 Gestión de Sucursales</h2>
+                <h2>🏢 Gestion de Sucursales</h2>
                 <div class="alert alert-info">
                     <span class="alert-icon">ℹ️</span>
-                    <span>Esta función es exclusiva del <strong>Plan Pro</strong>. Con el Plan Básico solo tienes una
+                    <span>Funcion exclusiva del <strong>Plan Pro</strong>. El Plan Basico solo permite una
                         sucursal.</span>
                 </div>
-                <h3>Crear una Sucursal</h3>
                 <ol class="steps">
                     <li>Ve a <strong>Perfil → Sucursales</strong> y haz clic en <strong>"+ Crear Nueva
                             Sucursal"</strong></li>
-                    <li>Ingresa el nombre: <em>Sucursal Centro / Sucursal Norte</em></li>
+                    <li>Ingresa el nombre: Sucursal Centro, Sucursal Norte</li>
                     <li>Haz clic en <strong>"Crear Ahora"</strong></li>
                 </ol>
-                <h3>Cambiar de Sucursal</h3>
-                <p>En la lista de sucursales, usa el botón <strong>"Cambiar a esta"</strong>. Tu sesión se traslada y
-                    los productos, pedidos y configuración serán los de ese local. La selección se guarda
-                    automáticamente.</p>
+                <p>En la lista de sucursales, usa el boton <strong>"Cambiar a esta"</strong> para operar en otro local.
+                    La seleccion se guarda automaticamente para la proxima vez.</p>
             </section>
 
-            <!-- 11. PERFIL -->
+            <!-- PERFIL -->
             <section id="perfil">
                 <h2>🖼️ Foto de Perfil</h2>
                 <ol class="steps">
-                    <li>Haz clic en tu <strong>avatar</strong> (círculo con iniciales) en la esquina superior izquierda
+                    <li>Haz clic en tu <strong>avatar</strong> (circulo con iniciales) en la esquina superior izquierda
                         del header</li>
-                    <li>Aparecerá un modal para subir tu foto</li>
                     <li>Selecciona una imagen de tu dispositivo (JPG, PNG)</li>
-                    <li>Confirma y tu foto se mostrará en el header</li>
+                    <li>Confirma y tu foto aparecera en el header</li>
                 </ol>
                 <div class="alert alert-info">
                     <span class="alert-icon">ℹ️</span>
@@ -711,34 +653,33 @@
                 </div>
             </section>
 
-            <!-- 12. AJUSTES -->
+            <!-- AJUSTES -->
             <section id="ajustes">
                 <h2>⚙️ Ajustes y Modo Oscuro</h2>
-                <h3>Activar/Desactivar Modo Oscuro</h3>
-                <p>Haz clic en el ícono <strong>🌙</strong> en la esquina superior derecha del header. El sistema
-                    alterna entre modo oscuro y claro. Tu preferencia se guarda automáticamente.</p>
+                <h3>Modo Oscuro</h3>
+                <p>Haz clic en el icono <strong>🌙</strong> en la esquina superior derecha. El sistema alterna entre
+                    modo oscuro y claro, y guarda tu preferencia automaticamente.</p>
                 <h3>Configurar Impuesto</h3>
                 <ol class="steps">
                     <li>Ve a <strong>Perfil → Ajustes</strong></li>
-                    <li>Modifica el <strong>% de Impuesto de Venta</strong> (por defecto 16% IVA México)</li>
+                    <li>Modifica el <strong>% de Impuesto de Venta</strong> (por defecto: 16% IVA Mexico)</li>
                     <li>Haz clic en <strong>"Guardar Ajustes"</strong></li>
                 </ol>
             </section>
 
-            <!-- 13. PRODUCTOS -->
+            <!-- PRODUCTOS -->
             <section id="productos">
                 <h2>📦 Agregar y Editar Productos</h2>
                 <h3>Agregar un Producto</h3>
                 <ol class="steps">
-                    <li>Ve a la sección <strong>"Productos"</strong> (solo Admin)</li>
-                    <li>Llena el formulario: <strong>nombre, precio, categoría</strong> y emoji representativo</li>
-                    <li>Opcionalmente agrega <strong>Modificadores dinámicos</strong>: extras, tamaños, opciones</li>
+                    <li>Ve a la seccion <strong>"Productos"</strong> (solo Admin)</li>
+                    <li>Llena: nombre, precio, categoria y emoji representativo</li>
+                    <li>Opcionalmente agrega <strong>Modificadores dinamicos</strong>: extras, tamanios, opciones</li>
                     <li>Haz clic en <strong>"Agregar Producto"</strong></li>
                 </ol>
-                <h3>Eliminiar un Producto</h3>
-                <p>En la lista de productos, cada tarjeta tiene un botón de <strong>eliminar 🗑️</strong>. El producto
-                    se borrará permanentemente del catálogo.</p>
-                <h3>Modificadores Dinámicos (ejemplos)</h3>
+                <p>Para eliminar: cada tarjeta de producto tiene un boton de eliminar. El producto se borrara
+                    permanentemente del catalogo.</p>
+                <h3>Modificadores Dinamicos (ejemplos)</h3>
                 <table class="tut-table">
                     <tr>
                         <th>Tipo</th>
@@ -753,48 +694,46 @@
                         <td>Con queso, Sin cebolla, Con aguacate</td>
                     </tr>
                     <tr>
-                        <td>Tamaño</td>
+                        <td>Tamano</td>
                         <td>Chico, Mediano, Grande</td>
                     </tr>
                 </table>
             </section>
 
-            <!-- 14. PWA -->
+            <!-- PWA -->
             <section id="pwa">
-                <h2>📱 App Móvil (PWA)</h2>
-                <p>FoodWeb Pro es una <strong>Aplicación Web Progresiva</strong>. Puedes instalarla en tu celular como
-                    app nativa sin ir al App Store.</p>
+                <h2>📱 App Movil (PWA)</h2>
+                <p>FoodWeb Pro se puede instalar en tu celular como app nativa sin ir al App Store.</p>
                 <h3>Instalar en Android (Chrome)</h3>
                 <ol class="steps">
-                    <li>Abre FoodWeb Pro en Chrome en tu celular</li>
+                    <li>Abre FoodWeb Pro en Chrome</li>
                     <li>Toca el banner: <strong>"Agregar a pantalla de inicio"</strong></li>
-                    <li>También: menú <strong>⋮ → "Agregar a pantalla de inicio"</strong></li>
+                    <li>O ve al menu ⋮ → <strong>"Agregar a pantalla de inicio"</strong></li>
                 </ol>
                 <h3>Instalar en iPhone (Safari)</h3>
                 <ol class="steps">
                     <li>Abre FoodWeb Pro en Safari</li>
-                    <li>Toca el botón <strong>Compartir ↑</strong></li>
+                    <li>Toca el boton <strong>Compartir</strong></li>
                     <li>Selecciona <strong>"Agregar a pantalla de inicio"</strong> y confirma</li>
                 </ol>
-                <h3>Ventajas</h3>
                 <ul>
-                    <li>✅ Ícono propio en pantalla de inicio</li>
-                    <li>✅ Carga más rápida con caché</li>
+                    <li>✅ Icono propio en pantalla de inicio</li>
+                    <li>✅ Carga mas rapida con cache</li>
                     <li>✅ Sin descargas en App Store ni Play Store</li>
                     <li>✅ Funciona en Android, iPhone y PC</li>
                 </ul>
             </section>
 
-            <!-- 15. ROLES -->
+            <!-- ROLES -->
             <section id="roles">
                 <h2>📋 Tabla de Roles y Permisos</h2>
                 <table class="tut-table">
                     <tr>
-                        <th>Función</th>
-                        <th><span class="role role-admin">🛡️ Admin</span></th>
-                        <th><span class="role role-cajero">💰 Cajero</span></th>
-                        <th><span class="role role-mesero">🏃 Mesero</span></th>
-                        <th><span class="role role-cocinero">👨‍🍳 Cocinero</span></th>
+                        <th>Funcion</th>
+                        <th><span class="role role-admin">Admin</span></th>
+                        <th><span class="role role-cajero">Cajero</span></th>
+                        <th><span class="role role-mesero">Mesero</span></th>
+                        <th><span class="role role-cocinero">Cocinero</span></th>
                     </tr>
                     <tr>
                         <td>Tomar pedidos (Ventas)</td>
@@ -860,7 +799,7 @@
                         <td class="cross">—</td>
                     </tr>
                     <tr>
-                        <td>Gestionar Sucursales 🌟</td>
+                        <td>Gestionar Sucursales</td>
                         <td class="check">✓ Pro</td>
                         <td class="cross">—</td>
                         <td class="cross">—</td>
@@ -872,24 +811,22 @@
         </main>
     </div>
 
-    <!-- Footer -->
     <footer class="tut-footer">
-        <p>FoodWeb Pro — Software POS para Restaurantes &bull; <a href="mailto:ayuda@foodweb.pro">ayuda@foodweb.pro</a>
-        </p>
-        <p style="margin-top:0.4rem; font-size:0.8rem;">¿Tienes dudas adicionales? Escríbenos a soporte@foodweb.pro o
-            llámanos al (+52) 155 9225 6031</p>
+        <p>FoodWeb Pro — Software POS para Restaurantes</p>
+        <p style="margin-top:0.4rem;">Soporte: <a href="mailto:ayuda@foodweb.pro">ayuda@foodweb.pro</a> &bull; Tel:
+            (+52) 155 9225 6031</p>
     </footer>
 
     <script>
-        // Resaltar ítem del sidebar al hacer scroll
+        // Resaltar item del sidebar al hacer scroll
         const sections = document.querySelectorAll('section[id]');
         const navLinks = document.querySelectorAll('.tut-sidebar a');
-        window.addEventListener('scroll', () => {
-            let current = '';
-            sections.forEach(s => {
+        window.addEventListener('scroll', function () {
+            var current = '';
+            sections.forEach(function (s) {
                 if (window.scrollY >= s.offsetTop - 80) current = s.id;
             });
-            navLinks.forEach(a => {
+            navLinks.forEach(function (a) {
                 a.classList.remove('active');
                 if (a.getAttribute('href') === '#' + current) a.classList.add('active');
             });
