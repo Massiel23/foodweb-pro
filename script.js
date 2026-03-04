@@ -1868,8 +1868,8 @@ function showPaymentModal(orderId, total) {
             </div>
             
             <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; margin-bottom: 0.5rem; color: #1a252f; font-weight: 600;">Método de Pago:</label>
-                <select id="payment-method" onchange="handlePaymentMethodChange(${total})" style="width: 100%; padding: 1rem; border: 2px solid #FF6B35; border-radius: 8px; font-size: 1.1rem; font-weight: 600; background: white; cursor: pointer;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 600;">Método de Pago:</label>
+                <select id="payment-method" onchange="handlePaymentMethodChange(${total})" style="width: 100%; padding: 1rem; border: 2px solid #FF6B35; border-radius: 8px; font-size: 1.1rem; font-weight: 600; background: var(--bg-secondary); color: var(--text-primary); cursor: pointer;">
                     <option value="Efectivo">💵 Efectivo</option>
                     <option value="Tarjeta">💳 Tarjeta</option>
                     <option value="Transferencia">📱 Transferencia</option>
@@ -2157,7 +2157,7 @@ function renderTickets() {
         const div = document.createElement('div');
         div.className = 'ticket-item';
         div.innerHTML = `
-            < h4 > Ticket #${ticket.id} - Pedido #${ticket.order_id}</h4 >
+            <h4>Ticket #${ticket.id} - Pedido #${ticket.order_id}</h4>
             <p><strong>Método:</strong> ${paymentIcon} ${ticket.payment_method || 'Efectivo'}</p>
             <p><strong>Total:</strong> $${parseFloat(ticket.total).toFixed(2)}</p>
             <p><strong>Recibido:</strong> $${parseFloat(ticket.amount_received).toFixed(2)}</p>
