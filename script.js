@@ -2211,7 +2211,7 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
         const displayText = quantity > 1
             ? `${quantity}x ${item.name}${customText} @$${unitPrice.toFixed(2)} = $${item.price.toFixed(2)} `
             : `${item.name}${customText} - $${item.price.toFixed(2)} `;
-        return `< li > ${displayText}</li > `;
+        return `<li style="margin-bottom: 5px;">${displayText}</li>`;
     }).join('');
 
     // Determinar el icono del método de pago
@@ -2219,36 +2219,55 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
     if (paymentMethod === 'Tarjeta') paymentIcon = '💳';
     else if (paymentMethod === 'Transferencia') paymentIcon = '📱';
 
+    // Cargar textos personalizados si existen (o usar defaults)
+    const savedHeader = localStorage.getItem('ticketHeader') || `<h3 style="margin: 0; font-size: 1.2rem;">FoodWeb Pro</h3><p style="margin: 0;">Ticket de Compra</p>`;
+    const savedFooter = localStorage.getItem('ticketFooter') || `<p style="margin: 0;">¡Gracias por su compra!</p><p style="margin: 0;">🌭 Vuelva pronto 🌭</p>`;
+
     contentDiv.innerHTML = `
-            < p > <strong>Pedido #${order.id}</strong></p >
-        <p>Atendido por: ${order.username}</p>
-        ${order.table_name ? `<p style="font-size: 1.1rem; border: 1px solid #000; padding: 4px; text-align: center;"><strong>🪑 MESA: ${order.table_name}</strong></p>` : ''}
-        <p>${new Date(order.created_at).toLocaleString()}</p>
-        <hr>
-        <ul style="list-style: none; padding: 0;">${itemsList}</ul>
-        <hr>
-        <p><strong>Total: $${parseFloat(order.total).toFixed(2)}</strong></p>
-        <p><strong>Método de Pago:</strong> ${paymentIcon} ${paymentMethod}</p>
-        <p>Recibido: $${parseFloat(amountReceived).toFixed(2)}</p>
-        ${changeGiven > 0 ? `<p><strong>Cambio: $${parseFloat(changeGiven).toFixed(2)}</strong></p>` : ''}
-        <hr>
-        <p style="text-align: center;">¡Gracias por su compra!</p>
-        <p style="text-align: center;">🌭 Vuelva pronto 🌭</p>
+        <div style="font-family: 'Courier New', Courier, monospace; color: #000; text-align: left; font-size: 0.95rem; line-height: 1.4;">
+            <div id="editable-ticket-header" contenteditable="true" onblur="localStorage.setItem('ticketHeader', this.innerHTML)" style="text-align: center; border: 1px dashed #ccc; padding: 5px; margin-bottom: 10px; cursor: text;" title="Haz clic para editar el encabezado">
+                ${savedHeader}
+            </div>
+            
+            <p style="margin: 5px 0;"><strong>Pedido #${order.id}</strong></p>
+            <p style="margin: 5px 0;">Atendido por: ${order.employee || order.username || 'Cajero'}</p>
+            ${order.table_name ? `<p style="font-size: 1.1rem; border: 1px dashed #000; padding: 4px; text-align: center; margin: 10px 0;"><strong>🪑 MESA: ${order.table_name}</strong></p>` : ''}
+            <p style="margin: 5px 0;">${new Date(order.created_at || Date.now()).toLocaleString()}</p>
+            
+            <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
+            
+            <ul style="list-style: none; padding: 0; margin: 0;">${itemsList}</ul>
+            
+            <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
+            
+            <p style="margin: 5px 0; font-size: 1.1rem;"><strong>Total: $${parseFloat(order.total).toFixed(2)}</strong></p>
+            <p style="margin: 5px 0;">Modo Pago: ${paymentIcon} ${paymentMethod}</p>
+            <p style="margin: 5px 0;">Recibido: $${parseFloat(amountReceived).toFixed(2)}</p>
+            ${changeGiven > 0 ? `<p style="margin: 5px 0;"><strong>Cambio: $${parseFloat(changeGiven).toFixed(2)}</strong></p>` : ''}
+            
+            <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
+            
+            <div id="editable-ticket-footer" contenteditable="true" onblur="localStorage.setItem('ticketFooter', this.innerHTML)" style="text-align: center; border: 1px dashed #ccc; padding: 5px; margin-top: 10px; cursor: text;" title="Haz clic para editar el mensaje final">
+                ${savedFooter}
+            </div>
+        </div>
     `;
 
-    // Asegurarse de que el ticket sea visible con estilos inline
-    receiptDiv.style.display = 'block';
+    // Asegurarse de que el ticket sea visible y parezca un ticket término realista
+    receiptDiv.style.display = 'flex';
+    receiptDiv.style.flexDirection = 'column';
     receiptDiv.style.position = 'fixed';
     receiptDiv.style.top = '50%';
     receiptDiv.style.left = '50%';
     receiptDiv.style.transform = 'translate(-50%, -50%)';
     receiptDiv.style.zIndex = '10001';
-    receiptDiv.style.background = 'white';
-    receiptDiv.style.padding = '2rem';
-    receiptDiv.style.borderRadius = '12px';
-    receiptDiv.style.boxShadow = '0 20px 60px rgba(0,0,0,0.3)';
-    receiptDiv.style.maxWidth = '500px';
-    receiptDiv.style.width = '90%';
+    receiptDiv.style.background = '#fff';
+    receiptDiv.style.padding = '0';
+    receiptDiv.style.borderRadius = '0';
+    receiptDiv.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+    receiptDiv.style.width = '300px'; // Ancho típico de ticket 80mm
+    receiptDiv.style.maxHeight = '90vh';
+    receiptDiv.style.overflowY = 'auto';
 
     console.log('Ticket mostrado correctamente');
 }

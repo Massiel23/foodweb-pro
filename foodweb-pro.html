@@ -726,11 +726,14 @@
 
         <!-- Ticket de Compra (Para Caja) -->
         <div id="receipt" style="display: none;">
-            <h3>FoodWeb Pro</h3>
-            <h3>Ticket de Compra</h3>
-            <div id="receipt-content"></div>
-            <button onclick="printReceipt()">Imprimir</button>
-            <button onclick="cancelReceipt()">Cancelar</button>
+            <div id="receipt-content" style="padding: 1.5rem; flex: 1;"></div>
+            <div style="display: flex; gap: 10px; padding: 1rem; background: #f8f9fa; border-top: 1px solid #ddd;"
+                class="ticket-actions">
+                <button onclick="printReceipt()"
+                    style="flex: 1; background: #4a6ee0; color: white; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Imprimir</button>
+                <button onclick="cancelReceipt()"
+                    style="flex: 1; background: #e74c3c; color: white; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Cerrar</button>
+            </div>
         </div>
 
         <footer>
