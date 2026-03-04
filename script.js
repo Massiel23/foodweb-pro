@@ -1848,15 +1848,15 @@ function showPaymentModal(orderId, total) {
         position: fixed;
         top: 0;
         left: 0;
-        width: 100 %;
-        height: 100 %;
+        width: 100%;
+        height: 100%;
         background: rgba(0, 0, 0, 0.75);
         display: flex;
-        justify - content: center;
-        align - items: center;
-        z - index: 10000;
-        backdrop - filter: blur(5px);
-        `;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        backdrop-filter: blur(5px);
+    `;
 
     modal.innerHTML = `
             <div style="background: white; padding: 2.5rem; border-radius: 16px; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
@@ -2219,9 +2219,18 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
     if (paymentMethod === 'Tarjeta') paymentIcon = '💳';
     else if (paymentMethod === 'Transferencia') paymentIcon = '📱';
 
-    // Cargar textos personalizados si existen (o usar defaults)
-    const savedHeader = localStorage.getItem('ticketHeader') || `<h3 style="margin: 0; font-size: 1.2rem;">FoodWeb Pro</h3><p style="margin: 0;">Ticket de Compra</p>`;
-    const savedFooter = localStorage.getItem('ticketFooter') || `<p style="margin: 0;">¡Gracias por su compra!</p><p style="margin: 0;">🌭 Vuelva pronto 🌭</p>`;
+    // Cargar textos personalizados si existen (o usar defaults enriquecidos guiados por el layout térmico clásico)
+    const defaultHeader = `
+        <h3 style="margin: 0; font-size: 1.2rem; text-transform: uppercase;">NOMBRE DE TU NEGOCIO</h3>
+        <p style="margin: 0; font-size: 0.8rem;">Calle Falsa 123, Colonia Centro</p>
+        <p style="margin: 0; font-size: 0.8rem;">Ciudad, Estado, C.P. 12345</p>
+        <p style="margin: 0; font-size: 0.8rem;">RFC: XXXX-000000-XXX</p>
+        <p style="margin: 0; font-size: 0.8rem;">Tel: 55 1234 5678</p>
+        <br>
+        <p style="margin: 0; font-weight: bold; font-size: 1rem;">TICKET DE VENTA</p>
+    `;
+    const savedHeader = localStorage.getItem('ticketHeader') || defaultHeader;
+    const savedFooter = localStorage.getItem('ticketFooter') || `<p style="margin: 0;">¡Gracias por su preferencia!</p><p style="margin: 0;">🌭 Vuelva pronto 🌭</p>`;
 
     contentDiv.innerHTML = `
         <div style="font-family: 'Courier New', Courier, monospace; color: #000; text-align: left; font-size: 0.95rem; line-height: 1.4;">
