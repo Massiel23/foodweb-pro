@@ -2649,11 +2649,18 @@ body.dark-mode .modifier-option.selected {
     }
 
     .logout-btn .logout-icon {
-        display: inline !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
     }
 
     .logout-btn {
-        padding: 8px 12px;
+        padding: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        justify-content: center;
     }
 
     .header-center-info {
@@ -2667,6 +2674,11 @@ body.dark-mode .modifier-option.selected {
     .dark-mode-toggle {
         width: 40px;
         height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 1.2rem;
     }
 
