@@ -49,7 +49,7 @@ async function checkAutoLogin() {
                 if (socket) {
                     socket.emit('joinRestaurant', newId);
                 }
-                currentUser.restaurant_id=newId;
+                currentUser.restaurant_id = newId;
                 posApi.restaurantId = savedResId;
 
                 // Restaurar el nombre de la sucursal para la cabecera
@@ -129,7 +129,7 @@ function initializeSocket() {
         // Notificar al empleado si su pedido está listo
         if (currentUser && currentUser.role === 'empleado' && data.status === 'Finalizado') {
             // Verificar si el pedido es del empleado actual
-            const order = pendingOrders.find(o => o.id=== data.id);
+            const order = pendingOrders.find(o => o.id === data.id);
             if (order && order.username === currentUser.username) {
                 showNotification(`🎉 ¡Tu pedido #${data.id} está LISTO para entregar!`);
                 // Reproducir sonido de notificación (opcional)
@@ -185,7 +185,7 @@ function updateCountdownLabels() {
     const labels = document.querySelectorAll('.countdown-badge');
     labels.forEach(label => {
         const orderId = parseInt(label.getAttribute('data-order-id'));
-        const order = pendingOrders.find(o => o.id=== orderId);
+        const order = pendingOrders.find(o => o.id === orderId);
         if (order) {
             const times = calculateOrderTimes(orderId);
             if (order.status === 'Pendiente') {
@@ -200,7 +200,7 @@ function updateCountdownLabels() {
     const employeeLabels = document.querySelectorAll('.employee-countdown-badge');
     employeeLabels.forEach(label => {
         const orderId = parseInt(label.getAttribute('data-order-id'));
-        const order = pendingOrders.find(o => o.id=== orderId);
+        const order = pendingOrders.find(o => o.id === orderId);
         if (order) {
             const times = calculateOrderTimes(orderId);
             if (order.status === 'Pendiente') {
@@ -459,7 +459,7 @@ async function login() {
         // Priorizar la sucursal cacheada localmente si existe y si es el mismo usuario
         if (savedBranchStr && previousUsername === username) {
             const savedResId = parseInt(savedBranchStr);
-            response.user.restaurant_id=savedResId;
+            response.user.restaurant_id = savedResId;
             posApi.restaurantId = savedResId;
             // Restaurar las variables que posApi.login borró
             localStorage.setItem('restaurantId', savedResId);
@@ -552,7 +552,7 @@ function updateHeaderProfile(user) {
     // Intentar cargar la foto de perfil
     const savedPic = localStorage.getItem('userAvatar_' + user.id);
     if (savedPic && imgElement) {
-        imgElement.src=savedPic;
+        imgElement.src = savedPic;
         imgElement.style.display = 'block';
         if (initialSpan) initialSpan.style.display = 'none';
     } else {
@@ -573,7 +573,7 @@ function openAvatarModal() {
     const initial = (currentUser.name || currentUser.username || 'U').charAt(0).toUpperCase();
 
     const modal = document.createElement('div');
-    modal.id='avatar-modal';
+    modal.id = 'avatar-modal';
     modal.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
@@ -617,7 +617,7 @@ function handleProfilePhotoUpload(event) {
             const preview = document.getElementById('modal-avatar-preview');
             const initialSpan = document.getElementById('modal-avatar-initial');
             if (preview) {
-                preview.src=base64Str;
+                preview.src = base64Str;
                 preview.style.display = 'block';
                 if (initialSpan) initialSpan.style.display = 'none';
             }
@@ -636,7 +636,7 @@ function removeProfilePhoto() {
         const initialSpan = document.getElementById('modal-avatar-initial');
         if (preview) {
             preview.style.display = 'none';
-            preview.src='';
+            preview.src = '';
             if (initialSpan) initialSpan.style.display = 'block';
         }
     }
@@ -810,7 +810,7 @@ async function showProfile() {
 
         // Iniciales
         const names = (user.full_name || user.username).split(' ');
-        const initials = names.length> 1 ? (names[0][0] + (names[1] ? names[1][0] : '')) : names[0].substring(0, 2);
+        const initials = names.length > 1 ? (names[0][0] + (names[1] ? names[1][0] : '')) : names[0].substring(0, 2);
         document.getElementById('profile-initials').textContent = initials.toUpperCase();
 
         // ========= RESTRICCIONES PLAN BÁSICO =========
@@ -932,7 +932,7 @@ function renderBranches() {
     }
 
     window.myBranches.forEach(branch => {
-        const isCurrent = branch.id=== parseInt(localStorage.getItem('restaurantId'));
+        const isCurrent = branch.id === parseInt(localStorage.getItem('restaurantId'));
         const div = document.createElement('div');
         div.style.cssText = `
     display: flex;
@@ -967,7 +967,7 @@ async function switchBranch(id, name) {
 
     // Actualizar el objeto de usuario local para mantener la sesión activa
     if (currentUser) {
-        currentUser.restaurant_id=id;
+        currentUser.restaurant_id = id;
         currentUser.restaurant_name = name;
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
@@ -1078,7 +1078,7 @@ function renderProducts() {
         if (ventaList) {
             const card = document.createElement('div');
             card.className = 'product-card-v2';
-            card.onclick=() => showCustomizationModal(product.id, product.name, product.price);
+            card.onclick = () => showCustomizationModal(product.id, product.name, product.price);
             card.innerHTML = `
         <span class="icon"> ${product.img || '🍔'}</span>
                 <h4>${product.name}</h4>
@@ -1164,7 +1164,7 @@ async function renderTables() {
             let selectHtml = `<select onchange="assignTableToUser(${table.id}, this.value)" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-size: 0.9rem; cursor: pointer;">
         <option value="">🌐 Libre (Sin asignar)</option>`;
             meseros.forEach(m => {
-                const selected = (table.assigned_user_id== m.id) ? 'selected' : '';
+                const selected = (table.assigned_user_id == m.id) ? 'selected' : '';
                 selectHtml += `<option value = "${m.id}" ${selected}>👤 Asignada a: ${m.username}</option> `;
             });
             selectHtml += `</select> `;
@@ -1339,16 +1339,16 @@ function addToCart(id, name, price) {
 function showCustomizationModal(id, name, price) {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
-    modal.id='customization-modal';
+    modal.id = 'customization-modal';
 
-    const product = products.find(p => p.id=== id);
+    const product = products.find(p => p.id === id);
     let modifiersArray = [];
     if (product && product.modifiers) {
         modifiersArray = typeof product.modifiers === 'string' ? JSON.parse(product.modifiers) : product.modifiers;
     }
 
     let modifierOptions = '';
-    if (modifiersArray && modifiersArray.length> 0) {
+    if (modifiersArray && modifiersArray.length > 0) {
         modifierOptions = modifiersArray.map(mod => `
         <label class="modifier-option">
             <input type="checkbox" value="${mod}" class="customization-checkbox"
@@ -1400,7 +1400,7 @@ function showCustomizationModal(id, name, price) {
 
     document.body.appendChild(modal);
 
-    modal.onclick=(e) => {
+    modal.onclick = (e) => {
         if (e.target === modal) closeCustomizationModal();
     };
 }
@@ -1418,7 +1418,7 @@ function increaseQuantity() {
 function decreaseQuantity() {
     const input = document.getElementById('quantity-input');
     let quantity = parseInt(input.value) || 1;
-    if (quantity> 1) {
+    if (quantity > 1) {
         input.value = quantity - 1;
         input.dispatchEvent(new Event('input'));
     }
@@ -1432,7 +1432,7 @@ function updateQuantityDisplay(unitPrice) {
         quantity = 1;
         input.value = 1;
     }
-    if (quantity> 99) {
+    if (quantity > 99) {
         quantity = 99;
         input.value = 99;
     }
@@ -1497,8 +1497,8 @@ function confirmCustomization(id, name, price, event) {
     updateCart();
     closeCustomizationModal();
 
-    const customText = customizations.length> 0 ? ` (${customizations.join(', ')})` : '';
-    const quantityText = quantity> 1 ? `${quantity} x ` : '';
+    const customText = customizations.length > 0 ? ` (${customizations.join(', ')})` : '';
+    const quantityText = quantity > 1 ? `${quantity} x ` : '';
     showNotification(`${quantityText}${name}${customText} agregado al carrito`);
 }
 
@@ -1512,7 +1512,7 @@ function updateCart() {
         const div = document.createElement('div');
         div.className = 'cart-item';
 
-        const customizations = item.customizations && item.customizations.length> 0
+        const customizations = item.customizations && item.customizations.length > 0
             ? `<br> <small style="color: var(--primary-color);">✨ ${item.customizations.join(', ')}</small>`
             : '';
 
@@ -1560,7 +1560,7 @@ function increaseCartQuantity(index) {
 
 function decreaseCartQuantity(index) {
     const item = cart[index];
-    if (item.quantity> 1) {
+    if (item.quantity > 1) {
         const unitPrice = item.unitPrice || item.price;
         item.quantity--;
         const oldPrice = item.price;
@@ -1590,12 +1590,12 @@ async function sendOrder() {
         if (tables.data) tables = tables.data;
 
         // Si hay mesas creadas en el sistema, forzar la selección, filtrando a las disponibles
-        if (tables.length> 0) {
+        if (tables.length > 0) {
             // Regla de Negocio: Obtener las mesas asignadas específicamente a este empleado
-            const myAssignedTables = tables.filter(t => t.assigned_user_id== currentUser.id);
+            const myAssignedTables = tables.filter(t => t.assigned_user_id == currentUser.id);
             let availableTables = [];
 
-            if (myAssignedTables.length> 0) {
+            if (myAssignedTables.length > 0) {
                 // Si el dueño me asignó mesas, SOLO veo las mías (las demás se me ocultan)
                 availableTables = myAssignedTables;
             } else {
@@ -1650,19 +1650,19 @@ function showTableSelectionModal(tables) {
         // Crear overlay oscuro
         const overlay = document.createElement('div');
         overlay.style.cssText = `
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(0, 0, 0, 0.6); backdrop - filter: blur(4px);
-    display: flex; align - items: center; justify - content: center; z - index: 10000;
-    `;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center; z-index: 10000;
+        `;
 
         // Crear card
         const card = document.createElement('div');
         card.style.cssText = `
-    background: var(--bg - primary); width: 90 %; max - width: 400px;
-    border - radius: 12px; padding: 1.5rem; text - align: center;
-    box - shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    color: var(--text - primary);
-    `;
+            background: var(--bg-primary); width: 90%; max-width: 400px;
+            border-radius: 12px; padding: 1.5rem; text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            color: var(--text-primary);
+        `;
 
         let selectHtml = `<select id="modal-table-select" style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 2px solid var(--primary-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; margin-bottom: 1.5rem; cursor: pointer;">
         <option value="" disabled selected>-- Elige una mesa --</option>`;
@@ -1689,8 +1689,8 @@ function showTableSelectionModal(tables) {
             resolve(result);
         };
 
-        document.getElementById('btn-cancel-table').onclick=() => closeMenu(null);
-        document.getElementById('btn-confirm-table').onclick=() => {
+        document.getElementById('btn-cancel-table').onclick = () => closeMenu(null);
+        document.getElementById('btn-confirm-table').onclick = () => {
             const val = document.getElementById('modal-table-select').value;
             if (!val) {
                 alert('Debes seleccionar una mesa');
@@ -1732,7 +1732,7 @@ async function loadOrders() {
 
 // ========== LÓGICA DE TIEMPOS DINÁMICOS CON CUENTA REGRESIVA REAL ==========
 function calculateOrderTimes(orderId) {
-    const order = pendingOrders.find(o => o.id=== orderId);
+    const order = pendingOrders.find(o => o.id === orderId);
     if (!order) return { startInSeconds: 60, readyInSeconds: 300 };
 
     // Calcular SEGUNDOS transcurridos desde que se creó el pedido
@@ -1747,13 +1747,13 @@ function calculateOrderTimes(orderId) {
         .filter(o => o.status === 'Pendiente' || o.status === 'En Preparación')
         .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // ASC: Viejo primero
 
-    const orderIndex = activeOrders.findIndex(o => o.id=== orderId);
+    const orderIndex = activeOrders.findIndex(o => o.id === orderId);
 
     if (orderIndex === -1) return { startInSeconds: 0, readyInSeconds: 0 };
 
     // Cálculo base de tiempo para empezar (en segundos)
     let startInSeconds = 60; // Base 1 min
-    if (orderIndex> 0) {
+    if (orderIndex > 0) {
         // Sumamos 2 min por cada platillo de los pedidos anteriores en la cola
         const previousOrders = activeOrders.slice(0, orderIndex);
         const totalPreviousItems = previousOrders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + (i.quantity || 1), 0), 0);
@@ -1871,7 +1871,7 @@ function renderKitchenOrders() {
 
         const itemsList = order.items.map(item => {
             const quantity = item.quantity || 1;
-            const custom = item.customizations && item.customizations.length> 0 ? `<br> <small style="color:red">(!) ${item.customizations.join(', ')}</small>` : '';
+            const custom = item.customizations && item.customizations.length > 0 ? `<br> <small style="color:red">(!) ${item.customizations.join(', ')}</small>` : '';
             return `<li style="margin-bottom: 0.5rem; font-size: 1.1rem;"> <strong>${quantity}x</strong> ${item.name}${custom}</li> `;
         }).join('');
 
@@ -1951,7 +1951,7 @@ function renderCashierPendingOrders() {
 // ========== MODAL DE PAGO ==========
 function showPaymentModal(orderId, total) {
     const modal = document.createElement('div');
-    modal.id='payment-modal';
+    modal.id = 'payment-modal';
     modal.style.cssText = `
     position: fixed;
     top: 0;
@@ -2065,14 +2065,14 @@ function calculateChange(total) {
     const insufficientDisplay = document.getElementById('insufficient-display');
     const confirmBtn = document.getElementById('confirm-payment-btn');
 
-    if (amount>= total && amount> 0) {
+    if (amount >= total && amount > 0) {
         changeDisplay.style.display = 'block';
         insufficientDisplay.style.display = 'none';
         document.getElementById('change-amount').textContent = change.toFixed(2);
         confirmBtn.disabled = false;
         confirmBtn.style.background = '#27ae60';
         confirmBtn.style.cursor = 'pointer';
-    } else if (amount> 0) {
+    } else if (amount > 0) {
         changeDisplay.style.display = 'none';
         insufficientDisplay.style.display = 'block';
         confirmBtn.disabled = true;
@@ -2101,7 +2101,7 @@ async function confirmPayment(orderId, total) {
     const amount = parseFloat(document.getElementById('payment-amount').value) || 0;
     console.log('amount:', amount);
 
-    if (amount <total) {
+    if (amount < total) {
         alert('El monto recibido es insuficiente');
         return;
     }
@@ -2109,7 +2109,7 @@ async function confirmPayment(orderId, total) {
     try {
         // Obtener el pedido antes de actualizar Y HACER UNA COPIA PROFUNDA
         console.log('Buscando pedido en pendingOrders...');
-        const order = pendingOrders.find(o => o.id=== orderId);
+        const order = pendingOrders.find(o => o.id === orderId);
         console.log('Pedido encontrado:', order);
 
         if (!order) {
@@ -2171,7 +2171,7 @@ async function confirmPayment(orderId, total) {
         console.log('Ticket mostrado');
 
         // Mostrar notificación según el método de pago
-        const changeMsg = change> 0 ? ` Cambio: $${change.toFixed(2)} ` : '';
+        const changeMsg = change > 0 ? ` Cambio: $${change.toFixed(2)} ` : '';
         showNotification(`Pedido #${orderId} cobrado con ${paymentMethod}.${changeMsg} `);
 
         // Actualizar listas DESPUÉS de mostrar el ticket
@@ -2269,7 +2269,7 @@ function renderTickets() {
             <p><strong>Método:</strong> ${paymentIcon} ${ticket.payment_method || 'Efectivo'}</p>
             <p><strong>Total:</strong> $${parseFloat(ticket.total).toFixed(2)}</p>
             <p><strong>Recibido:</strong> $${parseFloat(ticket.amount_received).toFixed(2)}</p>
-            ${ticket.change_given> 0 ? `<p><strong>Cambio:</strong> $${parseFloat(ticket.change_given).toFixed(2)}</p>` : ''}
+            ${ticket.change_given > 0 ? `<p><strong>Cambio:</strong> $${parseFloat(ticket.change_given).toFixed(2)}</p>` : ''}
             <p><small>${new Date(ticket.printed_at).toLocaleString()}</small></p>
             <button onclick="reprintTicket(${ticket.order_id}, ${ticket.amount_received}, ${ticket.change_given}, '${ticket.payment_method || 'Efectivo'}')">Reimprimir</button>
     `;
@@ -2280,7 +2280,7 @@ function renderTickets() {
 
 async function reprintTicket(orderId, amount, change, paymentMethod = 'Efectivo') {
     try {
-        const order = pendingOrders.find(o => o.id=== orderId);
+        const order = pendingOrders.find(o => o.id === orderId);
         if (!order) {
             alert('Pedido no encontrado');
             return;
@@ -2311,12 +2311,12 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
     }
 
     const itemsList = order.items.map(item => {
-        const customText = item.customizations && item.customizations.length> 0
+        const customText = item.customizations && item.customizations.length > 0
             ? ` [${item.customizations.join(', ')}]`
             : '';
         const quantity = item.quantity || 1;
         const unitPrice = item.unitPrice || item.price;
-        const displayText = quantity> 1
+        const displayText = quantity > 1
             ? `${quantity}x ${item.name}${customText} @$${unitPrice.toFixed(2)} = $${item.price.toFixed(2)} `
             : `${item.name}${customText} - $${item.price.toFixed(2)} `;
         return `<li style="margin-bottom: 5px;"> ${displayText}</li> `;
@@ -2359,7 +2359,7 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
             <p style="margin: 5px 0; font-size: 1.1rem;"><strong>Total: $${parseFloat(order.total).toFixed(2)}</strong></p>
             <p style="margin: 5px 0;">Modo Pago: ${paymentIcon} ${paymentMethod}</p>
             <p style="margin: 5px 0;">Recibido: $${parseFloat(amountReceived).toFixed(2)}</p>
-            ${changeGiven> 0 ? `<p style="margin: 5px 0;"><strong>Cambio: $${parseFloat(changeGiven).toFixed(2)}</strong></p>` : ''}
+            ${changeGiven > 0 ? `<p style="margin: 5px 0;"><strong>Cambio: $${parseFloat(changeGiven).toFixed(2)}</strong></p>` : ''}
             
             <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
             
@@ -2416,7 +2416,7 @@ function openTicketConfigModal() {
     const savedFooter = localStorage.getItem('ticketFooter') || defaultFooter;
 
     modal = document.createElement('div');
-    modal.id='ticket-config-modal';
+    modal.id = 'ticket-config-modal';
     modal.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center;
@@ -2610,7 +2610,7 @@ async function addEmployee() {
             if (role === 'caja') {
                 // LÍMITE: máximo 1 cajero
                 const cajaUsers = users.filter(u => u.role === 'caja');
-                if (cajaUsers.length>= 1) {
+                if (cajaUsers.length >= 1) {
                     empMsg.style.color = 'orange';
                     empMsg.innerHTML = '⚠️ <strong>Plan Básico:</strong> Solo se permite 1 cajero. Actualiza al Plan Pro para más.';
                     return;
@@ -2618,7 +2618,7 @@ async function addEmployee() {
             } else if (role === 'empleado' || role === 'cocinero') {
                 // LÍMITE: máximo 2 empleados operativos (meseros / cocineros independientemente de la caja)
                 const operativos = users.filter(u => u.role === 'empleado' || u.role === 'cocinero');
-                if (operativos.length>= 2) {
+                if (operativos.length >= 2) {
                     empMsg.style.color = 'orange';
                     empMsg.innerHTML = '⚠️ <strong>Plan Básico:</strong> Límite de 2 empleados (Mesero/Cocinero) alcanzado. Actualiza al Plan Pro para más.';
                     return;
@@ -2657,7 +2657,7 @@ function showSuccessModal(username, password) {
 
     const isDark = document.body.classList.contains('dark-mode');
     const modal = document.createElement('div');
-    modal.id='success-employee-modal';
+    modal.id = 'success-employee-modal';
 
     // Contenedor principal del modal (overlay)
     modal.style.cssText = `
@@ -2732,7 +2732,7 @@ function showConfirmModal(title, message) {
 
         const isDark = document.body.classList.contains('dark-mode');
         const modal = document.createElement('div');
-        modal.id='custom-confirm-modal';
+        modal.id = 'custom-confirm-modal';
 
         modal.style.cssText = `
             position: fixed;
@@ -2792,8 +2792,8 @@ function showConfirmModal(title, message) {
             }, 300);
         };
 
-        document.getElementById('btn-confirm-cancel').onclick=() => closeAndResolve(false);
-        document.getElementById('btn-confirm-accept').onclick=() => closeAndResolve(true);
+        document.getElementById('btn-confirm-cancel').onclick = () => closeAndResolve(false);
+        document.getElementById('btn-confirm-accept').onclick = () => closeAndResolve(true);
 
         requestAnimationFrame(() => {
             modal.style.opacity = '1';
@@ -2809,7 +2809,7 @@ function showLoadingModal(title, subtitle) {
 
     const isDark = document.body.classList.contains('dark-mode');
     const modal = document.createElement('div');
-    modal.id='custom-loading-modal';
+    modal.id = 'custom-loading-modal';
 
     modal.style.cssText = `
         position: fixed;
@@ -3086,7 +3086,7 @@ async function generateReports(period = 'all') {
         // Estadísticas generales
         const totalOrders = allOrders.length;
         const totalSales = allOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
-        const avgOrderValue = totalOrders> 0 ? totalSales / totalOrders : 0;
+        const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
         // Pedidos por estado
         const ordersByStatus = {
@@ -3360,7 +3360,7 @@ async function renderTables() {
 
             let assignedText = '<span style="color:var(--text-secondary); font-size:0.85rem;">No asignada</span>';
             if (table.assigned_user_id) {
-                const assignedUser = users.find(u => u.id=== table.assigned_user_id);
+                const assignedUser = users.find(u => u.id === table.assigned_user_id);
                 if (assignedUser) {
                     assignedText = `<span style="color:var(--success-color); font-weight:bold; font-size:0.85rem;">Asignada a: ${assignedUser.username}</span>`;
                 }
@@ -3368,7 +3368,7 @@ async function renderTables() {
 
             let selectHtml = `<select onchange="assignTableToUser(${table.id}, this.value)" style="padding: 0.4rem; border-radius: 4px; border: 1px solid var(--border-color); width: 100%; background: var(--bg-primary); color: var(--text-primary); font-size: 0.85rem;">
                 <option value="">-- Sin Asignar --</option>
-                ${waiters.map(w => `<option value="${w.id}" ${table.assigned_user_id=== w.id ? 'selected' : ''}>${w.username}</option>`).join('')}
+                ${waiters.map(w => `<option value="${w.id}" ${table.assigned_user_id === w.id ? 'selected' : ''}>${w.username}</option>`).join('')}
             </select>`;
 
             div.innerHTML = `
@@ -3428,3 +3428,23 @@ async function assignTableToUser(tableId, userId) {
         alert('Error al asignar mesa: ' + e.message);
     }
 }
+
+// ==========================================
+// TABS DE PERFIL (Datos, Reportes, etc.)
+// ==========================================
+window.showProfileTab = function(tabId) {
+    const tabsContent = document.querySelectorAll('.profile-tab-content');
+    tabsContent.forEach(tab => tab.style.display = 'none');
+    
+    const tabBtns = document.querySelectorAll('.profile-tab-btn');
+    tabBtns.forEach(btn => btn.classList.remove('active'));
+    
+    const targetTab = document.getElementById('tab-' + tabId);
+    if (targetTab) targetTab.style.display = 'block';
+    
+    const activeBtn = Array.from(tabBtns).find(b => {
+        const attr = b.getAttribute('onclick') || '';
+        return attr.includes("'" + tabId + "'") || attr.includes('"' + tabId + '"');
+    });
+    if (activeBtn) activeBtn.classList.add('active');
+};
