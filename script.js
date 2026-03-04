@@ -876,12 +876,12 @@ function showProfileTab(tabName) {
     });
 
     // Mostrar pestaña seleccionada
-    const targetTab = document.getElementById(`tab - ${tabName} `);
+    const targetTab = document.getElementById(`tab-${tabName}`);
     if (targetTab) {
         targetTab.style.display = 'block';
 
         // Resaltar botón
-        const btn = Array.from(document.querySelectorAll('.profile-tab-btn')).find(b => b.getAttribute('onclick').includes(`'${tabName}'`));
+        const btn = Array.from(document.querySelectorAll('.profile-tab-btn')).find(b => b.getAttribute('onclick').includes(`'${tabName}'`) || b.getAttribute('onclick').includes(`"${tabName}"`));
         if (btn) {
             btn.classList.add('active');
             btn.style.background = 'var(--bg-primary)';
@@ -3428,23 +3428,3 @@ async function assignTableToUser(tableId, userId) {
         alert('Error al asignar mesa: ' + e.message);
     }
 }
-
-// ==========================================
-// TABS DE PERFIL (Datos, Reportes, etc.)
-// ==========================================
-window.showProfileTab = function(tabId) {
-    const tabsContent = document.querySelectorAll('.profile-tab-content');
-    tabsContent.forEach(tab => tab.style.display = 'none');
-    
-    const tabBtns = document.querySelectorAll('.profile-tab-btn');
-    tabBtns.forEach(btn => btn.classList.remove('active'));
-    
-    const targetTab = document.getElementById('tab-' + tabId);
-    if (targetTab) targetTab.style.display = 'block';
-    
-    const activeBtn = Array.from(tabBtns).find(b => {
-        const attr = b.getAttribute('onclick') || '';
-        return attr.includes("'" + tabId + "'") || attr.includes('"' + tabId + '"');
-    });
-    if (activeBtn) activeBtn.classList.add('active');
-};
