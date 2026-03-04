@@ -1757,7 +1757,7 @@ function renderKitchenOrders() {
         }
 
         const div = document.createElement('div');
-        div.className = `card order - card - kitchen ${order.status === 'En Preparación' ? 'preparing-glow' : ''} `;
+        div.className = `card order-card-kitchen ${order.status === 'En Preparación' ? 'preparing-glow' : ''}`;
         div.style.borderLeft = order.status === 'En Preparación' ? '8px solid #3498db' : '8px solid #ff6b35';
         div.style.padding = '1.5rem';
 
@@ -1859,7 +1859,7 @@ function showPaymentModal(orderId, total) {
     `;
 
     modal.innerHTML = `
-            <div style="background: white; padding: 2.5rem; border-radius: 16px; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
+            <div style="background: var(--bg-primary); padding: 2.5rem; border-radius: 16px; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
             <h3 style="color: #FF6B35; margin-bottom: 1.5rem; text-align: center;">💰 Cobrar Pedido #${orderId}</h3>
             
             <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
@@ -2230,6 +2230,7 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
         <p style="margin: 0; font-weight: bold; font-size: 1rem;">TICKET DE VENTA</p>
     `;
     const savedHeader = localStorage.getItem('ticketHeader') || defaultHeader;
+    const savedFooter = localStorage.getItem('ticketFooter') || `<p style="margin: 0;">¡Gracias por su preferencia!</p><p style="margin: 0;">🌭 Vuelva pronto 🌭</p>`;
     contentDiv.innerHTML = `
         <div style="font-family: 'Courier New', Courier, monospace; color: #000; text-align: left; font-size: 0.95rem; line-height: 1.4;">
             <div style="text-align: center; margin-bottom: 10px;">
@@ -2315,17 +2316,17 @@ function openTicketConfigModal() {
     `;
 
     modal.innerHTML = `
-        <div style="background: white; padding: 2.5rem; border-radius: 16px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div style="background: var(--bg-primary); padding: 2.5rem; border-radius: 16px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
             <h2 style="margin-top: 0; color: var(--primary-color);">⚙️ Configurar Ticket Térmico</h2>
             <p style="color: var(--text-secondary); margin-bottom: 20px;">Edita el modelo base que aparecerá en la cabecera y el pie de página de todos los tickets generados.</p>
             
-            <label style="font-weight: bold; display: block; margin-bottom: 5px;">Encabezado del Ticket:</label>
-            <div id="config-header-editor" contenteditable="true" style="border: 1px solid #ccc; border-radius: 8px; padding: 15px; min-height: 150px; margin-bottom: 20px; font-family: 'Courier New', monospace; font-size: 14px; background: #f9f9f9;">
+            <label style="font-weight: bold; display: block; margin-bottom: 5px; color: var(--text-primary);">Encabezado del Ticket:</label>
+            <div id="config-header-editor" contenteditable="true" style="border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 15px; min-height: 150px; margin-bottom: 20px; font-family: 'Courier New', monospace; font-size: 14px; background: var(--bg-secondary);">
                 ${savedHeader}
             </div>
             
-            <label style="font-weight: bold; display: block; margin-bottom: 5px;">Pie de Página del Ticket:</label>
-            <div id="config-footer-editor" contenteditable="true" style="border: 1px solid #ccc; border-radius: 8px; padding: 15px; min-height: 100px; margin-bottom: 20px; font-family: 'Courier New', monospace; font-size: 14px; background: #f9f9f9;">
+            <label style="font-weight: bold; display: block; margin-bottom: 5px; color: var(--text-primary);">Pie de Página del Ticket:</label>
+            <div id="config-footer-editor" contenteditable="true" style="border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 15px; min-height: 100px; margin-bottom: 20px; font-family: 'Courier New', monospace; font-size: 14px; background: var(--bg-secondary);">
                 ${savedFooter}
             </div>
 
