@@ -1518,12 +1518,12 @@ function updateCart() {
 
         div.innerHTML = `
         <div class="cart-item-info">
-                <span>${item.quantity}x ${item.name}</span>
+                <span style="font-size: 0.95rem;">${item.quantity}x ${item.name}</span>
                 <small>$${(item.unitPrice || item.price).toFixed(2)} c/u</small>
                 ${customizations}
             </div>
         <div class="cart-item-controls">
-            <button class="cart-item-btn" onclick="removeFromCart(${index})" style="background:var(--danger-color); color:white; border:none;">×</button>
+            <button class="cart-item-btn" onclick="removeFromCart(${index})" style="background:transparent; color:var(--danger-color); border:none; cursor:pointer; font-size: 1.4rem; padding: 0.2rem 0.5rem;">×</button>
         </div>
     `;
         cartDiv.appendChild(div);
@@ -1675,7 +1675,7 @@ function showTableSelectionModal(tables) {
         <h3 style="margin-top: 0; color: var(--primary-color);"> Selecciona tu Mesa</h3>
             <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">Para enviar la orden, es necesario indicar la mesa.</p>
             ${selectHtml}
-    <div style="display: flex; gap: 1rem;">
+    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
         <button id="btn-cancel-table" style="flex: 1; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: transparent; color: var(--text-primary); cursor: pointer; font-weight: bold;">Cancelar</button>
         <button id="btn-confirm-table" class="btn-primary" style="flex: 1; padding: 0.8rem; border-radius: 8px;">Enviar Orden</button>
     </div>
