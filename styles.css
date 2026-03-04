@@ -2633,3 +2633,26 @@ body.dark-mode .modifier-option.selected {
 .subs-manage-btn:hover {
     color: #ffffff;
 }
+
+/* ========== HEADER RESPONSIVE (AVATAR Y LOGOUT) ========== */
+@media (max-width: 650px) {
+    .logout-btn .logout-text {
+        display: none;
+    }
+
+    .logout-btn .logout-icon {
+        display: inline !important;
+    }
+
+    .logout-btn {
+        padding: 8px 12px;
+    }
+
+    .header-center-info {
+        display: none;
+    }
+
+    .user-info-text-mobile {
+        display: none;
+    }
+}
