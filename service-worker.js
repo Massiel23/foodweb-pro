@@ -1,7 +1,7 @@
 // FoodWeb Pro — Service Worker
 // Estrategia: Cache-First para activos estáticos, Network-First para la API
 
-const CACHE_NAME = 'foodweb-pro-v1';
+const CACHE_NAME = 'foodweb-pro-v2';
 const STATIC_ASSETS = [
     '/foodweb-pro.html',
     '/styles.css',
@@ -47,6 +47,12 @@ self.addEventListener('activate', (event) => {
 // ─── FETCH: Estrategia inteligente por tipo de solicitud ─────────────────────
 self.addEventListener('fetch', (event) => {
     const { request } = event;
+
+    // Ignorar solicitudes POST, PUT, DELETE, etc. Solo cacheamos GET.
+    if (request.method !== 'GET') {
+        return;
+    }
+
     const url = new URL(request.url);
 
     // 1. Llamadas a la API → Network-First (datos siempre frescos)

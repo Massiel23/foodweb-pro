@@ -579,14 +579,17 @@ function openAvatarModal() {
         background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
         z-index: 10000; backdrop-filter: blur(4px);
     `;
-    modal.innerHTML = \`
+
+    // Validar visualizacion condicional para las variables del src y el initial
+
+    modal.innerHTML = `
         <div style="background: var(--bg-primary); padding: 2.5rem; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 15px 50px rgba(0,0,0,0.3); border: 1px solid var(--border-color);">
             <h3 style="margin-top: 0; color: var(--text-primary); margin-bottom: 5px;">Tu Foto de Perfil</h3>
             <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem;">Personaliza cómo te ven los demás.</p>
             
             <div style="width: 120px; height: 120px; border-radius: 50%; background: var(--primary-color); color: white; margin: 0 auto 1.5rem; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; overflow: hidden; border: 4px solid var(--bg-secondary); box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-                <img id="modal-avatar-preview" src="\${pic || ''}" style="width: 100%; height: 100%; object-fit: cover; display: \${pic ? 'block' : 'none'};">
-                <span id="modal-avatar-initial" style="display: \${pic ? 'none' : 'block'};">\${initial}</span>
+                <img id="modal-avatar-preview" src="${pic || ''}" style="width: 100%; height: 100%; object-fit: cover; display: ${pic ? 'block' : 'none'};">
+                <span id="modal-avatar-initial" style="display: ${pic ? 'none' : 'block'};">${initial}</span>
             </div>
             
             <input type="file" id="modal-avatar-input" accept="image/*" style="display: none;" onchange="handleProfilePhotoUpload(event)">
@@ -597,7 +600,7 @@ function openAvatarModal() {
                 <button onclick="document.getElementById('avatar-modal').remove()" style="width: 100%; padding: 12px; background: transparent; color: var(--text-secondary); border: none; cursor: pointer; text-decoration: underline; margin-top: 0.5rem;">Cerrar</button>
             </div>
         </div>
-    \`;
+    `;
     document.body.appendChild(modal);
 }
 
@@ -605,18 +608,18 @@ function handleProfilePhotoUpload(event) {
     const file = event.target.files[0];
     if (file && currentUser) {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             const base64Str = e.target.result;
             localStorage.setItem('userAvatar_' + currentUser.id, base64Str);
             updateHeaderProfile(currentUser);
-            
+
             // Actualizar vista del modal si sigue abierto
             const preview = document.getElementById('modal-avatar-preview');
             const initialSpan = document.getElementById('modal-avatar-initial');
-            if(preview) {
+            if (preview) {
                 preview.src = base64Str;
                 preview.style.display = 'block';
-                if(initialSpan) initialSpan.style.display = 'none';
+                if (initialSpan) initialSpan.style.display = 'none';
             }
         };
         reader.readAsDataURL(file);
@@ -627,14 +630,14 @@ function removeProfilePhoto() {
     if (currentUser) {
         localStorage.removeItem('userAvatar_' + currentUser.id);
         updateHeaderProfile(currentUser);
-        
+
         // Actualizar vista del modal
         const preview = document.getElementById('modal-avatar-preview');
         const initialSpan = document.getElementById('modal-avatar-initial');
-        if(preview) {
+        if (preview) {
             preview.style.display = 'none';
             preview.src = '';
-            if(initialSpan) initialSpan.style.display = 'block';
+            if (initialSpan) initialSpan.style.display = 'block';
         }
     }
 }
@@ -717,7 +720,7 @@ async function showSection(sectionId, pushState = true) {
         // Solo empujar si es diferente al estado actual para no llenar de duplicados el historial
         const currentState = history.state;
         if (!currentState || currentState.sectionId !== sectionId) {
-            history.pushState({ sectionId: sectionId }, '', `#${ sectionId } `);
+            history.pushState({ sectionId: sectionId }, '', `#${sectionId} `);
         }
     }
 
@@ -796,7 +799,7 @@ async function showProfile() {
             // Capitalizar la primera letra del mes
             let dateStr = today.toLocaleDateString('es-ES', options);
             dateStr = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-            planRenewal.textContent = `Próxima renovación: ${ dateStr } `;
+            planRenewal.textContent = `Próxima renovación: ${dateStr} `;
         }
 
         if (planBadgeSide) {
@@ -873,7 +876,7 @@ function showProfileTab(tabName) {
     });
 
     // Mostrar pestaña seleccionada
-    const targetTab = document.getElementById(`tab - ${ tabName } `);
+    const targetTab = document.getElementById(`tab - ${tabName} `);
     if (targetTab) {
         targetTab.style.display = 'block';
 
@@ -935,10 +938,10 @@ function renderBranches() {
     display: flex;
     justify - content: space - between;
     align - items: center;
-    background: ${ isCurrent ? 'var(--bg-primary)' : 'var(--bg-secondary)' };
+    background: ${isCurrent ? 'var(--bg-primary)' : 'var(--bg-secondary)'};
     padding: 1rem 1.5rem;
     border - radius: 10px;
-    border: 1px solid ${ isCurrent ? 'var(--primary-color)' : 'var(--border-color)' };
+    border: 1px solid ${isCurrent ? 'var(--primary-color)' : 'var(--border-color)'};
     transition: all 0.2s;
     `;
 
@@ -947,7 +950,7 @@ function renderBranches() {
                 <h4 style="margin: 0; color: var(--text-primary);">${branch.name} ${isCurrent ? '<span style="font-size: 0.7rem; background: var(--primary-color); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">ACTIVA</span>' : ''}</h4>
                 <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">${branch.plan} Plan</p>
             </div >
-        ${ !isCurrent ? `<button onclick="switchBranch(${branch.id}, '${branch.name}')" class="btn-primary" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">Cambiar a esta</button>` : '' }
+        ${!isCurrent ? `<button onclick="switchBranch(${branch.id}, '${branch.name}')" class="btn-primary" style="width: auto; padding: 0.5rem 1rem; font-size: 0.8rem;">Cambiar a esta</button>` : ''}
     `;
         list.appendChild(div);
     });
@@ -976,7 +979,7 @@ async function switchBranch(id, name) {
     posApi.restaurantId = id;
 
     // Mostrar modal elegante de carga en lugar de un alert feo
-    showLoadingModal(`Cambiando a sucursal: ${ name } `, 'Por favor espera un momento...');
+    showLoadingModal(`Cambiando a sucursal: ${name} `, 'Por favor espera un momento...');
 
     // Recargar después de un breve delay para que la animación se vea
     setTimeout(() => {
@@ -1046,7 +1049,7 @@ function renderCategories() {
 
     filters.innerHTML = uniqueCategories.map(cat => `
         < span class="category-chip ${selectedCategory === cat ? 'active' : ''}"
-    onclick = "filterByCategory('${cat}')" > ${ cat === 'all' ? 'Todos' : cat }</span >
+    onclick = "filterByCategory('${cat}')" > ${cat === 'all' ? 'Todos' : cat}</span >
         `).join('');
 }
 
@@ -1077,7 +1080,7 @@ function renderProducts() {
             card.className = 'product-card-v2';
             card.onclick = () => showCustomizationModal(product.id, product.name, product.price);
             card.innerHTML = `
-        < span class="icon" > ${ product.img || '🍔' }</span >
+        < span class="icon" > ${product.img || '🍔'}</span >
                 <h4>${product.name}</h4>
                 <p class="price">$${parseFloat(product.price).toFixed(2)}</p>
                 <button class="add-btn-v2">Agregar +</button>
@@ -1090,7 +1093,7 @@ function renderProducts() {
             const adminItem = document.createElement('div');
             adminItem.className = 'product-item';
             adminItem.innerHTML = `
-        < div style = "font-size: 2em;" > ${ product.img }</div >
+        < div style = "font-size: 2em;" > ${product.img}</div >
                 <h4>${product.name}</h4>
                 <p>$${parseFloat(product.price).toFixed(2)}</p>
                 <button onclick="removeProduct(${product.id})" style="background-color: var(--danger-color); color: white; border: none; padding: 0.5rem; border-radius: 4px; pointer-events: auto;">Eliminar</button>
@@ -1162,7 +1165,7 @@ async function renderTables() {
         <option value="">🌐 Libre (Sin asignar)</option>`;
             meseros.forEach(m => {
                 const selected = (table.assigned_user_id == m.id) ? 'selected' : '';
-                selectHtml += `< option value = "${m.id}" ${ selected }>👤 Asignada a: ${ m.username }</option > `;
+                selectHtml += `< option value = "${m.id}" ${selected}>👤 Asignada a: ${m.username}</option > `;
             });
             selectHtml += `</select > `;
 
@@ -1183,7 +1186,7 @@ async function renderTables() {
             list.appendChild(div);
         });
     } catch (error) {
-        list.innerHTML = `< div style = "grid-column: 1/-1; color: red;" > Error al cargar mesas: ${ error.message }</div > `;
+        list.innerHTML = `< div style = "grid-column: 1/-1; color: red;" > Error al cargar mesas: ${error.message}</div > `;
     }
 }
 
@@ -1307,7 +1310,7 @@ function renderModifierTags() {
     `;
 
         tag.innerHTML = `
-            ${ mod }
+            ${mod}
     <span onclick="removeModifierTag(${index})" style="cursor: pointer; color: #4F46E5; font-weight: bold; padding-left: 0.2rem;">&times;</span>
     `;
 
@@ -1494,9 +1497,9 @@ function confirmCustomization(id, name, price, event) {
     updateCart();
     closeCustomizationModal();
 
-    const customText = customizations.length > 0 ? ` (${ customizations.join(', ') })` : '';
-    const quantityText = quantity > 1 ? `${ quantity } x ` : '';
-    showNotification(`${ quantityText }${ name }${ customText } agregado al carrito`);
+    const customText = customizations.length > 0 ? ` (${customizations.join(', ')})` : '';
+    const quantityText = quantity > 1 ? `${quantity} x ` : '';
+    showNotification(`${quantityText}${name}${customText} agregado al carrito`);
 }
 
 function updateCart() {
@@ -1517,7 +1520,7 @@ function updateCart() {
         < div class="cart-item-info" >
                 <span>${item.quantity}x ${item.name}</span>
                 <small>$${(item.unitPrice || item.price).toFixed(2)} c/u</small>
-                ${ customizations }
+                ${customizations}
             </div >
         <div class="cart-item-controls">
             <button class="cart-item-btn" onclick="removeFromCart(${index})" style="background:var(--danger-color); color:white; border:none;">×</button>
@@ -1528,7 +1531,7 @@ function updateCart() {
 
     const totalDisplay = document.getElementById('cart-total-display');
     if (totalDisplay) {
-        totalDisplay.textContent = `$${ total.toFixed(2) } `;
+        totalDisplay.textContent = `$${total.toFixed(2)} `;
     }
 }
 
@@ -1551,7 +1554,7 @@ function increaseCartQuantity(index) {
         item.price = unitPrice * item.quantity;
         total = total - oldPrice + item.price;
         updateCart();
-        showNotification(`Cantidad actualizada: ${ item.quantity }x ${ item.name } `);
+        showNotification(`Cantidad actualizada: ${item.quantity}x ${item.name} `);
     }
 }
 
@@ -1564,7 +1567,7 @@ function decreaseCartQuantity(index) {
         item.price = unitPrice * item.quantity;
         total = total - oldPrice + item.price;
         updateCart();
-        showNotification(`Cantidad actualizada: ${ item.quantity }x ${ item.name } `);
+        showNotification(`Cantidad actualizada: ${item.quantity}x ${item.name} `);
     }
 }
 
@@ -1664,14 +1667,14 @@ function showTableSelectionModal(tables) {
         let selectHtml = `< select id = "modal-table-select" style = "width: 100%; padding: 0.8rem; border-radius: 8px; border: 2px solid var(--primary-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; margin-bottom: 1.5rem; cursor: pointer;" >
         <option value="" disabled selected>-- Elige una mesa --</option>`;
         tables.forEach(t => {
-            selectHtml += `< option value = "${t.name}" >🪑 ${ t.name }</option > `;
+            selectHtml += `< option value = "${t.name}" >🪑 ${t.name}</option > `;
         });
         selectHtml += `</select > `;
 
         card.innerHTML = `
         < h3 style = "margin-top: 0; color: var(--primary-color);" > Selecciona tu Mesa</h3 >
             <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">Para enviar la orden, es necesario indicar la mesa.</p>
-            ${ selectHtml }
+            ${selectHtml}
     <div style="display: flex; gap: 1rem;">
         <button id="btn-cancel-table" style="flex: 1; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: transparent; color: var(--text-primary); cursor: pointer; font-weight: bold;">Cancelar</button>
         <button id="btn-confirm-table" class="btn-primary" style="flex: 1; padding: 0.8rem; border-radius: 8px;">Enviar Orden</button>
@@ -1778,7 +1781,7 @@ function updateKitchenStats() {
 
     const enEspera = pendingOrders.filter(o => o.status === 'Pendiente').length;
     const preparando = pendingOrders.filter(o => o.status === 'En Preparación').length;
-    statsDiv.textContent = `⏳ ${ enEspera } en espera | 🔥 ${ preparando } preparando`;
+    statsDiv.textContent = `⏳ ${enEspera} en espera | 🔥 ${preparando} preparando`;
 }
 
 function renderPendingOrders() {
@@ -1791,14 +1794,14 @@ function renderPendingOrders() {
         if (order.status === 'Cobrado') return;
 
         const div = document.createElement('div');
-        div.className = `order - card - compact ${ order.status.toLowerCase().replace(' ', '-') } `;
+        div.className = `order - card - compact ${order.status.toLowerCase().replace(' ', '-')} `;
 
         const times = calculateOrderTimes(order.id);
         const timeBadge = order.status === 'Pendiente'
-            ? `< div class="order-card-status" style = "background:#fff3e0; color:#e65100;" >⏳ ${ formatCountdown(times.startInSeconds) }</div > `
-            : (order.status === 'En Preparación' ? `< div class="order-card-status" style = "background:#e3f2fd; color:#1565c0;" >🔥 ${ formatCountdown(times.readyInSeconds) }</div > ` : ` < div class="order-card-status" style = "background:#e8f5e9; color:#2e7d32;" >✅ LISTO</div > `);
+            ? `< div class="order-card-status" style = "background:#fff3e0; color:#e65100;" >⏳ ${formatCountdown(times.startInSeconds)}</div > `
+            : (order.status === 'En Preparación' ? `< div class="order-card-status" style = "background:#e3f2fd; color:#1565c0;" >🔥 ${formatCountdown(times.readyInSeconds)}</div > ` : ` < div class="order-card-status" style = "background:#e8f5e9; color:#2e7d32;" >✅ LISTO</div > `);
 
-        const itemsList = order.items.map(i => `< li > ${ i.quantity }x ${ i.name }</li > `).join('');
+        const itemsList = order.items.map(i => `< li > ${i.quantity}x ${i.name}</li > `).join('');
 
         div.innerHTML = `
         < div class="order-card-header" >
@@ -1806,7 +1809,7 @@ function renderPendingOrders() {
                 <h4>Pedido #${order.id}</h4>
                 <small style="color:var(--text-secondary)">${order.employee || 'Admin'}${order.table_name ? ` • <span style="color:var(--primary-color); font-weight:bold;">🪑 ${order.table_name}</span>` : ''}</small>
             </div>
-                ${ timeBadge }
+                ${timeBadge}
             </div >
             <ul class="order-card-items">${itemsList}</ul>
             <div class="order-card-footer">
@@ -1847,7 +1850,7 @@ function renderKitchenOrders() {
                 historyItem.style.opacity = '0.7';
                 historyItem.style.borderLeft = order.status === 'Cobrado' ? '5px solid #27ae60' : '5px solid #2ecc71';
 
-                const itemsStr = order.items.map(i => `${ i.quantity }x ${ i.name } `).join(', ');
+                const itemsStr = order.items.map(i => `${i.quantity}x ${i.name} `).join(', ');
 
                 historyItem.innerHTML = `
         < div style = "display: flex; justify-content: space-between; align-items: center;" >
@@ -1862,20 +1865,20 @@ function renderKitchenOrders() {
         }
 
         const div = document.createElement('div');
-        div.className = `card order - card - kitchen ${ order.status === 'En Preparación' ? 'preparing-glow' : '' } `;
+        div.className = `card order - card - kitchen ${order.status === 'En Preparación' ? 'preparing-glow' : ''} `;
         div.style.borderLeft = order.status === 'En Preparación' ? '8px solid #3498db' : '8px solid #ff6b35';
         div.style.padding = '1.5rem';
 
         const itemsList = order.items.map(item => {
             const quantity = item.quantity || 1;
             const custom = item.customizations && item.customizations.length > 0 ? `< br > <small style="color:red">(!) ${item.customizations.join(', ')}</small>` : '';
-            return `< li style = "margin-bottom: 0.5rem; font-size: 1.1rem;" > <strong>${quantity}x</strong> ${ item.name }${ custom }</li > `;
+            return `< li style = "margin-bottom: 0.5rem; font-size: 1.1rem;" > <strong>${quantity}x</strong> ${item.name}${custom}</li > `;
         }).join('');
 
         const isPreparing = order.status === 'En Preparación';
         const timeBadge = isPreparing
-            ? `< span class="countdown-badge" data - order - id="${order.id}" style = "background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;" >🔥 PREPARANDO - ~${ formatCountdown(times.readyInSeconds) }</span > `
-            : `< span class="countdown-badge" data - order - id="${order.id}" style = "background: #ff6b35; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;" >⏳ EN ESPERA - ~${ formatCountdown(times.startInSeconds) }</span > `;
+            ? `< span class="countdown-badge" data - order - id="${order.id}" style = "background: #3498db; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;" >🔥 PREPARANDO - ~${formatCountdown(times.readyInSeconds)}</span > `
+            : `< span class="countdown-badge" data - order - id="${order.id}" style = "background: #ff6b35; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;" >⏳ EN ESPERA - ~${formatCountdown(times.startInSeconds)}</span > `;
 
         div.innerHTML = `
         < div style = "display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;" >
@@ -1883,7 +1886,7 @@ function renderKitchenOrders() {
                 <h3 style="margin: 0; color: var(--text-primary);">Pedido #${order.id}</h3>
                 <small style="color: var(--text-secondary);">${order.employee || 'Mesero'}${order.table_name ? ` • <strong style="color:var(--primary-color); font-size:1rem;">🪑 ${order.table_name}</strong>` : ''}</small>
             </div>
-                ${ timeBadge }
+                ${timeBadge}
             </div >
             <ul style="list-style: none; padding: 0; margin-bottom: 1.5rem;">${itemsList}</ul>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -1900,7 +1903,7 @@ function renderKitchenOrders() {
 async function updateOrderStatus(orderId, newStatus) {
     try {
         await posApi.updateOrderStatus(orderId, newStatus);
-        showNotification(`Pedido #${ orderId } actualizado a: ${ newStatus } `);
+        showNotification(`Pedido #${orderId} actualizado a: ${newStatus} `);
         await loadOrders();
     } catch (error) {
         alert('Error al actualizar pedido: ' + error.message);
@@ -1925,7 +1928,7 @@ function renderCashierPendingOrders() {
         const div = document.createElement('div');
         div.className = 'order-card-compact finalizado';
 
-        const itemsList = order.items.map(i => `< li > ${ i.quantity }x ${ i.name }</li > `).join('');
+        const itemsList = order.items.map(i => `< li > ${i.quantity}x ${i.name}</li > `).join('');
 
         div.innerHTML = `
         < div class="order-card-header" >
@@ -2168,8 +2171,8 @@ async function confirmPayment(orderId, total) {
         console.log('Ticket mostrado');
 
         // Mostrar notificación según el método de pago
-        const changeMsg = change > 0 ? ` Cambio: $${ change.toFixed(2) } ` : '';
-        showNotification(`Pedido #${ orderId } cobrado con ${ paymentMethod }.${ changeMsg } `);
+        const changeMsg = change > 0 ? ` Cambio: $${change.toFixed(2)} ` : '';
+        showNotification(`Pedido #${orderId} cobrado con ${paymentMethod}.${changeMsg} `);
 
         // Actualizar listas DESPUÉS de mostrar el ticket
         console.log('Actualizando listas...');
@@ -2202,7 +2205,7 @@ function renderCashierPaidOrders() {
         const div = document.createElement('div');
         div.className = 'order-card-compact cobrado';
 
-        const itemsList = order.items.map(i => `< li > ${ i.quantity }x ${ i.name }</li > `).join('');
+        const itemsList = order.items.map(i => `< li > ${i.quantity}x ${i.name}</li > `).join('');
 
         div.innerHTML = `
         < div class="order-card-header" >
@@ -2262,11 +2265,11 @@ function renderTickets() {
         const div = document.createElement('div');
         div.className = 'ticket-item';
         div.innerHTML = `
-        < h4 > Ticket #${ ticket.id } - Pedido #${ ticket.order_id }</h4 >
+        < h4 > Ticket #${ticket.id} - Pedido #${ticket.order_id}</h4 >
             <p><strong>Método:</strong> ${paymentIcon} ${ticket.payment_method || 'Efectivo'}</p>
             <p><strong>Total:</strong> $${parseFloat(ticket.total).toFixed(2)}</p>
             <p><strong>Recibido:</strong> $${parseFloat(ticket.amount_received).toFixed(2)}</p>
-            ${ ticket.change_given > 0 ? `<p><strong>Cambio:</strong> $${parseFloat(ticket.change_given).toFixed(2)}</p>` : '' }
+            ${ticket.change_given > 0 ? `<p><strong>Cambio:</strong> $${parseFloat(ticket.change_given).toFixed(2)}</p>` : ''}
             <p><small>${new Date(ticket.printed_at).toLocaleString()}</small></p>
             <button onclick="reprintTicket(${ticket.order_id}, ${ticket.amount_received}, ${ticket.change_given}, '${ticket.payment_method || 'Efectivo'}')">Reimprimir</button>
     `;
@@ -2309,14 +2312,14 @@ function showReceipt(order, amountReceived, changeGiven, paymentMethod = 'Efecti
 
     const itemsList = order.items.map(item => {
         const customText = item.customizations && item.customizations.length > 0
-            ? ` [${ item.customizations.join(', ') }]`
+            ? ` [${item.customizations.join(', ')}]`
             : '';
         const quantity = item.quantity || 1;
         const unitPrice = item.unitPrice || item.price;
         const displayText = quantity > 1
-            ? `${ quantity }x ${ item.name }${ customText } @$${ unitPrice.toFixed(2) } = $${ item.price.toFixed(2) } `
-            : `${ item.name }${ customText } - $${ item.price.toFixed(2) } `;
-        return `< li style = "margin-bottom: 5px;" > ${ displayText }</li > `;
+            ? `${quantity}x ${item.name}${customText} @$${unitPrice.toFixed(2)} = $${item.price.toFixed(2)} `
+            : `${item.name}${customText} - $${item.price.toFixed(2)} `;
+        return `< li style = "margin-bottom: 5px;" > ${displayText}</li > `;
     }).join('');
 
     // Determinar el icono del método de pago
