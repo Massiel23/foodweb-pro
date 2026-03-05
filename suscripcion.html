@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suscripción — FoodWeb Pro</title>
+    <meta name="description"
+        content="Gestiona tu suscripción y planes de FoodWeb Pro. Actualiza a Pro para obtener funciones ilimitadas.">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {
+            --card-bg: var(--bg-secondary);
+            --border: var(--border-color);
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .subs-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 4rem 1.5rem;
+            width: 100%;
+        }
+
+        .subs-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .subs-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subs-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .pricing-card {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-card.featured {
+            border-color: var(--primary-color);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.1);
+        }
+
+        .pricing-card.featured::before {
+            content: "RECOMENDADO";
+            position: absolute;
+            top: 20px;
+            right: -35px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 5px 40px;
+            transform: rotate(45deg);
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .plan-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-price {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+
+        .plan-price span {
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 2rem 0;
+            flex-grow: 1;
+        }
+
+        .plan-features li {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .plan-features li svg {
+            color: var(--success-color);
+            flex-shrink: 0;
+        }
+
+        .btn-upgrade {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 10px;
+            border: none;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn-current {
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            cursor: default;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-pro {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-pro:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .back-nav {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--primary-color);
+        }
+
+        /* Dark Mode overrides if needed beyond root variables */
+        body.dark-mode .pricing-card {
+            background: #1e293b;
+            border-color: #334155;
+        }
+
+        body.dark-mode .btn-current {
+            background: #0f172a;
+            border-color: #334155;
+        }
+
+        #paypal-button-container {
+            margin-top: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="dark-mode"> <!-- Force dark mode style initially or detect via JS -->
+
+    <div class="back-nav">
+        <a href="/" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Volver al POS
+        </a>
+    </div>
+
+    <div class="subs-container">
+        <div class="subs-header">
+            <h1 id="subs-title">Gestiona tu Plan</h1>
+            <p id="subs-subtitle">Elige el plan que mejor se adapte al crecimiento de tu restaurante.</p>
+        </div>
+
+        <div class="pricing-grid">
+            <!-- Plan Básico -->
+            <div class="pricing-card" id="card-basic">
+                <div class="plan-name">Starter</div>
+                <div class="plan-price">$260 <span>/ mes</span></div>
+                <ul class="plan-features">
+                    <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>1 Sucursal</li>
+                    <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>Hasta 3 empleados</li>
+                    <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>Ventas ilimitadas</li>
+                    <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>Gestión de mesas</li>
+                    <li style="color: #64748b;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" style="color: #64748b;">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>Reportes Avanzados</li>
+                </ul>
+                <button class="btn-upgrade btn-current" id="btn-basic">Tu plan actual</button>
+            </div>
+
+            <!-- Plan Pro -->
+            <div class="pricing-card featured" id="card-pro">
+                <div class="plan-name">Pro</div>
+                <div class="plan-price">$499 <span>/ mes</span></div>
+                <ul class="plan-features">
+                    <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>Sucursales ilimitadas</li>
+                    <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>Empleados ilimitados</li>
+                    <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>Reportes y Estadísticas</li>
+                    <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>Personalización de Tickets</li>
+                    <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>Soporte 24/7</li>
+                </ul>
+                <button class="btn-upgrade btn-pro" id="btn-pro-action" onclick="initUpgrade()">Mejorar a Pro</button>
+                <div id="paypal-button-container"></div>
+            </div>
+        </div>
+
+        <div style="margin-top: 3rem; text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+            ¿Necesitas ayuda con tu facturación? Contacta a <a href="mailto:soporte@foodweb.pro"
+                style="color: var(--primary-color);">soporte@foodweb.pro</a>
+        </div>
+    </div>
+
+    <!-- SDK PayPal -->
+    <script src="https://www.paypal.com/sdk/js?client-id=sb&vault=true&intent=subscription"></script>
+    <script src="api.js"></script>
+    <script>
+        const posApi = new API();
+        let currentUser = null;
+
+        // Cargar estado
+        document.addEventListener('DOMContentLoaded', async () => {
+            const userStr = localStorage.getItem('currentUser');
+            if (!userStr) {
+                window.location.href = '/';
+                return;
+            }
+            currentUser = JSON.parse(userStr);
+
+            // Cargar datos reales del perfil para saber el plan
+            try {
+                const { restaurant } = await posApi.getProfile(currentUser.id);
+                const currentPlan = (restaurant.plan || 'Basico').toLowerCase();
+
+                if (currentPlan === 'pro') {
+                    document.getElementById('btn-pro-action').textContent = 'Tu plan actual';
+                    document.getElementById('btn-pro-action').classList.remove('btn-pro');
+                    document.getElementById('btn-pro-action').classList.add('btn-current');
+                    document.getElementById('btn-pro-action').onclick = null;
+
+                    document.getElementById('btn-basic').textContent = 'Cambiar a Starter';
+                    document.getElementById('btn-basic').classList.remove('btn-current');
+                    document.getElementById('btn-basic').classList.add('btn-pro');
+                    document.getElementById('btn-basic').style.background = '#64748b'; // Slate color for downgrade
+                    document.getElementById('btn-basic').onclick = () => alert('Para cambiar de plan, contacta a soporte.');
+                }
+            } catch (e) {
+                console.error('Error al cargar perfil:', e);
+            }
+        });
+
+        function initUpgrade() {
+            document.getElementById('btn-pro-action').style.display = 'none';
+            document.getElementById('paypal-button-container').style.display = 'block';
+
+            paypal.Buttons({
+                style: {
+                    shape: 'rect',
+                    color: 'gold',
+                    layout: 'vertical',
+                    label: 'subscribe'
+                },
+                createSubscription: function (data, actions) {
+                    return actions.subscription.create({
+                        'plan_id': 'P-EXAMPLE' // Solo ejemplo para la UI
+                    });
+                },
+                onApprove: function (data, actions) {
+                    alert('¡Suscripción Pro activada correctamente! (Simulado)');
+                    // Aquí iría la llamada al API para actualizar el plan en la DB
+                    window.location.href = '/';
+                }
+            }).render('#paypal-button-container');
+        }
+    </script>
+</body>
+
+</html>
