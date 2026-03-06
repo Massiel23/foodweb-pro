@@ -300,7 +300,7 @@
         src="https://www.paypal.com/sdk/js?client-id=AfbxzwIJXzw7WYOANGp0htcN3c3bXY9T4j6-ph2dJZJ2Ph_ZqmJq0wD2aoiix3rSvCy8zPG0rYHq9Pcf&vault=true&intent=subscription"></script>
     <script src="api.js"></script>
     <script>
-        const posApi = new API();
+        // posApi ya viene declarado globalmente desde api.js
         let currentUser = null;
 
         function addLog(msg, isError = false) {
