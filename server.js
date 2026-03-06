@@ -196,6 +196,14 @@ apiRouter.post('/restaurants/branch', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+apiRouter.put('/restaurants/plan', async (req, res) => {
+    const { plan } = req.body;
+    try {
+        await dbRun('UPDATE restaurants SET plan = ? WHERE id = ?', [plan, req.restaurantId]);
+        res.json({ success: true, plan });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // Usuarios
 apiRouter.get('/users', async (req, res) => {
     try {

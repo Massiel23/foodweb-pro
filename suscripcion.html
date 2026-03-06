@@ -290,10 +290,42 @@
         </div>
     </div>
 
-    <!-- SDK PayPal -->
-    <script src="https://www.paypal.com/sdk/js?client-id=sb&vault=true&intent=subscription"></script>
+    <!-- SDK PayPal REAL -->
+    <script
+        src="https://www.paypal.com/sdk/js?client-id=AfbxzwIJXzw7WYOANGp0htcN3c3bXY9T4j6-ph2dJZJ2Ph_ZqmJq0wD2aoiix3rSvCy8zPG0rYHq9Pcf&vault=true&intent=subscription"></script>
     <script src="api.js"></script>
     <script>
+        // Mover funciones al scope global explícitamente para evitar ReferenceError
+        window.initUpgrade = function () {
+            document.getElementById('btn-pro-action').style.display = 'none';
+            document.getElementById('paypal-button-container').style.display = 'block';
+
+            paypal.Buttons({
+                style: {
+                    shape: 'rect',
+                    color: 'gold',
+                    layout: 'vertical',
+                    label: 'subscribe'
+                },
+                createSubscription: function (data, actions) {
+                    return actions.subscription.create({
+                        'plan_id': 'P-1YS68428Y6663370UNGSILUY' // Plan Pro Real
+                    });
+                },
+                onApprove: async function (data, actions) {
+                    try {
+                        console.log('Suscripción aprobada:', data.subscriptionID);
+                        await posApi.updateRestaurantPlan('Pro');
+                        alert('¡Felicidades! Tu cuenta ha sido actualizada a PLAN PRO correctamente.');
+                        window.location.href = '/';
+                    } catch (err) {
+                        console.error('Error al actualizar plan:', err);
+                        alert('El pago se realizó pero hubo un error al activar tu plan. Contacta a soporte.');
+                    }
+                }
+            }).render('#paypal-button-container');
+        };
+
         const posApi = new API();
         let currentUser = null;
 
@@ -312,45 +344,19 @@
                 const currentPlan = (restaurant.plan || 'Basico').toLowerCase();
 
                 if (currentPlan === 'pro') {
-                    document.getElementById('btn-pro-action').textContent = 'Tu plan actual';
+                    document.getElementById('subs-title').textContent = 'Tu Plan Actual: Pro';
+                    document.getElementById('btn-pro-action').textContent = 'Plan Pro Activo';
                     document.getElementById('btn-pro-action').classList.remove('btn-pro');
                     document.getElementById('btn-pro-action').classList.add('btn-current');
                     document.getElementById('btn-pro-action').onclick = null;
 
-                    document.getElementById('btn-basic').textContent = 'Cambiar a Starter';
-                    document.getElementById('btn-basic').classList.remove('btn-current');
-                    document.getElementById('btn-basic').classList.add('btn-pro');
-                    document.getElementById('btn-basic').style.background = '#64748b'; // Slate color for downgrade
-                    document.getElementById('btn-basic').onclick = () => alert('Para cambiar de plan, contacta a soporte.');
+                    document.getElementById('btn-basic').textContent = 'Starter (Actual)';
+                    document.getElementById('btn-basic').onclick = () => alert('Ya tienes un plan superior.');
                 }
             } catch (e) {
                 console.error('Error al cargar perfil:', e);
             }
         });
-
-        function initUpgrade() {
-            document.getElementById('btn-pro-action').style.display = 'none';
-            document.getElementById('paypal-button-container').style.display = 'block';
-
-            paypal.Buttons({
-                style: {
-                    shape: 'rect',
-                    color: 'gold',
-                    layout: 'vertical',
-                    label: 'subscribe'
-                },
-                createSubscription: function (data, actions) {
-                    return actions.subscription.create({
-                        'plan_id': 'P-EXAMPLE' // Solo ejemplo para la UI
-                    });
-                },
-                onApprove: function (data, actions) {
-                    alert('¡Suscripción Pro activada correctamente! (Simulado)');
-                    // Aquí iría la llamada al API para actualizar el plan en la DB
-                    window.location.href = '/';
-                }
-            }).render('#paypal-button-container');
-        }
     </script>
 </body>
 

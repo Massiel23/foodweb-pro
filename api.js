@@ -116,6 +116,13 @@ class API {
         });
     }
 
+    async updateRestaurantPlan(plan) {
+        return this.request('/api/restaurants/plan', {
+            method: 'PUT',
+            body: JSON.stringify({ plan })
+        });
+    }
+
     // ========== PERFIL Y SEGURIDAD ==========
     async getProfile(userId) {
         return this.request(`/api/profile?userId=${userId}`);
