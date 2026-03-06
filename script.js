@@ -447,34 +447,19 @@ async function login() {
     }
 
     try {
-        // 🔒 CAPTURAR CACHÉ ANTES de llamar a posApi.login (ya que posApi.login sobreescribe 'restaurantId')
-        const savedBranchStr = localStorage.getItem('activeBranchId') || localStorage.getItem('restaurantId');
-        const previousUsername = localStorage.getItem('lastUsername');
-
         const response = await posApi.login(username, password);
 
-        // Guardar el nombre de usuario actual para futuras comprobaciones de la misma sesión/franquicia
-        localStorage.setItem('lastUsername', username);
+        // Limpiar cualquier rastro de sucursal anterior antes de setear la nueva
+        localStorage.removeItem('activeBranchId');
+        localStorage.removeItem('activeBranchName');
 
-        // Priorizar la sucursal cacheada localmente si existe y si es el mismo usuario
-        if (savedBranchStr && previousUsername === username) {
-            const savedResId = parseInt(savedBranchStr);
-            response.user.restaurant_id = savedResId;
-            posApi.restaurantId = savedResId;
-            // Restaurar las variables que posApi.login borró
-            localStorage.setItem('restaurantId', savedResId);
-            localStorage.setItem('activeBranchId', savedResId);
+        // El backend ahora devuelve el restaurante correcto/validado en el perfil, 
+        // pero para el login inicial usamos el asignado.
+        posApi.restaurantId = response.user.restaurant_id;
+        localStorage.setItem('restaurantId', response.user.restaurant_id);
 
-            // También se unen al nuevo id por si acaso
-            if (socket) {
-                socket.emit('joinRestaurant', savedResId);
-            }
-
-            // Restaurar el nombre de la sucursal para la cabecera
-            const savedBranchName = localStorage.getItem('activeBranchName');
-            if (savedBranchName) {
-                response.user.restaurant_name = savedBranchName;
-            }
+        if (socket) {
+            socket.emit('joinRestaurant', response.user.restaurant_id);
         }
 
         currentUser = response.user;

@@ -53,13 +53,16 @@ class API {
         }
     }
 
-    // Eliminar token (Evitar borrar el restaurantId guardado para preservar la sucursal asignada tras logout)
+    // Eliminar sesión completa
     clearToken() {
         this.token = null;
-        // Mantenemos this.restaurantId para que reconecte al mismo por si hay reconexiones
+        this.restaurantId = null;
         localStorage.removeItem('token');
+        localStorage.removeItem('restaurantId');
+        localStorage.removeItem('activeBranchId');
+        localStorage.removeItem('activeBranchName');
+        localStorage.removeItem('lastUsername');
         localStorage.removeItem('currentUser');
-        // No borramos 'restaurantId' ni 'activeBranchId'
     }
 
     // Método genérico para hacer peticiones

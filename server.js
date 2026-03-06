@@ -169,10 +169,28 @@ apiRouter.post('/restaurants/register', async (req, res) => {
 apiRouter.get('/profile', async (req, res) => {
     try {
         const userId = req.query.userId;
-        const user = await dbGet('SELECT id, username, email, full_name, role FROM users WHERE id = ?', [userId]);
-        const restaurant = await dbGet('SELECT * FROM restaurants WHERE id = ?', [req.restaurantId]);
+        // Obtener usuario con su restaurant_id real
+        const user = await dbGet('SELECT id, username, email, full_name, role, restaurant_id FROM users WHERE id = ?', [userId]);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        const userPrimaryRest = await dbGet('SELECT * FROM restaurants WHERE id = ?', [user.restaurant_id]);
+        let finalRestaurantId = req.restaurantId;
+
+        // SEGURIDAD: Validar si el usuario tiene permiso para ver el restaurante del header
+        if (user.role !== 'admin') {
+            // Si no es admin, forzar SIEMPRE su restaurante asignado
+            finalRestaurantId = user.restaurant_id;
+        } else {
+            // Si es admin, validar que el restaurante solicitado pertenezca al mismo dueño (owner_email)
+            const requestedRest = await dbGet('SELECT owner_email FROM restaurants WHERE id = ?', [req.restaurantId]);
+            if (!requestedRest || requestedRest.owner_email !== userPrimaryRest.owner_email) {
+                finalRestaurantId = user.restaurant_id;
+            }
+        }
+
+        const restaurant = await dbGet('SELECT * FROM restaurants WHERE id = ?', [finalRestaurantId]);
         let branches = [];
-        if (restaurant && restaurant.owner_email) {
+        if (user.role === 'admin' && restaurant && restaurant.owner_email) {
             branches = await dbQuery('SELECT id, name, plan FROM restaurants WHERE owner_email = ?', [restaurant.owner_email]);
         }
         res.json({ user, restaurant, branches });
