@@ -137,21 +137,44 @@ const requireRestaurantId = (req, res, next) => {
 };
 
 // 6. HELPERS DE SEGURIDAD
+const https = require('https');
 const RECAPTCHA_SECRET = '6LdJTIEsAAAAAIE6ud4yI61b3i0Xyb98b8I6R4VZ';
 
 async function verifyRecaptcha(token) {
-    if (!token) return false;
-    try {
-        const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-        const response = await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET}&response=${token}`, {
-            method: 'POST'
-        });
-        const data = await response.json();
-        return data.success && data.score >= 0.5; // Score v3: 0.0 (bot) a 1.0 (humano)
-    } catch (e) {
-        console.error('Error validando reCAPTCHA:', e);
+    if (!token) {
+        console.log('⚠️ [reCAPTCHA] No se recibió token en la petición.');
         return false;
     }
+
+    return new Promise((resolve) => {
+        const url = `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET}&response=${token}`;
+
+        // Petición POST a Google usando el módulo nativo HTTPS (sin dependencias extra)
+        https.request(url, { method: 'POST' }, (res) => {
+            let data = '';
+            res.on('data', (chunk) => { data += chunk; });
+            res.on('end', () => {
+                try {
+                    const parsed = JSON.parse(data);
+                    console.log('🛡️ [reCAPTCHA Debug]:', {
+                        success: parsed.success,
+                        score: parsed.score,
+                        errors: parsed['error-codes']
+                    });
+
+                    // En v3, validamos éxito y que el score sea razonable (0.3+ para evitar bloqueos agresivos)
+                    const isHuman = parsed.success && (parsed.score === undefined || parsed.score >= 0.3);
+                    resolve(isHuman);
+                } catch (e) {
+                    console.error('❌ Error parseando respuesta de reCAPTCHA:', e.message);
+                    resolve(false);
+                }
+            });
+        }).on('error', (err) => {
+            console.error('❌ Error de conexión con API reCAPTCHA:', err.message);
+            resolve(false);
+        }).end();
+    });
 }
 
 const apiRouter = express.Router();
