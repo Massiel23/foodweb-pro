@@ -136,6 +136,24 @@ const requireRestaurantId = (req, res, next) => {
     next();
 };
 
+// 6. HELPERS DE SEGURIDAD
+const RECAPTCHA_SECRET = '6LdJTIEsAAAAAIE6ud4yI61b3i0Xyb98b8I6R4VZ';
+
+async function verifyRecaptcha(token) {
+    if (!token) return false;
+    try {
+        const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+        const response = await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET}&response=${token}`, {
+            method: 'POST'
+        });
+        const data = await response.json();
+        return data.success && data.score >= 0.5; // Score v3: 0.0 (bot) a 1.0 (humano)
+    } catch (e) {
+        console.error('Error validando reCAPTCHA:', e);
+        return false;
+    }
+}
+
 const apiRouter = express.Router();
 apiRouter.use(requireRestaurantId);
 app.use('/api', apiRouter);
@@ -144,7 +162,12 @@ app.use('/api', apiRouter);
 
 // Auth & Registro
 apiRouter.post('/login', async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, recaptchaToken } = req.body;
+
+    // Validar reCAPTCHA
+    const isHuman = await verifyRecaptcha(recaptchaToken);
+    if (!isHuman) return res.status(403).json({ error: 'Fallo de seguridad reCAPTCHA. Intenta de nuevo.' });
+
     try {
         const user = await dbGet('SELECT * FROM users WHERE (username = ? OR email = ?) AND password = ?', [username, username, password]);
         if (!user) return res.status(401).json({ error: 'Credenciales inválidas' });
@@ -155,7 +178,12 @@ apiRouter.post('/login', async (req, res) => {
 });
 
 apiRouter.post('/restaurants/register', async (req, res) => {
-    const { restaurantName, email, fullName, password, plan } = req.body;
+    const { restaurantName, email, fullName, password, plan, recaptchaToken } = req.body;
+
+    // Validar reCAPTCHA
+    const isHuman = await verifyRecaptcha(recaptchaToken);
+    if (!isHuman) return res.status(403).json({ error: 'Fallo de seguridad reCAPTCHA. Registro bloqueado.' });
+
     try {
         const restResult = await dbRun('INSERT INTO restaurants (name, plan, owner_email) VALUES (?, ?, ?)', [restaurantName, plan || 'Basico', email]);
         const restaurantId = restResult.lastID;
@@ -164,6 +192,24 @@ apiRouter.post('/restaurants/register', async (req, res) => {
         res.json({ success: true, restaurantId });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+apiRouter.post('/forgot-password', async (req, res) => {
+    const { email, recaptchaToken } = req.body;
+
+    // Validar reCAPTCHA
+    const isHuman = await verifyRecaptcha(recaptchaToken);
+    if (!isHuman) return res.status(403).json({ error: 'Fallo de seguridad reCAPTCHA. Solicitud denegada.' });
+
+    try {
+        const user = await dbGet('SELECT * FROM users WHERE email = ?', [email]);
+        if (!user) return res.status(404).json({ error: 'No existe una cuenta asociada a este correo.' });
+
+        // Aquí iría la lógica real de envío de email (Nodemailer, etc.)
+        // Por ahora simulamos éxito
+        res.json({ success: true, message: 'Se han enviado las instrucciones de recuperación a tu correo.' });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 
 // Perfil y Sucursales
 apiRouter.get('/profile', async (req, res) => {

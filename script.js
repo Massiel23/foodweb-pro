@@ -295,11 +295,20 @@ async function handleForgotPassword() {
     const email = document.getElementById('forgot-email').value.trim();
     if (!email) return alert('Por favor ingresa tu correo electrónico');
     try {
-        const res = await posApi.forgotPassword(email);
-        alert(res.message);
-        showLoginForm();
+        grecaptcha.ready(function () {
+            grecaptcha.execute('6LdJTIEsAAAAAE_sfb7mjJXNepgMMmuY99NpEM-O', { action: 'forgot_password' }).then(async function (token) {
+                try {
+                    const res = await posApi.forgotPassword(email, token);
+                    alert(res.message);
+                    showLoginForm();
+                } catch (e) {
+                    alert(e.message);
+                }
+            });
+        });
     } catch (e) {
-        alert(e.message);
+        console.error('Error reCAPTCHA:', e);
+        // Fallback or alert
     }
 }
 
@@ -403,22 +412,39 @@ async function handlePaymentSuccess(subscriptionID) {
     try {
         // ✅ CREAR LA CUENTA AHORA (solo cuando el pago fue aprobado)
         const { name, fullName, email, password, plan } = pendingRegistration;
-        const response = await posApi.registerRestaurant(name, email, fullName, password, plan);
 
-        showNotification(`¡Bienvenido a FoodWeb Pro! ID de suscripción: ${subscriptionID}`);
+        grecaptcha.ready(function () {
+            grecaptcha.execute('6LdJTIEsAAAAAE_sfb7mjJXNepgMMmuY99NpEM-O', { action: 'register' }).then(async function (token) {
+                try {
+                    const response = await posApi.registerRestaurant(name, email, fullName, password, plan, token);
 
-        // Auto-login con el usuario generado por el backend
-        document.getElementById('username').value = response.username;
-        document.getElementById('password').value = password;
+                    showNotification(`¡Bienvenido a FoodWeb Pro! ID de suscripción: ${subscriptionID}`);
 
-        pendingRegistration = null;
-        selectedPlan = null;
+                    // Auto-login con el usuario generado por el backend
+                    document.getElementById('username').value = response.username;
+                    document.getElementById('password').value = password;
 
-        document.getElementById('payment-container').style.display = 'none';
-        document.getElementById('login-form-container').style.display = 'block';
-        loginMsg.textContent = '';
+                    pendingRegistration = null;
+                    selectedPlan = null;
 
-        await login();
+                    document.getElementById('payment-container').style.display = 'none';
+                    document.getElementById('login-form-container').style.display = 'block';
+                    loginMsg.textContent = '';
+
+                    await login();
+                } catch (error) {
+                    if (error.message && error.message.toLowerCase().includes('duplicate')) {
+                        loginMsg.textContent = '⚠️ Tu cuenta ya existe. Por favor inicia sesión con tus credenciales.';
+                        loginMsg.style.color = 'orange';
+                        document.getElementById('payment-container').style.display = 'none';
+                        document.getElementById('login-form-container').style.display = 'block';
+                    } else {
+                        loginMsg.style.color = 'red';
+                        loginMsg.textContent = 'Error: ' + error.message;
+                    }
+                }
+            });
+        });
 
     } catch (error) {
         // Si ya existe el usuario (segundo intento tras pago exitoso previo), intentar login directo
@@ -447,32 +473,40 @@ async function login() {
     }
 
     try {
-        const response = await posApi.login(username, password);
+        grecaptcha.ready(function () {
+            grecaptcha.execute('6LdJTIEsAAAAAE_sfb7mjJXNepgMMmuY99NpEM-O', { action: 'login' }).then(async function (token) {
+                try {
+                    const response = await posApi.login(username, password, token);
 
-        // Limpiar cualquier rastro de sucursal anterior antes de setear la nueva
-        localStorage.removeItem('activeBranchId');
-        localStorage.removeItem('activeBranchName');
+                    // Limpiar cualquier rastro de sucursal anterior antes de setear la nueva
+                    localStorage.removeItem('activeBranchId');
+                    localStorage.removeItem('activeBranchName');
 
-        // El backend ahora devuelve el restaurante correcto/validado en el perfil, 
-        // pero para el login inicial usamos el asignado.
-        posApi.restaurantId = response.user.restaurant_id;
-        localStorage.setItem('restaurantId', response.user.restaurant_id);
+                    // El backend ahora devuelve el restaurante correcto/validado en el perfil, 
+                    // pero para el login inicial usamos el asignado.
+                    posApi.restaurantId = response.user.restaurant_id;
+                    localStorage.setItem('restaurantId', response.user.restaurant_id);
 
-        if (socket) {
-            socket.emit('joinRestaurant', response.user.restaurant_id);
-        }
+                    if (socket) {
+                        socket.emit('joinRestaurant', response.user.restaurant_id);
+                    }
 
-        currentUser = response.user;
-        localStorage.setItem('currentUser', JSON.stringify(response.user));
+                    currentUser = response.user;
+                    localStorage.setItem('currentUser', JSON.stringify(response.user));
 
-        await applyUserPermissions(response.user);
+                    await applyUserPermissions(response.user);
 
-        await loadProducts();
-        await loadOrders();
+                    await loadProducts();
+                    await loadOrders();
 
-        showNotification(`Bienvenido, ${response.user.username}!`);
+                    showNotification(`Bienvenido, ${response.user.username}!`);
+                } catch (error) {
+                    loginMsg.textContent = error.message || 'Usuario o contraseña incorrectos.';
+                }
+            });
+        });
     } catch (error) {
-        loginMsg.textContent = error.message || 'Usuario o contraseña incorrectos.';
+        loginMsg.textContent = 'Error de seguridad reCAPTCHA. Intenta de nuevo.';
     }
 }
 

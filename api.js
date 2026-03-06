@@ -99,10 +99,10 @@ class API {
     }
 
     // ========== MODO SAAS (Multi-Tenant) ==========
-    async registerRestaurant(restaurantName, email, fullName, password, plan) {
+    async registerRestaurant(restaurantName, email, fullName, password, plan, recaptchaToken = null) {
         const response = await this.request('/api/restaurants/register', {
             method: 'POST',
-            body: JSON.stringify({ restaurantName, email, fullName, password, plan })
+            body: JSON.stringify({ restaurantName, email, fullName, password, plan, recaptchaToken })
         });
 
         if (response.restaurantId) {
@@ -138,10 +138,10 @@ class API {
         });
     }
 
-    async forgotPassword(email) {
+    async forgotPassword(email, recaptchaToken = null) {
         return this.request('/api/forgot-password', {
             method: 'POST',
-            body: JSON.stringify({ email })
+            body: JSON.stringify({ email, recaptchaToken })
         });
     }
 
@@ -153,10 +153,10 @@ class API {
     }
 
     // ========== AUTENTICACIÓN ==========
-    async login(username, password) {
+    async login(username, password, recaptchaToken = null) {
         const response = await this.request('/api/login', {
             method: 'POST',
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, password, recaptchaToken })
         });
 
         // Guardar token y restaurant_id
