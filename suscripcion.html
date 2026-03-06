@@ -284,6 +284,11 @@
             </div>
         </div>
 
+        <div id="debug-log"
+            style="margin-top: 2rem; padding: 1rem; background: #000; color: #0f0; font-family: monospace; font-size: 0.8rem; border-radius: 8px; display: none; text-align: left; max-height: 200px; overflow-y: auto;">
+            <div style="color: yellow; border-bottom: 1px solid #333; margin-bottom: 5px;">DEBUG LOG:</div>
+        </div>
+
         <div style="margin-top: 3rem; text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
             ¿Necesitas ayuda con tu facturación? Contacta a <a href="mailto:soporte@foodweb.pro"
                 style="color: var(--primary-color);">soporte@foodweb.pro</a>
@@ -295,41 +300,75 @@
         src="https://www.paypal.com/sdk/js?client-id=AfbxzwIJXzw7WYOANGp0htcN3c3bXY9T4j6-ph2dJZJ2Ph_ZqmJq0wD2aoiix3rSvCy8zPG0rYHq9Pcf&vault=true&intent=subscription"></script>
     <script src="api.js"></script>
     <script>
-        // Mover funciones al scope global explícitamente para evitar ReferenceError
-        window.initUpgrade = function () {
-            document.getElementById('btn-pro-action').style.display = 'none';
-            document.getElementById('paypal-button-container').style.display = 'block';
-
-            paypal.Buttons({
-                style: {
-                    shape: 'rect',
-                    color: 'gold',
-                    layout: 'vertical',
-                    label: 'subscribe'
-                },
-                createSubscription: function (data, actions) {
-                    return actions.subscription.create({
-                        'plan_id': 'P-1YS68428Y6663370UNGSILUY' // Plan Pro Real
-                    });
-                },
-                onApprove: async function (data, actions) {
-                    try {
-                        console.log('Suscripción aprobada:', data.subscriptionID);
-                        await posApi.updateRestaurantPlan('Pro');
-                        alert('¡Felicidades! Tu cuenta ha sido actualizada a PLAN PRO correctamente.');
-                        window.location.href = '/';
-                    } catch (err) {
-                        console.error('Error al actualizar plan:', err);
-                        alert('El pago se realizó pero hubo un error al activar tu plan. Contacta a soporte.');
-                    }
-                }
-            }).render('#paypal-button-container');
-        };
-
         const posApi = new API();
         let currentUser = null;
 
-        // Cargar estado
+        function addLog(msg, isError = false) {
+            const log = document.getElementById('debug-log');
+            log.style.display = 'block';
+            const entry = document.createElement('div');
+            entry.style.color = isError ? '#ff4444' : '#0f0';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            log.appendChild(entry);
+            console.log(msg);
+        }
+
+        // Mover funciones al scope global explícitamente para evitar ReferenceError
+        window.initUpgrade = function () {
+            addLog("Iniciando proceso de mejora de plan...");
+
+            if (typeof paypal === 'undefined') {
+                addLog("ERROR: El SDK de PayPal no ha cargado. Verifica tu conexión o desactiva bloqueadores de anuncios.", true);
+                alert("PayPal no está disponible. Por favor, recarga la página o revisa tu conexión.");
+                return;
+            }
+
+            try {
+                document.getElementById('btn-pro-action').style.display = 'none';
+                document.getElementById('paypal-button-container').style.display = 'block';
+
+                addLog("Renderizando botones de PayPal...");
+                paypal.Buttons({
+                    style: {
+                        shape: 'rect',
+                        color: 'gold',
+                        layout: 'vertical',
+                        label: 'subscribe'
+                    },
+                    createSubscription: function (data, actions) {
+                        addLog("Creando suscripción en PayPal...");
+                        return actions.subscription.create({
+                            'plan_id': 'P-1YS68428Y6663370UNGSILUY' // Plan Pro Real
+                        });
+                    },
+                    onApprove: async function (data, actions) {
+                        try {
+                            addLog(`Pago aprobado por PayPal! ID: ${data.subscriptionID}`);
+                            addLog("Actualizando base de datos...");
+                            await posApi.updateRestaurantPlan('Pro');
+                            addLog("ÉXITO: Plan actualizado a Pro.");
+                            alert('¡Felicidades! Tu cuenta ha sido actualizada a PLAN PRO correctamente.');
+                            window.location.href = '/';
+                        } catch (err) {
+                            addLog(`ERROR CRÍTICO: ${err.message}`, true);
+                            console.error('Error al actualizar plan:', err);
+                            alert('El pago se realizó pero hubo un error al activar tu plan. Contacta a soporte.');
+                        }
+                    },
+                    onError: function (err) {
+                        addLog(`ERROR DE PAYPAL: ${err}`, true);
+                        document.getElementById('btn-pro-action').style.display = 'block';
+                        document.getElementById('paypal-button-container').style.display = 'none';
+                    }
+                }).render('#paypal-button-container').catch(err => {
+                    addLog(`ERROR AL RENDERIZAR: ${err.message}`, true);
+                });
+            } catch (e) {
+                addLog(`ERROR DE EJECUCIÓN: ${e.message}`, true);
+            }
+        };
+
+        // Cargar estado inicial
         document.addEventListener('DOMContentLoaded', async () => {
             const userStr = localStorage.getItem('currentUser');
             if (!userStr) {
@@ -337,11 +376,14 @@
                 return;
             }
             currentUser = JSON.parse(userStr);
+            addLog(`Bienvenido, ${currentUser.username}.`);
 
             // Cargar datos reales del perfil para saber el plan
             try {
+                addLog("Verificando plan actual...");
                 const { restaurant } = await posApi.getProfile(currentUser.id);
                 const currentPlan = (restaurant.plan || 'Basico').toLowerCase();
+                addLog(`Plan detectado: ${currentPlan}`);
 
                 if (currentPlan === 'pro') {
                     document.getElementById('subs-title').textContent = 'Tu Plan Actual: Pro';
@@ -354,6 +396,7 @@
                     document.getElementById('btn-basic').onclick = () => alert('Ya tienes un plan superior.');
                 }
             } catch (e) {
+                addLog(`Error cargando perfil: ${e.message}`, true);
                 console.error('Error al cargar perfil:', e);
             }
         });
