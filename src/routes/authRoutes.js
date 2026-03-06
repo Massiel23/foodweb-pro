@@ -3,7 +3,7 @@ const router = express.Router();
 const { loginValidators, registerValidators } = require('../middleware/validators');
 const { loginLimiter, authenticateToken, authorizeRoles } = require('../middleware/security');
 
-module.exports = (authService, io) => {
+module.exports = (authService, io, verifyRecaptcha) => {
     /**
      * @route   POST /api/auth/login
      * @desc    Iniciar sesión
@@ -11,7 +11,14 @@ module.exports = (authService, io) => {
      */
     router.post('/login', loginLimiter, loginValidators, async (req, res, next) => {
         try {
-            const { username, password } = req.body;
+            const { username, password, recaptchaToken } = req.body;
+
+            // Validar reCAPTCHA si el helper está disponible (v3)
+            if (verifyRecaptcha) {
+                const isHuman = await verifyRecaptcha(recaptchaToken);
+                if (!isHuman) return res.status(403).json({ error: 'Fallo de seguridad reCAPTCHA. Intenta de nuevo.' });
+            }
+
             const result = await authService.login(username, password);
             res.json(result);
         } catch (error) {
@@ -24,18 +31,18 @@ module.exports = (authService, io) => {
      * @desc    Registrar nuevo usuario (solo admin)
      * @access  Private (Admin)
      */
-    router.post('/register', 
-        authenticateToken, 
+    router.post('/register',
+        authenticateToken,
         authorizeRoles('admin'),
-        registerValidators, 
+        registerValidators,
         async (req, res, next) => {
             try {
                 const { username, password, role } = req.body;
                 const user = await authService.register(username, password, role);
-                
+
                 // Emitir evento de nuevo usuario
                 io.emit('userAdded', user);
-                
+
                 res.status(201).json(user);
             } catch (error) {
                 if (error.message === 'El usuario ya existe') {
@@ -71,9 +78,9 @@ module.exports = (authService, io) => {
      * @access  Private
      */
     router.get('/verify', authenticateToken, (req, res) => {
-        res.json({ 
-            valid: true, 
-            user: req.user 
+        res.json({
+            valid: true,
+            user: req.user
         });
     });
 

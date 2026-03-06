@@ -11,6 +11,26 @@ const path = require('path');
 const { helmetConfig, apiLimiter, authenticateToken, authorizeRoles } = require('./src/middleware/security');
 const { errorHandler } = require('./src/middleware/errorHandler');
 const { productValidators, orderValidators, ticketValidators, idParamValidator } = require('./src/middleware/validators');
+const https = require('https');
+
+// Helper de reCAPTCHA
+const RECAPTCHA_SECRET = '6LdJTIEsAAAAAIE6ud4yI61b3i0Xyb98b8I6R4VZ';
+async function verifyRecaptcha(token) {
+    if (!token) return false;
+    return new Promise((resolve) => {
+        const url = `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET}&response=${token}`;
+        https.request(url, { method: 'POST' }, (res) => {
+            let data = '';
+            res.on('data', (chunk) => { data += chunk; });
+            res.on('end', () => {
+                try {
+                    const parsed = JSON.parse(data);
+                    resolve(parsed.success && (parsed.score === undefined || parsed.score >= 0.3));
+                } catch (e) { resolve(false); }
+            });
+        }).on('error', () => resolve(false)).end();
+    });
+}
 
 // Servicios
 const AuthService = require('./src/services/authService');
@@ -255,7 +275,7 @@ async function initializeApp() {
     });
 
     // ========== RUTAS DE AUTENTICACIÓN ==========
-    const authRoutes = require('./src/routes/authRoutes')(authService, io);
+    const authRoutes = require('./src/routes/authRoutes')(authService, io, verifyRecaptcha);
     app.use('/api/auth', authRoutes);
 
     // ========== API USUARIOS (PROTEGIDA) ==========
