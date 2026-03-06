@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacidad y Términos — FoodWeb Pro</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .legal-container {
+            max-width: 800px;
+            margin: 4rem auto;
+            padding: 2rem;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .legal-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .legal-header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .legal-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .legal-section h2 {
+            color: var(--primary-color);
+            font-size: 1.4rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .legal-section p,
+        .legal-section li {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 2rem;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .back-btn:hover {
+            color: var(--primary-color);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+
+<body class="dark-mode">
+    <div style="padding: 2rem;">
+        <a href="javascript:history.back()" class="back-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Volver
+        </a>
+
+        <div class="legal-container">
+            <div class="legal-header">
+                <h1>Privacidad y Términos</h1>
+                <p>Última actualización: Marzo 2026</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>1. Recopilación de Información</h2>
+                <p>En FoodWeb Pro, recolectamos información necesaria para la operación del sistema POS:</p>
+                <ul>
+                    <li>Datos de cuenta: Nombre del restaurante, correo electrónico y credenciales de acceso.</li>
+                    <li>Datos operativos: Productos, inventarios, registros de ventas y nombres de empleados.</li>
+                    <li>Configuración: Datos de sucursales y personalización de tickets.</li>
+                </ul>
+            </div>
+
+            <div class="legal-section">
+                <h2>2. Uso de los Datos</h2>
+                <p>Sus datos se utilizan exclusivamente para:</p>
+                <ul>
+                    <li>Proveer las funciones del Punto de Venta y sincronización en tiempo real.</li>
+                    <li>Generar reportes estadísticos para su propia gestión.</li>
+                    <li>Procesar su suscripción a través de PayPal de forma segura.</li>
+                </ul>
+            </div>
+
+            <div class="legal-section">
+                <h2>3. Seguridad de la Información</h2>
+                <p>Implementamos medidas de seguridad de nivel industrial:</p>
+                <ul>
+                    <li>Encriptado de contraseñas mediante algoritmos de hash seguros.</li>
+                    <li>Aislamiento estricto de bases de datos entre diferentes restaurantes.</li>
+                    <li>No almacenamos datos de tarjetas de crédito; todos los pagos son procesados externamente por
+                        PayPal.</li>
+                </ul>
+            </div>
+
+            <div class="legal-section">
+                <h2>4. Compromiso de Privacidad</h2>
+                <p>FoodWeb Pro se compromete a NO vender, alquilar ni compartir sus datos operativos con terceras
+                    empresas con fines publicitarios. Sus datos le pertenecen a usted.</p>
+            </div>
+
+            <div class="legal-section">
+                <h2>5. Terminación del Servicio</h2>
+                <p>Usted puede cancelar su suscripción en cualquier momento. Al hacerlo, mantendrá acceso a sus datos
+                    hasta el fin del periodo pagado.</p>
+            </div>
+        </div>
+
+        <footer>
+            &copy; 2026 FoodWeb Pro — Tecnologías para Restaurantes. Pachamama.
+        </footer>
+    </div>
+</body>
+
+</html>
